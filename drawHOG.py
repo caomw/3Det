@@ -40,7 +40,7 @@ def draw1HOG(img,hog,py,px,ry,rx):
         drawLine(img,px+rx-1,py+ry-1,-ang/numpy.pi*180,ry,hog[o])
         drawLine(img,px+rx-1,py+ry-1,-ang/numpy.pi*180+180,ry,hog[o])
         
-def drawHOG(feat,hogpix=15):
+def drawHOG(feat,hogpix=15,border=None):
     r=(hogpix+1)/2
     dimy=feat.shape[0]
     dimx=feat.shape[1]
@@ -49,6 +49,17 @@ def drawHOG(feat,hogpix=15):
         for x in range(dimx):
             #draw1HOG(img,feat[y,x,:9]+0.5*feat[y,x,9:18]+0.5*feat[y,x,18:27],y*hogpix,x*hogpix,r,r)
             draw1HOG(img,feat[y,x,:9]+feat[y,x,9:18]+feat[y,x,18:27],y*hogpix,x*hogpix,r,r)
+    if border!=None:
+        if type(border)!=int:
+            border=2
+        if numpy.all(numpy.array(img.shape)>0):
+            val=img.max()
+        else:
+            vla=0
+        img[:,:border]=1
+        img[:,-border:]=1
+        img[:border]=1
+        img[-border:]=1
     return img
 
 if __name__=="__main__":

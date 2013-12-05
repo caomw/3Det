@@ -17,6 +17,25 @@ part=numpy.dtype([("itr", i32),("oct",i32),("y",i32),("x",i32),("sy",i32),("sx",
 #                    [0,0,0.5],[0,0.5,0],[0,0.5,0.5],[0.5,0,0],[0.5,0,0.5],[0.5,0.5,0],[0.3,0.5,0.7],[0.7,0.5,0.3]])
 colors=["r","g","c",'m','w']                    
      
+
+def myimshow(X):
+    import matplotlib.pyplot as plt
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.imshow(X, interpolation='nearest')
+
+    numrows, numcols = X.shape
+    def format_coord(x, y):
+        col = int(x+0.5)
+        row = int(y+0.5)
+        if col>=0 and col<numcols and row>=0 and row<numrows:
+            z = X[row,col]
+            return 'x=%1.4f, y=%1.4f, z=%1.4f'%(x, y, z)
+        else:
+            return 'x=%1.4f, y=%1.4f'%(x, y)
+
+    ax.format_coord = format_coord
+    plt.show()
    
 def myimread_old(imgname,flip=False):
     img=None
