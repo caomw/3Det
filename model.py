@@ -1,7 +1,37 @@
 
 import numpy
 #danger: code dupicated in pyrHOG2.py: find a solution
+import test3D2
 
+def initmodel3D():
+
+    lmask=[]
+    step=2
+    size=4
+    if 0:
+        profile=[0.8,0.9,1,0.9,0.8,0.7,0.65,0.7,0.8,0.9,1,0.9,0.8]
+        ang=numpy.array([-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90])
+        #ang=numpy.array([-60,-45,-30,-15,0,15,30,45,60])
+        #ang=numpy.array([-30,-15,0,15,30])
+        for py in range(len(ang)):
+            for px in range(len(ang)):
+                #lmask.append(test3D2.part3D(0.1*numpy.ones((4,4,31),dtype=numpy.float32),0,0,-25*numpy.cos(ang[py]/180.0*numpy.pi)*numpy.cos(ang[px]/180.0*numpy.pi),ang[py],ang[px]))
+                #lmask.append(test3D2.part3D(0.1*numpy.ones((4,4,31),dtype=numpy.float32),0,0,-17,ang[py],ang[px]))
+                lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),0,0,-17*profile[px],ang[py],ang[px]))
+    else:
+        #profile=[0.8,0.9,1,0.9,0.8,0.7,0.65,0.7,0.8,0.9,1,0.9,0.8]
+        #ang=numpy.array([-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90])
+        ang=numpy.array([-45,-15,0,0,0,0,0,15,45])
+        z=numpy.array([0,1,2,2,2,2,2,1,0])
+        #ang=numpy.array([-30,-15,0,15,30])
+        for py in range(len(ang)):
+            for px in range(len(ang)):
+                #lmask.append(test3D2.part3D(0.1*numpy.ones((4,4,31),dtype=numpy.float32),0,0,-25*numpy.cos(ang[py]/180.0*numpy.pi)*numpy.cos(ang[px]/180.0*numpy.pi),ang[py],ang[px]))
+                #lmask.append(test3D2.part3D(0.1*numpy.ones((4,4,31),dtype=numpy.float32),0,0,-17,ang[py],ang[px]))
+                lmask.append(test3D2.part3D(0.00001*numpy.ones((4,4,31),dtype=numpy.float32),(py-4)*4,(px-4)*4,-2*z[px],ang[py],ang[px]))
+
+    models=[{"ww":lmask,"rho":0}]
+    return models
 
 def initmodel(fy,fx,N,useRL,lenf,CRF=False,small2=False):
     ww=[]
@@ -158,6 +188,20 @@ def model2w(model,deform,usemrf,usefather,k=1,lastlev=0,usebow=False,useCRF=Fals
         w=numpy.concatenate((w,model["small2"].flatten()))
     return w
 
+def feat2flatten(feat):
+    hsize=feat[0].size
+    flat=numpy.zeros(hsize*len(feat),dtype=feat[0].dtype)
+    for idl,l in enumerate(feat):
+        flat[idl*hsize:(idl+1)*hsize]=l.flatten()
+    return flat
+
+def model2w3D(model):
+    w=numpy.zeros(0,dtype=numpy.float32)
+    for l in range(len(model["ww"])):
+        #print "here"#,item
+        w=numpy.concatenate((w,model["ww"][l].mask.flatten()))
+    return w
+
 def w2model(descr,N,E,rho,lev,fsz,fy=[],fx=[],bin=5,siftsize=2,deform=False,usemrf=False,usefather=False,k=1,norm=1,mindef=0.001,useoccl=False,usebow=False,useCRF=False,small2=False):
         #does not work with occlusions
         """
@@ -196,5 +240,13 @@ def w2model(descr,N,E,rho,lev,fsz,fy=[],fx=[],bin=5,siftsize=2,deform=False,usem
         m["facial"][1::2]=m["facial"][1::2]*(ww[0].shape[1]/(NE/N))
         return m
 
+
+def w2model3D(oldmodel,descr,rho):
+    hsize=oldmodel["ww"][0].mask.size
+    hshape=oldmodel["ww"][0].mask.shape
+    for idl,l in enumerate(oldmodel["ww"]):
+        oldmodel["ww"][idl].mask=descr[idl*hsize:(idl+1)*hsize].reshape(hshape)
+    oldmodel["rho"]=rho
+    return oldmodel
 
 

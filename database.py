@@ -1263,7 +1263,7 @@ class MultiPIE2(VOC06Data):
         elif self.camera=="190":
             pose=45
         elif self.camera=="200":
-            pose=-60
+            pose=60
         elif self.camera=="010":
             pose=75
         elif self.camera=="240":

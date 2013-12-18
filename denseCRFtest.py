@@ -50,9 +50,10 @@ def runtest(models,tsImages,cfg,parallel=True,numcore=4,detfun=detectCRF.test,sa
         if show:
             im=myimread(arg[ii]["file"])
             if tsImages[ii]["bbox"]!=[]:
-                detectCRF.visualize2(res[:3],cfg.N,im,bb=tsImages[ii]["bbox"][0])
+                #detectCRF.visualize2(res[:3],cfg.N,im,bb=tsImages[ii]["bbox"][0])
+                detectCRF.visualize3D(res[:3],cfg.N,im,bb=tsImages[ii]["bbox"][0])
             else:
-                detectCRF.visualize2(res[:3],cfg.N,im)
+                detectCRF.visualize3D(res[:3],cfg.N,im)
             print [x["scr"] for x in res[:5]]
         ltdet+=res
 
@@ -133,9 +134,10 @@ if __name__ == '__main__':
     cfg.dbpath="/users/visics/mpederso/databases/"
     cfg.testpath="./data/test/"#"./data/CRF/12_09_19/"
     cfg.testspec="force-bb"#"full2"
-    cfg.db="VOC"
+    cfg.db="AFLW"#"MultiPIE2"#"VOC"
     cfg.maxtest=200
     cfg.maxneg=200
+    cfg.use3D=True
     #cfg.db="imagenet"
     #cfg.cls="tandem"
     #cfg.N=
@@ -193,6 +195,47 @@ if __name__ == '__main__':
                         usetr=True,usedf=False),cfg.maxtest)
         tsImages=tsPosImages#numpy.concatenate((tsPosImages,tsNegImages),0)
         tsImagesFull=tsPosImages
+    elif cfg.db=="MultiPIE2":
+        #cameras=["11_0","12_0","09_0","08_0","13_0","14_0","05_1","05_0","04_1","19_0","20_0","01_0","24_0"]
+        #cameras=["110","120","090","080","130","140","051","050","041","190","200","010","240"]
+        cameras=["080","130","140","051","050","041","190"]
+        #conditions=2
+        #subjects=1#25
+        aux=getRecord(MultiPIE2(basepath=cfg.dbpath),cfg.maxpos,facial=True,pose=True)
+        trPosImages=numpy.array([],dtype=aux.dtype)
+        #for ss in range(subjects):
+        #    trPosImages=numpy.concatenate((trPosImages,getRecord(MultiPIE(basepath=cfg.dbpath,camera=cameras[6],subject="%03d"%ss),conditions,facial=True,pose=True)))
+        #conditions=5
+        #subjects=50 #to reach 600
+        #13*50=650   
+        for cc in cameras: 
+            #for ss in range(subjects):
+            if cc=="051":
+                conditions=150#300
+            else:
+                conditions=50#50
+            trPosImages=numpy.concatenate((trPosImages,getRecord(MultiPIE2(basepath=cfg.dbpath,camera=cc),conditions,facial=True,pose=True)))
+            #print conditions,"LEN",len(trPosImages)
+
+        trPosImagesNoTrunc=trPosImages[:len(trPosImages)/2]
+        trNegImages=getRecord(InriaNegData(basepath=cfg.dbpath),cfg.maxneg)#check if it works better like this
+        trNegImagesFull=getRecord(InriaNegData(basepath=cfg.dbpath),cfg.maxnegfull)
+        #test
+        #subjects=10
+        conditions=5
+        tsImages=numpy.array([],dtype=aux.dtype)
+        for cc in cameras:#range(subjects):
+            tsImages=numpy.concatenate((tsImages,getRecord(MultiPIE2(basepath=cfg.dbpath,camera=cc),conditions,facial=True,pose=True)))
+        #tsImages=getRecord(MultiPIE(basepath=cfg.dbpath,session="session02"),cfg.maxtest,facial=True,pose=True)#cfg.useFacial)
+        tsImagesFull=tsImages
+    elif cfg.db=="AFLW":
+        trPosImages=getRecord(AFLW(basepath=cfg.dbpath,fold=0),cfg.maxpos,facial=True,pose=True)#cfg.useFacial)
+        trPosImagesNoTrunc=trPosImages[:900]
+        trNegImages=getRecord(InriaNegData(basepath=cfg.dbpath),cfg.maxneg)#check if it works better like this
+        trNegImagesFull=getRecord(InriaNegData(basepath=cfg.dbpath),cfg.maxnegfull)
+        #test
+        tsImages=getRecord(AFLW(basepath=cfg.dbpath,fold=0),cfg.maxtest,facial=True,pose=True)#cfg.useFacial)
+        tsImagesFull=tsImages
     ##############load model
     for l in range(cfg.posit):
         try:
@@ -241,14 +284,15 @@ if __name__ == '__main__':
     #testname="./data/afterCVPR/bicycle2_force-bb_final"
     #testname="../../CRFdet/data/afterCVPR/12_01_10/cat2_force-bb_final"
     #testname="data/condor2/person3_full_condor219"
-    testname="data/condor_lowres/person2_morerigid_final"
+    #testname="data/condor_lowres/person2_morerigid_final"
+    testname="data/test/face1_3Dmore_final"
     cfg.trunc=1
     models=util.load("%s.model"%(testname))
     #del models[0]
     cfg.numcl=2
     cfg.E=1
     #cfg.N=3
-    cfg.N=models[0]["N"]
+    #cfg.N=models[0]["N"]
     #models=util.load("%s%d.model"%(testname,it))
     #just for the new
     #for idm,m in enumerate(models):
@@ -259,5 +303,5 @@ if __name__ == '__main__':
     ##############test
     #import itertools
     #runtest(models,tsImages,cfg,parallel=False,numcore=4,detfun=lambda x :detectCRF.test(x,numhyp=1,show=False),show=True)#,save="%s%d"%(testname,it))
-    runtest(models,tsImages,cfg,parallel=True,numcore=8,show=True,detfun=testINC,save="./person_resctirct")
+    runtest(models,tsImages,cfg,parallel=True,numcore=4,show=True,detfun=testINC,save="./person_resctirct")
 

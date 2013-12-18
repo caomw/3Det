@@ -23,17 +23,18 @@ def refinePos(el):
     models=el["models"]
     cfg=el["cfg"]
     imageflip=el["flip"]
+    pose=el["pose"]
     dratios=[]
     fy=[]
     fx=[]
     det=[]
-    for m in models:
-        fy.append(m["ww"][0].shape[0]/cfg.N)
-        fx.append(m["ww"][0].shape[1]/cfg.N)
-        dratios.append(fy[-1]/float(fx[-1]))
-    fy=numpy.array(fy)
-    fx=numpy.array(fx)
-    dratios=numpy.array(dratios)
+    #for m in models:
+    #    fy.append(m["ww"][0].shape[0]/cfg.N)
+    #    fx.append(m["ww"][0].shape[1]/cfg.N)
+    #    dratios.append(fy[-1]/float(fx[-1]))
+    #fy=numpy.array(fy)
+    #fx=numpy.array(fx)
+    #dratios=numpy.array(dratios)
     #dratios=numpy.array(cfg.fy)/numpy.array(cfg.fx)
     img=util.myimread(imname,resize=cfg.resize)
     #make a mirror out of the image --> max out 50%
@@ -62,8 +63,24 @@ def refinePos(el):
            #el["facial"][:1:2]=img.shape[1]-el["facial"][:1:2]#for my points
            cfacial[::2]=(bbox[3]-bbox[1])-cfacial[::2]
     #print cfacial
-    maxy=numpy.max([x["ww"][0].shape[0] for x in models])    
-    maxx=numpy.max([x["ww"][0].shape[1] for x in models])    
+    import test3D2
+    angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
+    angx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
+    mypose=numpy.argmin((numpy.array(angx)-(pose))**2)
+    selangy=[6]
+    selangx=[mypose]
+    print "Pose",pose,"Angle",selangx
+    msize=test3D2.modelsize(models[0],angy,angx)
+    dmaxy=numpy.max(msize[:,:,2])+1#numpy.max([el.y for el in model["ww"]])+1
+    dmaxx=numpy.max(msize[:,:,3])+1#numpy.max([el.x for el in model["ww"]])+1
+    dminy=numpy.min(msize[:,:,0])+1#numpy.max([el.y for el in model["ww"]])+1
+    dminx=numpy.min(msize[:,:,1])+1#numpy.max([el.x for el in model["ww"]])+1
+    maxy=dmaxy-dminy
+    maxx=dmaxx-dminx
+    fy=[maxy]
+    fx=[maxx]
+    #maxy=numpy.max([x["ww"][0].shape[0] for x in models])    
+    #maxx=numpy.max([x["ww"][0].shape[1] for x in models]) 
     if (bbox!=[]):
         marginy=(bbox[2]-bbox[0])*0.5 #safe margin to be sure the border is not used
         marginx=(bbox[3]-bbox[1])*0.5
@@ -75,72 +92,88 @@ def refinePos(el):
         cropratio= marginy/float(marginx)
         dist=abs(numpy.log(dratios)-numpy.log(cropratio))
         #idm=numpy.where(dist<0.5)[0] #
-        idm=numpy.where(dist<0.7)[0] #
+        #idm=numpy.where(dist<0.7)[0] #
         #print "                 Selected ratios",idm
         if cfg.useclip:
             if bbox[4]==1 or extbbox[4]==1:# use all models for truncated
                 #print "TRUNCATED!!!"
                 idm=range(len(models)) 
-        if len(idm)>0:
-            if cfg.rescale:# and len(idm)>0:
-                #tiley=((bbox[2]-bbox[0]))/float(numpy.max(fy[idm]))
-                #tilex=((bbox[3]-bbox[1]))/float(numpy.max(fx[idm]))
-                tiley=((extbbox[2]-extbbox[0]))/float(numpy.max(fy[idm]))
-                tilex=((extbbox[3]-extbbox[1]))/float(numpy.max(fx[idm]))
-                #print "Tile y",tiley,(bbox[2]-bbox[0])/8,"Tile x",tilex,(bbox[3]-bbox[1])/8
-                if tiley>8*cfg.N and tilex>8*cfg.N:
-                    rescale=(8*cfg.N)/float(min(tiley,tilex))
-                    img=zoom(img,(rescale,rescale,1),order=1)
-                    newbbox=numpy.array(newbbox)*rescale
-                    extnewbbox=numpy.array(extnewbbox)*rescale
-                else:
-                    print "Not Rescaling!!!!"
-            selmodels=[models[x] for x in idm] 
-            #t1=time.time()
-            if cfg.usebbPOS:
-                [f,det]=rundetbb(img,cfg.N,cfg.E,selmodels,numdet=cfg.numhypPOS, interv=cfg.intervPOS,aiter=cfg.aiterPOS,restart=cfg.restartPOS,trunc=cfg.trunc,useFastDP=cfg.useFastDP)
-            else:         
-                #[f,det]=rundet(img,cfg.N,selmodels,numhyp=cfg.numhypPOS,interv=cfg.intervPOS,aiter=cfg.aiterPOS,restart=cfg.restartPOS,trunc=cfg.trunc)
-                if cfg.useFacial:
-                    [f,det]=rundetc(img,cfg.N,cfg.E,selmodels,numhyp=cfg.numhypPOS,interv=cfg.intervPOS,aiter=cfg.
+        #if len(idm)>0:
+        if cfg.rescale:# and len(idm)>0:
+            #tiley=((bbox[2]-bbox[0]))/float(numpy.max(fy[idm]))
+            #tilex=((bbox[3]-bbox[1]))/float(numpy.max(fx[idm]))
+            tiley=((extbbox[2]-extbbox[0]))/float(numpy.max(fy[0]))
+            tilex=((extbbox[3]-extbbox[1]))/float(numpy.max(fx[0]))
+            #print "Tile y",tiley,(bbox[2]-bbox[0])/8,"Tile x",tilex,(bbox[3]-bbox[1])/8
+            if tiley>8*cfg.N and tilex>8*cfg.N:
+                rescale=(8*cfg.N)/float(min(tiley,tilex))
+                img=zoom(img,(rescale,rescale,1),order=1)
+                newbbox=numpy.array(newbbox)*rescale
+                extnewbbox=numpy.array(extnewbbox)*rescale
+        else:
+            print "Not Rescaling!!!!"
+        #selmodels=[models[x] for x in idm] 
+        #t1=time.time()
+        if cfg.use3D:
+            import test3D2
+            [f,det]=test3D2.rundet(img,models[0],bbox=extnewbbox,angy=angy,angx=angx,selangy=selangy,selangx=selangx)
+            print "Bbox",det[0]["bbox"]
+        elif cfg.usebbPOS:
+            [f,det]=rundetbb(img,cfg.N,cfg.E,selmodels,numdet=cfg.numhypPOS, interv=cfg.intervPOS,aiter=cfg.aiterPOS,restart=cfg.restartPOS,trunc=cfg.trunc,useFastDP=cfg.useFastDP)
+        else:         
+            #[f,det]=rundet(img,cfg.N,selmodels,numhyp=cfg.numhypPOS,interv=cfg.intervPOS,aiter=cfg.aiterPOS,restart=cfg.restartPOS,trunc=cfg.trunc)
+            if cfg.useFacial:
+                [f,det]=rundetc(img,cfg.N,cfg.E,selmodels,numhyp=cfg.numhypPOS,interv=cfg.intervPOS,aiter=cfg.
 aiterPOS,restart=cfg.restartPOS,trunc=cfg.trunc,facial=cfacial,useFastDP=cfg.useFastDP,sbin=cfg.sbin,bbox=extnewbbox)
-                else:
-                    [f,det]=rundetc(img,cfg.N,cfg.E,selmodels,numhyp=cfg.numhypPOS,interv=cfg.intervPOS,aiter=cfg.
+            else:
+                [f,det]=rundetc(img,cfg.N,cfg.E,selmodels,numhyp=cfg.numhypPOS,interv=cfg.intervPOS,aiter=cfg.
 aiterPOS,restart=cfg.restartPOS,trunc=cfg.trunc,bbox=extnewbbox,useFastDP=cfg.useFastDP,sbin=cfg.sbin)
     #else: #for negatives
     #    [f,det]=rundet(img,cfg,models)
     #print "Rundet time:",time.time()-t1
     print "Detection time:",time.time()-t
     #detectCRF.check(det[:10],f,models)
-    boundingbox(det,cfg.N)
+    #boundingbox(det,cfg.N)
     if cfg.useclip:
         clip(det,img.shape)
     #detectCRF.visualize(det[:10],f,img,cfgpos)
-    bestscr=-100
-    best=-1
-    for idl,l in enumerate(det):
-        ovr=util.overlap(newbbox,l["bbox"])
-        #print ovr,l["scr"]
-        if ovr>cfg.posovr and l["scr"]>cfg.posthr:#valid detection
-            if l["scr"]>bestscr:
-                best=idl
-                bestscr=l["scr"]
+    #bestscr=-100
+    #best=-1
+    #for idl,l in enumerate(det):
+    #    ovr=util.overlap(newbbox,l["bbox"])
+    #    #print ovr,l["scr"]
+    #    if ovr>cfg.posovr and l["scr"]>cfg.posthr:#valid detection
+    #        if l["scr"]>bestscr:
+    #            best=idl
+    #            bestscr=l["scr"]
     #raw_input()
+    best=0
     if len(det)>0 and best!=-1:
         print "Pos det:",[x["scr"] for x in det[:5]]
         if cfg.show:
             visualize([det[best]],cfg.N,f,img)
-        feat,edge=getfeature([det[best]],cfg.N,cfg.E,f,models,cfg.trunc)
+        #feat,edge=getfeature([det[best]],cfg.N,cfg.E,f,models,cfg.trunc)
+        feat=getfeature3D([det[best]],f,models,angy,angx,cfg.trunc)
         #add image name and bbx so that each annotation is unique
         if imageflip:
             det[best]["idim"]=el["file"].split("/")[-1]+".flip"
         else:
             det[best]["idim"]=el["file"].split("/")[-1]
         det[best]["idbb"]=el["idbb"]
+        if 0:
+            import test3D2
+            raw_input()
+            pylab.figure(20)
+            pylab.clf()
+            test3D2.showHOG(models[0],feat[0],0,0,nhog=50,border=2,bis=False,val=1)
+            pylab.figure(21)
+            pylab.clf()
+            test3D2.showHOG(models[0],feat[0],angy[det[best]["ang"][0]],angx[det[best]["ang"][1]],nhog=50,border=2,bis=False,val=1)
+        #raw_input()
         #add bias
         #det[best]["scr"]-=models[det[best]["id"]]["rho"]/float(cfg.bias)
-        return det[best],feat[0],edge[0],[rescale,y1,x1,y2,x2]#last just for drawing
-    return [],[],[],[rescale,y1,x1,y2,x2]
+        return det[best],feat[best],[rescale,y1,x1,y2,x2]#last just for drawing
+    return [],[],[rescale,y1,x1,y2,x2]
 
 
 
@@ -160,10 +193,16 @@ def hardNeg(el):
     else:
         img=util.myimread(imname,resize=cfg.resize)
     #imageflip=el["flip"]
-    if cfg.usebbNEG:
-        [f,det]=rundetbb(img,cfg.N,cfg.E,models,minthr=-1.0,numdet=cfg.numhypNEG,interv=cfg.intervNEG,aiter=cfg.aiterNEG,restart=cfg.restartNEG,trunc=cfg.trunc,useFastDP=cfg.useFastDP)
+    if cfg.use3D:
+        angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
+        angx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
+        import test3D2
+        [f,det]=test3D2.rundet(img,models[0],angy=angy,angx=angx,selangy=[6])
     else:
-        [f,det]=rundet(img,cfg.N,cfg.E,models,numhyp=cfg.numhypNEG,interv=cfg.intervNEG,aiter=cfg.aiterNEG,restart=cfg.restartNEG,trunc=cfg.trunc)
+        if cfg.usebbNEG:
+            [f,det]=rundetbb(img,cfg.N,cfg.E,models,minthr=-1.0,numdet=cfg.numhypNEG,interv=cfg.intervNEG,aiter=cfg.aiterNEG,restart=cfg.restartNEG,trunc=cfg.trunc,useFastDP=cfg.useFastDP)
+        else:
+            [f,det]=rundet(img,cfg.N,cfg.E,models,numhyp=cfg.numhypNEG,interv=cfg.intervNEG,aiter=cfg.aiterNEG,restart=cfg.restartNEG,trunc=cfg.trunc)
     ####
     #for idl,l in enumerate(det[1:]):
     #    if abs(det[idl]["scr"]-l["scr"])<0.00000001:
@@ -180,14 +219,15 @@ def hardNeg(el):
         if det[idl]["scr"]>-1:
             det[idl]["idim"]=el["file"].split("/")[-1]
             ldet.append(det[idl])
-            feat,edge=getfeature([det[idl]],cfg.N,cfg.E,f,models,cfg.trunc)
+            feat=getfeature3D([det[idl]],f,models,angy,angx,cfg.trunc)
+            #feat,edge=getfeature([det[idl]],cfg.N,cfg.E,f,models,cfg.trunc)
             lfeat+=feat
-            ledge+=edge
+            #ledge+=edge
     if cfg.show:
         visualize(ldet,cfg.N,f,img)
     print "Detection time:",time.time()-t
     print "Found %d hard negatives"%len(ldet)
-    return ldet,lfeat,ledge
+    return ldet,lfeat#,ledge
 
 def hardNegPos(el):
     t=time.time()
@@ -259,18 +299,24 @@ def test(el,docluster=True,show=False,inclusion=False,onlybest=False,ovr=0.5):
     else:
         img=util.myimread(imname,resize=cfg.resize)
     #imageflip=el["flip"]
-    if cfg.usebbTEST:
-        if cfg.useswTEST:
-            [f,det]=rundetwbb(img,cfg.N,models,numdet=cfg.numhypTEST*len(models),interv=cfg.intervTEST,aiter=cfg.aiterTEST,restart=cfg.restartTEST,trunc=cfg.trunc,wstepy=cfg.swstepy,wstepx=cfg.swstepx)
-        else:
-            [f,det]=rundetbb(img,cfg.N,cfg.E,models,minthr=minthr,hallucinate=cfg.hallucinate,numdet=cfg.numhypTEST,interv=cfg.intervTEST,aiter=cfg.aiterTEST,restart=cfg.restartTEST,trunc=cfg.trunc,useFastDP=cfg.useFastDP)
+    if cfg.use3D:
+        angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
+        angx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
+        import test3D2
+        [f,det]=test3D2.rundet(img,models[0],angy=angy,angx=angx,selangy=[6])
     else:
-        if cfg.useswTEST:
-            [f,det]=rundetw2(img,cfg.N,models,numhyp=cfg.numhypTEST,interv=cfg.intervTEST,aiter=cfg.aiterTEST,restart=cfg.restartTEST,trunc=cfg.trunc,
-            wstepy=cfg.swstepy,wstepx=cfg.swstepx,wsizey=cfg.swsizey,wsizex=cfg.swsizex,forcestep=cfg.swforcestep)
+        if cfg.usebbTEST:
+            if cfg.useswTEST:
+                [f,det]=rundetwbb(img,cfg.N,models,numdet=cfg.numhypTEST*len(models),interv=cfg.intervTEST,aiter=cfg.aiterTEST,restart=cfg.restartTEST,trunc=cfg.trunc,wstepy=cfg.swstepy,wstepx=cfg.swstepx)
+            else:
+                [f,det]=rundetbb(img,cfg.N,cfg.E,models,minthr=minthr,hallucinate=cfg.hallucinate,numdet=cfg.numhypTEST,interv=cfg.intervTEST,aiter=cfg.aiterTEST,restart=cfg.restartTEST,trunc=cfg.trunc,useFastDP=cfg.useFastDP)
         else:
-            [f,det]=rundet(img,cfg.N,cfg.E,models,numhyp=cfg.numhypTEST,interv=cfg.intervTEST,aiter=cfg.aiterTEST,restart=cfg.restartTEST,trunc=cfg.trunc)
-    boundingbox(det,cfg.N)
+            if cfg.useswTEST:
+                [f,det]=rundetw2(img,cfg.N,models,numhyp=cfg.numhypTEST,interv=cfg.intervTEST,aiter=cfg.aiterTEST,restart=cfg.restartTEST,trunc=cfg.trunc,
+                wstepy=cfg.swstepy,wstepx=cfg.swstepx,wsizey=cfg.swsizey,wsizex=cfg.swsizex,forcestep=cfg.swforcestep)
+            else:
+                [f,det]=rundet(img,cfg.N,cfg.E,models,numhyp=cfg.numhypTEST,interv=cfg.intervTEST,aiter=cfg.aiterTEST,restart=cfg.restartTEST,trunc=cfg.trunc)
+        boundingbox(det,cfg.N)
     if cfg.useclip:
         clip(det,img.shape)
     if docluster:
@@ -346,6 +392,26 @@ def getfeature(det,N,E,f,models,trunc=0):
             print "Component:",det[l]["id"]
             #raw_input()
     return lfeat,ledge
+
+def getfeature3D(det,f,model,angy,angx,trunc=0):
+    """ check if score of detections and score from features are correct"""
+    import test3D2
+    lfeat=[]
+    for ld in det:#lsort[:100]:
+        r=ld["hog"]    
+        m1=model[0]#["ww"]
+        m2=f.hog[r]
+        mangy=ld["ang"][0]
+        mangx=ld["ang"][1]
+        deltay=model[0]["size"][mangy,mangx][2]-model[0]["size"][mangy,mangx][0]
+        deltax=model[0]["size"][mangy,mangx][3]-model[0]["size"][mangy,mangx][1]
+        m2pad=numpy.zeros((m2.shape[0]+2*deltay,m2.shape[1]+2*deltax,m2.shape[2]),dtype=m2.dtype)
+        m2pad[deltay:deltay+m2.shape[0],deltax:deltax+m2.shape[1]]=m2
+        for ld in det:
+            feat,scr=test3D2.getfeat(m1,m2pad,angy,angx,ld["ang"],numpy.array(ld["fpos"])+[deltay,deltax])
+            assert(abs((scr-ld["scr"]-m1["rho"])/scr)<0.0001)
+        lfeat.append(feat)
+    return lfeat
 
 
 def boundingbox(det,N):
@@ -467,10 +533,10 @@ def visualize2(det,N,img,bb=[],text="",color=None,line=False,norec=True,nograph=
         scl=det[l]["scl"]
         idm=det[l]["id"]
         r=det[l]["hog"]
-        res=det[l]["def"]
+        #res=det[l]["def"]
         scr=det[l]["scr"]
-        numy=det[l]["def"].shape[1]#cfg.fy[idm]
-        numx=det[l]["def"].shape[2]#cfg.fx[idm]
+        #numy=det[l]["def"].shape[1]#cfg.fy[idm]
+        #numx=det[l]["def"].shape[2]#cfg.fx[idm]
         if scr<thr:
             break
         sf=float(8*N/scl)
@@ -523,6 +589,51 @@ def visualize2(det,N,img,bb=[],text="",color=None,line=False,norec=True,nograph=
     pl.draw()
     pl.show()
 
+
+def visualize3D(det,N,img,bb=[],text="",color=None,line=False,norec=True,nograph=False,lw=2,thr=-numpy.inf,alpha=0.5):
+    """visualize a detection and the corresponding featues"""
+    pl=pylab
+    if color!=None:
+        col=color
+    else:
+        col=['w','r','g','b','y','c','k','y','c','k']
+    #if norec:
+    subp=1
+    #else:
+    #subp=2
+    pl.figure(300,figsize=(8,4))
+    pl.clf()
+    pl.subplot(1,subp,1)
+    pl.title(text)
+    pl.imshow(img)
+    im=img
+    pad=0
+    cc=0
+    if bb!=[]:
+        if type(bb[0])!=list:
+            util.box(bb[0],bb[1],bb[2],bb[3], col="b--", lw=2)  
+        else:
+            for b in bb:
+                util.box(b[0],b[1],b[2],b[3], col="b--", lw=2)  
+    for l in range(len(det)):#lsort[:100]:
+        scl=det[l]["scl"]
+        idm=det[l]["id"]
+        r=det[l]["hog"]
+        #res=det[l]["def"]
+        scr=det[l]["scr"]
+        #numy=det[l]["def"].shape[1]#cfg.fy[idm]
+        #numx=det[l]["def"].shape[2]#cfg.fx[idm]
+        if scr<thr:
+            break
+        sf=float(8*N/scl)
+        #m2=f.hog[r]
+        pl.subplot(1,subp,1)
+        if det[l].has_key("bbox"):
+            util.box(det[l]["bbox"][0],det[l]["bbox"][1],det[l]["bbox"][2],det[l]["bbox"][3],lw=lw,col="w")#col[cc%10])
+        pylab.text(det[l]["bbox"][1],det[l]["bbox"][0],"%.2f %d %d"%(det[l]["scr"],det[l]["ang"][0],det[l]["ang"][1]),backgroundcolor = 'w', color = 'k')
+    pl.axis([0,img.shape[1],img.shape[0],0])
+    pl.draw()
+    pl.show()
 
 def visualizeDet(det,N,img,bb=[],text="",color=None,line=False):
     """visualize a detection and the corresponding featues"""

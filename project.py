@@ -87,6 +87,21 @@ def prjhog_bis(mask,pty,ptx):
                         hog[py,px]=hog[py,px]+mask[pty[pym,py],ptx[pxm,px]]
     return hog
 
+def invprjhog_bis(hog,pty,ptx):
+    #hog=numpy.zeros((pty.shape[1],ptx.shape[1],mask.shape[2]),dtype=mask.dtype)
+    mask=numpy.zeros((4,4,hog.shape[2]),dtype=hog.dtype)
+    for py in range(pty.shape[1]):
+        for pym in range(pty.shape[0]):
+            for px in range(ptx.shape[1]):
+                for pxm in range(ptx.shape[0]):
+                    if pty[pym,py]!=-1 and ptx[pxm,px]!=-1: 
+                        mask[pty[pym,py],ptx[pxm,px]]=hog[py,px]
+                        #hog[py,px]=hog[py,px]+mask[pty[pym,py],ptx[pxm,px]]
+    return mask
+
+def getproj(y,z,glangy,angy,hsize=4):
+    return y*numpy.cos(glangy/180.0*numpy.pi)-hsize/2.0*(numpy.cos(angy/180.0*numpy.pi))-z*numpy.sin(angy/180.0*numpy.pi)
+
 def project_bis(res,pty,ptx):
     """
     compute the correlation with angles ax and ay
