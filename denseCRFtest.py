@@ -48,7 +48,7 @@ def runtest(models,tsImages,cfg,parallel=True,numcore=4,detfun=detectCRF.test,sa
 
     for ii,res in enumerate(itr):
         if show:
-            im=myimread(arg[ii]["file"])
+            im=myimread(arg[ii]["file"],resize=cfg.resize)
             if tsImages[ii]["bbox"]!=[]:
                 #detectCRF.visualize2(res[:3],cfg.N,im,bb=tsImages[ii]["bbox"][0])
                 detectCRF.visualize3D(res[:3],cfg.N,im,bb=tsImages[ii]["bbox"][0])
@@ -134,10 +134,11 @@ if __name__ == '__main__':
     cfg.dbpath="/users/visics/mpederso/databases/"
     cfg.testpath="./data/test/"#"./data/CRF/12_09_19/"
     cfg.testspec="force-bb"#"full2"
-    cfg.db="AFLW"#"MultiPIE2"#"VOC"
+    cfg.db="LFW"#"AFLW"#"MultiPIE2"#"VOC"
     cfg.maxtest=200
     cfg.maxneg=200
     cfg.use3D=True
+    cfg.nobbox=False
     #cfg.db="imagenet"
     #cfg.cls="tandem"
     #cfg.N=
@@ -236,6 +237,22 @@ if __name__ == '__main__':
         #test
         tsImages=getRecord(AFLW(basepath=cfg.dbpath,fold=0),cfg.maxtest,facial=True,pose=True)#cfg.useFacial)
         tsImagesFull=tsImages
+    elif cfg.db=="LFW":
+        tfold=0 #test fold 0 other 9 for training
+        aux=getRecord(LFW(basepath=cfg.dbpath,fold=0),cfg.maxpos,facial=True,pose=True)
+        trPosImages=numpy.array([],dtype=aux.dtype)
+        for l in range(10):
+            aux=getRecord(LFW(basepath=cfg.dbpath,fold=l,fake=cfg.nobbox),cfg.maxpos,facial=True,pose=True)
+            if l==tfold:
+                tsImages=getRecord(LFW(basepath=cfg.dbpath,fold=l),cfg.maxtest,facial=True,pose=True)
+            else:
+                trPosImages=numpy.concatenate((trPosImages,aux),0)
+        trPosImagesNoTrunc=trPosImages
+        trNegImages=getRecord(InriaNegData(basepath=cfg.dbpath),cfg.maxneg)#check if it works better like this
+        trNegImagesFull=getRecord(InriaNegData(basepath=cfg.dbpath),cfg.maxnegfull)
+        #test
+        #tsImages=getRecord(InriaTestFullData(basepath=cfg.dbpath),cfg.maxtest)
+        tsImagesFull=tsImages
     ##############load model
     for l in range(cfg.posit):
         try:
@@ -275,6 +292,7 @@ if __name__ == '__main__':
     cfg.N=3
     cfg.useclip=True
     cfg.useFastDP=True
+    cfg.resize=2.0
     #testname="./data/CRF/12_10_02_parts_full/bicycle2_testN2_final"
     #testname="./data/person1_testN2best0"#inria1_inria3"bicycle2_testN4aiter3_final
     #testname="./data/bicycle2_testN4aiter3_final"
@@ -285,7 +303,7 @@ if __name__ == '__main__':
     #testname="../../CRFdet/data/afterCVPR/12_01_10/cat2_force-bb_final"
     #testname="data/condor2/person3_full_condor219"
     #testname="data/condor_lowres/person2_morerigid_final"
-    testname="data/test/face1_3Dmore_final"
+    testname="data/test2/face1_3Dright4"
     cfg.trunc=1
     models=util.load("%s.model"%(testname))
     #del models[0]

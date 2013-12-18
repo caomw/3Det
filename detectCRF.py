@@ -116,7 +116,7 @@ def refinePos(el):
         #t1=time.time()
         if cfg.use3D:
             import test3D2
-            [f,det]=test3D2.rundet(img,models[0],bbox=extnewbbox,angy=angy,angx=angx,selangy=selangy,selangx=selangx)
+            [f,det]=test3D2.rundet(img,models[0],bbox=extnewbbox,angy=angy,angx=angx,selangy=selangy,selangx=selangx,sort=cfg.mysort,k=cfg.k)
             print "Bbox",det[0]["bbox"]
         elif cfg.usebbPOS:
             [f,det]=rundetbb(img,cfg.N,cfg.E,selmodels,numdet=cfg.numhypPOS, interv=cfg.intervPOS,aiter=cfg.aiterPOS,restart=cfg.restartPOS,trunc=cfg.trunc,useFastDP=cfg.useFastDP)
@@ -137,23 +137,23 @@ aiterPOS,restart=cfg.restartPOS,trunc=cfg.trunc,bbox=extnewbbox,useFastDP=cfg.us
     if cfg.useclip:
         clip(det,img.shape)
     #detectCRF.visualize(det[:10],f,img,cfgpos)
-    #bestscr=-100
-    #best=-1
-    #for idl,l in enumerate(det):
-    #    ovr=util.overlap(newbbox,l["bbox"])
-    #    #print ovr,l["scr"]
-    #    if ovr>cfg.posovr and l["scr"]>cfg.posthr:#valid detection
-    #        if l["scr"]>bestscr:
-    #            best=idl
-    #            bestscr=l["scr"]
+    bestscr=-100
+    best=-1
+    for idl,l in enumerate(det):
+        ovr=util.overlap(newbbox,l["bbox"])
+        #print ovr,l["scr"]
+        if ovr>cfg.posovr and l["scr"]>cfg.posthr:#valid detection
+            if l["scr"]>bestscr:
+                best=idl
+                bestscr=l["scr"]
     #raw_input()
-    best=0
+    #best=0
     if len(det)>0 and best!=-1:
         print "Pos det:",[x["scr"] for x in det[:5]]
         if cfg.show:
             visualize([det[best]],cfg.N,f,img)
         #feat,edge=getfeature([det[best]],cfg.N,cfg.E,f,models,cfg.trunc)
-        feat=getfeature3D([det[best]],f,models,angy,angx,cfg.trunc)
+        feat,biases=getfeature3D([det[best]],f,models,angy,angx,cfg.k,cfg.trunc)
         #add image name and bbx so that each annotation is unique
         if imageflip:
             det[best]["idim"]=el["file"].split("/")[-1]+".flip"
@@ -172,8 +172,8 @@ aiterPOS,restart=cfg.restartPOS,trunc=cfg.trunc,bbox=extnewbbox,useFastDP=cfg.us
         #raw_input()
         #add bias
         #det[best]["scr"]-=models[det[best]["id"]]["rho"]/float(cfg.bias)
-        return det[best],feat[best],[rescale,y1,x1,y2,x2]#last just for drawing
-    return [],[],[rescale,y1,x1,y2,x2]
+        return det[best],feat[0],biases[0],[rescale,y1,x1,y2,x2]#last just for drawing
+    return [],[],[],[rescale,y1,x1,y2,x2]
 
 
 
@@ -197,7 +197,7 @@ def hardNeg(el):
         angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
         angx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
         import test3D2
-        [f,det]=test3D2.rundet(img,models[0],angy=angy,angx=angx,selangy=[6])
+        [f,det]=test3D2.rundet(img,models[0],angy=angy,angx=angx,selangy=[6],k=cfg.k)
     else:
         if cfg.usebbNEG:
             [f,det]=rundetbb(img,cfg.N,cfg.E,models,minthr=-1.0,numdet=cfg.numhypNEG,interv=cfg.intervNEG,aiter=cfg.aiterNEG,restart=cfg.restartNEG,trunc=cfg.trunc,useFastDP=cfg.useFastDP)
@@ -219,15 +219,15 @@ def hardNeg(el):
         if det[idl]["scr"]>-1:
             det[idl]["idim"]=el["file"].split("/")[-1]
             ldet.append(det[idl])
-            feat=getfeature3D([det[idl]],f,models,angy,angx,cfg.trunc)
+            feat,biases=getfeature3D([det[idl]],f,models,angy,angx,cfg.k,cfg.trunc)
             #feat,edge=getfeature([det[idl]],cfg.N,cfg.E,f,models,cfg.trunc)
             lfeat+=feat
-            #ledge+=edge
+            ledge+=biases
     if cfg.show:
         visualize(ldet,cfg.N,f,img)
     print "Detection time:",time.time()-t
     print "Found %d hard negatives"%len(ldet)
-    return ldet,lfeat#,ledge
+    return ldet,lfeat,ledge
 
 def hardNegPos(el):
     t=time.time()
@@ -303,7 +303,7 @@ def test(el,docluster=True,show=False,inclusion=False,onlybest=False,ovr=0.5):
         angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
         angx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
         import test3D2
-        [f,det]=test3D2.rundet(img,models[0],angy=angy,angx=angx,selangy=[6])
+        [f,det]=test3D2.rundet(img,models[0],angy=angy,angx=angx,selangy=[6],k=cfg.k)
     else:
         if cfg.usebbTEST:
             if cfg.useswTEST:
@@ -393,10 +393,11 @@ def getfeature(det,N,E,f,models,trunc=0):
             #raw_input()
     return lfeat,ledge
 
-def getfeature3D(det,f,model,angy,angx,trunc=0):
+def getfeature3D(det,f,model,angy,angx,k,trunc=0):
     """ check if score of detections and score from features are correct"""
     import test3D2
     lfeat=[]
+    lbiases=[]
     for ld in det:#lsort[:100]:
         r=ld["hog"]    
         m1=model[0]#["ww"]
@@ -408,10 +409,11 @@ def getfeature3D(det,f,model,angy,angx,trunc=0):
         m2pad=numpy.zeros((m2.shape[0]+2*deltay,m2.shape[1]+2*deltax,m2.shape[2]),dtype=m2.dtype)
         m2pad[deltay:deltay+m2.shape[0],deltax:deltax+m2.shape[1]]=m2
         for ld in det:
-            feat,scr=test3D2.getfeat(m1,m2pad,angy,angx,ld["ang"],numpy.array(ld["fpos"])+[deltay,deltax])
+            feat,biases,scr=test3D2.getfeat(m1,m2pad,angy,angx,ld["ang"],numpy.array(ld["fpos"])+[deltay,deltax],k)
             assert(abs((scr-ld["scr"]-m1["rho"])/scr)<0.0001)
         lfeat.append(feat)
-    return lfeat
+        lbiases.append(biases)
+    return lfeat,lbiases
 
 
 def boundingbox(det,N):
@@ -615,7 +617,7 @@ def visualize3D(det,N,img,bb=[],text="",color=None,line=False,norec=True,nograph
         else:
             for b in bb:
                 util.box(b[0],b[1],b[2],b[3], col="b--", lw=2)  
-    for l in range(len(det)):#lsort[:100]:
+    for l in range(len(det))[::-1]:#lsort[:100]:
         scl=det[l]["scl"]
         idm=det[l]["id"]
         r=det[l]["hog"]

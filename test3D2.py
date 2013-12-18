@@ -166,7 +166,7 @@ def det(model,hog,pglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],pglangx=
                 #res[4-w.y:4-w.y+hsy+4,4-w.x:4-w.x+hsx+4]=project.project(prec[l],ang0,ang0)
     return res                
 
-def det2(model,hog,ppglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],selangy=None,selangx=None,bis=True):
+def det2(model,hog,ppglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],selangy=None,selangx=None,bis=True,k=1):
     if selangy==None:
         selangy=range(len(ppglangy))
     if selangx==None:
@@ -192,7 +192,7 @@ def det2(model,hog,ppglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglan
     res=-1000*numpy.ones((len(ppglangy),len(ppglangx),hsy-minym+maxym+hsize+2,hsx-minxm+maxxm+hsize+2),dtype=numpy.float32)      
     for gly in selangy:
         for glx in selangx:
-            res[gly,glx]=0
+            res[gly,glx]=model["biases"][gly,glx]*k#0
             lminym=[]
             lminxm=[]
             minym=model["size"][gly,glx,0];minxm=model["size"][gly,glx,1]
@@ -217,6 +217,7 @@ def det2(model,hog,ppglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglan
                 res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]=res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+(1-disty)*(distx)*scr
                 res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]+(disty)*(1-distx)*scr
                 res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]=res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+(disty)*(distx)*scr
+                #res[gly,glx]=res[gly,glx]+model["biases"][gly,glx]
                 #res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-posx:maxmx-posx+hsx+hsize]=res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-posx:maxmx-posx+hsx+hsize]+(1-disty)*(1-distx)*scr
                 #res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]=res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+(1-disty)*(distx)*scr
                 #res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]+(disty)*(1-distx)*scr
@@ -234,7 +235,7 @@ def drawdet(ldet):
        pylab.text(l["bbox"][1],l["bbox"][0],"(%d,%d,%d,%d)"%(idl,l["scr"],l["ang"][0],l["ang"][1]))
        #print res[dd],l,dd[0],dd[1]
 
-def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],interv=5,sbin=4,maxdet=1000,sort=True,bbox=None,selangy=None,selangx=None,numhyp=1000):
+def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],interv=5,sbin=4,maxdet=1000,sort="scr",bbox=None,selangy=None,selangx=None,numhyp=1000,k=1):
     hog=pyrHOG2.pyrHOG(img,interv=interv,cformat=True,sbin=sbin)
     modelsize(model,angy,angx)
     hsize=model["ww"][0].mask.shape[0]
@@ -253,7 +254,7 @@ def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-9
         if show:
             pylab.figure()
             pylab.imshow(img)
-        res=det2(model,hog.hog[idr],ppglangy=angy,ppglangx=angx,selangy=selangy,selangx=selangx)
+        res=det2(model,hog.hog[idr],ppglangy=angy,ppglangx=angx,selangy=selangy,selangx=selangx,k=k)
         order=(-res).argsort(None)
         for l in range(min(numhyp,len(order))):
             dd=numpy.unravel_index(order[l],res.shape)
@@ -273,14 +274,13 @@ def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-9
             pylab.draw()
             pylab.show()
             raw_input()
-    if sort:
-        if bbox==None:
-            ldet.sort(key=lambda by: -by["scr"])
-        else:
-            ldet.sort(key=lambda by: -by["ovr"])
+    if sort=="scr":
+        ldet.sort(key=lambda by: -by["scr"])
+    else:
+        ldet.sort(key=lambda by: -by["ovr"])
     return hog,ldet[:maxdet]
 
-def getfeat(model,hog,angy,angx,ang,pos):
+def getfeat(model,hog,angy,angx,ang,pos,k):
     import project
     lhog=[]
     hsize=model["ww"][0].mask.shape[0]
@@ -317,7 +317,10 @@ def getfeat(model,hog,angy,angx,ang,pos):
         auxhog=auxhog+project.invprjhog_bis(m2pad[deltay+pos[0]+posy+1:,deltax+pos[1]+posx+1:],project.pattern4_bis(langy),project.pattern4_bis(langx))*(disty)*(distx)
         lhog.append(auxhog)
         scr+=numpy.sum(model["ww"][idp].mask*lhog[idp])
-    return lhog,scr
+    biases=numpy.zeros((13,13),dtype=numpy.float32)
+    biases[ang[0],ang[1]]=1.0#model["biases"][ang[0],ang[1]]
+    scr+=model["biases"][ang[0],ang[1]]*k
+    return lhog,biases,scr
 
 
 if __name__ == "__main__":
