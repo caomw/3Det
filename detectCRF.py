@@ -143,9 +143,14 @@ aiterPOS,restart=cfg.restartPOS,trunc=cfg.trunc,bbox=extnewbbox,useFastDP=cfg.us
         ovr=util.overlap(newbbox,l["bbox"])
         #print ovr,l["scr"]
         if ovr>cfg.posovr and l["scr"]>cfg.posthr:#valid detection
-            if l["scr"]>bestscr:
-                best=idl
-                bestscr=l["scr"]
+            if cfg.mysort=="scr":
+                if l["scr"]>bestscr:
+                    best=idl
+                    bestscr=l["scr"]
+            else:
+                if l["ovr"]>bestscr:
+                    best=idl
+                    bestscr=l["ovr"]
     #raw_input()
     #best=0
     if len(det)>0 and best!=-1:
@@ -303,7 +308,7 @@ def test(el,docluster=True,show=False,inclusion=False,onlybest=False,ovr=0.5):
         angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
         angx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
         import test3D2
-        [f,det]=test3D2.rundet(img,models[0],angy=angy,angx=angx,selangy=[6],k=cfg.k)
+        [f,det]=test3D2.rundet(img,models[0],angy=angy,angx=angx,selangy=[6],k=cfg.k)#[0,1,2,3,4,5,6,7,8,9,10,11,12],k=cfg.k)
     else:
         if cfg.usebbTEST:
             if cfg.useswTEST:

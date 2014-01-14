@@ -52,8 +52,11 @@ def drawHOG(feat,hogpix=15,border=None,val=None):
     if border!=None:
         if type(border)!=int:
             border=2
-        if val==None:#numpy.all(numpy.array(img.shape)>0) or val!=None:
-            val=img.max()
+        if val!=None: #numpy.all(numpy.array(img.shape)>0) or val!=None:
+            if numpy.all(numpy.array(img.shape)>0):
+                val=img.max()
+            else:
+                val=0
         #else:
         #    val=1
         img[:,:border]=val

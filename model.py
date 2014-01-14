@@ -3,12 +3,12 @@ import numpy
 #danger: code dupicated in pyrHOG2.py: find a solution
 import test3D2
 
-def initmodel3D():
+def initmodel3D(mtype=2):
 
     lmask=[]
     step=2
     size=4
-    if 0:
+    if mtype==0:
         profile=[0.8,0.9,1,0.9,0.8,0.7,0.65,0.7,0.8,0.9,1,0.9,0.8]
         ang=numpy.array([-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90])
         #ang=numpy.array([-60,-45,-30,-15,0,15,30,45,60])
@@ -18,7 +18,7 @@ def initmodel3D():
                 #lmask.append(test3D2.part3D(0.1*numpy.ones((4,4,31),dtype=numpy.float32),0,0,-25*numpy.cos(ang[py]/180.0*numpy.pi)*numpy.cos(ang[px]/180.0*numpy.pi),ang[py],ang[px]))
                 #lmask.append(test3D2.part3D(0.1*numpy.ones((4,4,31),dtype=numpy.float32),0,0,-17,ang[py],ang[px]))
                 lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),0,0,-17*profile[px],ang[py],ang[px]))
-    else:
+    elif mtype==1:
         #profile=[0.8,0.9,1,0.9,0.8,0.7,0.65,0.7,0.8,0.9,1,0.9,0.8]
         #ang=numpy.array([-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90])
         ang=numpy.array([-45,-15,0,0,0,15,45])
@@ -29,6 +29,21 @@ def initmodel3D():
                 #lmask.append(test3D2.part3D(0.1*numpy.ones((4,4,31),dtype=numpy.float32),0,0,-25*numpy.cos(ang[py]/180.0*numpy.pi)*numpy.cos(ang[px]/180.0*numpy.pi),ang[py],ang[px]))
                 #lmask.append(test3D2.part3D(0.1*numpy.ones((4,4,31),dtype=numpy.float32),0,0,-17,ang[py],ang[px]))
                 lmask.append(test3D2.part3D(0.00001*numpy.ones((4,4,31),dtype=numpy.float32),(py-4)*4,(px-4)*4,-2*z[px],ang[py],ang[px]))
+    elif mtype==2:#with orthogonal faces too
+        ang=numpy.array([-75,-60,-45,-30,-15,0,15,30,45,60,75])
+        z=numpy.array([0,3,4,5,5,5,4,3,0])*2
+        for py in range(6):
+            for px in range(len(ang)):
+                #lmask.append(test3D2.part3D(0.00001*numpy.ones((4,4,31),dtype=numpy.float32),(py-4)*4,0,-9-9*numpy.cos(ang[px]/180.0*numpy.pi),0,ang[px]))
+                lmask.append(test3D2.part3D(0.00001*numpy.ones((4,4,31),dtype=numpy.float32),(py-4)*4,0,-9-9*numpy.cos(abs(ang[px])/180.0*numpy.pi),0,ang[px]))#-9*numpy.cos(ang[px]/180.0*numpy.pi),0,ang[px]))
+                #lmask.append(test3D2.part3D(0.00001*numpy.ones((4,4,31),dtype=numpy.float32),(py-4)*2,(px-4)*2,-2*z[px],ang[py],ang[px]))
+        # for the orthogonals need another degree of freedom
+        #additional orthogonal faces
+        #for py in range(8):
+        #    for px in range(len(ang)/2+1):
+        #        lmask.append(test3D2.part3D(0.00001*numpy.ones((4,4,31),dtype=numpy.float32),(py-4)*2,0,-17-5*numpy.cos(ang[px]),0,ang[px]+90))
+        #    for px in range(len(ang)/2,len(ang)):
+        #        lmask.append(test3D2.part3D(0.00001*numpy.ones((4,4,31),dtype=numpy.float32),(py-4)*2,0,-17-5*numpy.cos(ang[px]),0,ang[px]-90))
 
     biases=numpy.zeros((13,13),dtype=numpy.float32)
     models=[{"ww":lmask,"biases":biases,"rho":0}]

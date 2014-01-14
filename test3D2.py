@@ -16,8 +16,13 @@ import numpy
 import project
 
 def showModel(model,glangy,glangx,hsize=4,pixh=15,border=2,nhog=30,bis=True,val=None):
-    img=numpy.zeros((pixh*nhog,pixh*nhog))
-    img2=numpy.zeros((pixh*nhog,pixh*nhog))
+    size=modelsize(model,[glangy],[glangx],force=True)[0,0]
+    nhogy=size[2]-size[0]+3
+    nhogx=size[3]-size[1]+3
+    #nhog=100
+    nnhog=0
+    img=numpy.zeros((pixh*nhogy,pixh*nhogx))
+    img2=numpy.zeros((pixh*nhogy,pixh*nhogx))
     for w in model["ww"]:
         angy=w.ay+glangy
         angx=w.ax+glangx
@@ -25,10 +30,10 @@ def showModel(model,glangy,glangx,hsize=4,pixh=15,border=2,nhog=30,bis=True,val=
             part=drawHOG.drawHOG(project.prjhog_bis(w.mask,project.pattern4_bis(angy),project.pattern4_bis(angx)),hogpix=pixh,border=border,val=val)
         else:
             part=drawHOG.drawHOG(project.prjhog(w.mask,project.pattern4(angy),project.pattern4(angx)),hogpix=pixh,border=border,val=val)
-        nposy=w.y*numpy.cos(glangy/180.0*numpy.pi)-hsize/2.0*(numpy.cos(angy/180.0*numpy.pi))-w.z*numpy.sin(angy/180.0*numpy.pi)
-        nposx=w.x*numpy.cos(glangx/180.0*numpy.pi)-hsize/2.0*(numpy.cos(angx/180.0*numpy.pi))-w.z*numpy.sin(angx/180.0*numpy.pi)
+        nposy=-size[0]+w.y*numpy.cos(glangy/180.0*numpy.pi)-hsize/2.0*(numpy.cos(angy/180.0*numpy.pi))-w.z*numpy.sin(angy/180.0*numpy.pi)
+        nposx=-size[1]+w.x*numpy.cos(glangx/180.0*numpy.pi)-hsize/2.0*(numpy.cos(angx/180.0*numpy.pi))-w.z*numpy.sin(angx/180.0*numpy.pi)
         #print nposy,nposx,glangx,angx,w.x*numpy.cos(glangx/180.0*numpy.pi),-w.z*numpy.sin(angx/180.0*numpy.pi),-hsize/2.0*(numpy.cos(angx/180.0*numpy.pi)),w.x*numpy.cos(glangx/180.0*numpy.pi)-hsize/2.0*(numpy.cos(angx/180.0*numpy.pi))-w.z*numpy.sin(angx/180.0*numpy.pi)
-        img[nhog/2*pixh+nposy*pixh:nhog/2*pixh+nposy*pixh+part.shape[0],nhog/2*pixh+nposx*pixh:nhog/2*pixh+nposx*pixh+part.shape[1]]=part        
+        img[nnhog/2*pixh+numpy.round(nposy*pixh):nnhog/2*pixh+numpy.round(nposy*pixh)+part.shape[0],nnhog/2*pixh+numpy.round(nposx*pixh):nnhog/2*pixh+numpy.round(nposx*pixh)+part.shape[1]]=part        
         #img2[nhog/2*pixh+nposy*pixh:nhog/2*pixh+nposy*pixh+part.shape[0],nhog/2*pixh+nposx*pixh:nhog/2*pixh+nposx*pixh+part.shape[1]]=part2        
         if 0:
             pylab.clf()
@@ -76,9 +81,9 @@ def showHOG(model,lhog,glangy,glangx,hsize=4,pixh=15,border=2,nhog=30,bis=True,v
     #raw_input()
 
 
-def modelsize(model,pglangy,pglangx):
+def modelsize_old(model,pglangy,pglangx,force=False):
     hsize=model["ww"][0].mask.shape[0]
-    if not(model.has_key("size")):
+    if force or not(model.has_key("size")) or (model.has_key("size") and model["size"].shape!=(len(pglangy),len(pglangx),4)):#not(model.has_key("size"))::
         model["size"]=numpy.zeros((len(pglangy),len(pglangx),4))
         for gly,glangy in enumerate(pglangy):
             for glx,glangx in enumerate(pglangx):
@@ -93,11 +98,44 @@ def modelsize(model,pglangy,pglangx):
                     nposx=w.x*numpy.cos(glangx/180.0*numpy.pi)-hsize/2.0*(numpy.cos(angx/180.0*numpy.pi))-w.z*numpy.sin(angx/180.0*numpy.pi)
                     lminym.append(nposy)
                     lminxm.append(nposx)
-                minym=numpy.min(lminym)
-                minxm=numpy.min(lminxm)
-                maxym=numpy.max(lminym)+hsize*numpy.cos(angy/180.0*numpy.pi)#project.pattern4_bis(angy).shape[1]
-                maxxm=numpy.max(lminxm)+hsize*numpy.cos(angx/180.0*numpy.pi)#project.pattern4_bis(angx).shape[1]
-                model["size"][gly,glx]=(minym,minxm,maxym,maxxm)
+                #print angx,numpy.cos(angx/180.0*numpy.pi)
+                minym=numpy.min(lminym)-hsize#*numpy.cos(angy/180.0*numpy.pi)
+                minxm=numpy.min(lminxm)-hsize#*numpy.cos(angx/180.0*numpy.pi)
+                maxym=numpy.max(lminym)+hsize#*numpy.cos(angy/180.0*numpy.pi)#project.pattern4_bis(angy).shape[1]
+                maxxm=numpy.max(lminxm)+hsize#*numpy.cos(angx/180.0*numpy.pi)#project.pattern4_bis(angx).shape[1]
+                model["size"][gly,glx]=(minym,minxm,maxym,maxxm)#numpy.round((minym,minxm,maxym,maxxm))
+    return model["size"]
+
+def modelsize(model,pglangy,pglangx,force=False):
+    hsize=model["ww"][0].mask.shape[0]
+    if force or not(model.has_key("size")) or (model.has_key("size") and model["size"].shape!=(len(pglangy),len(pglangx),4)):#not(model.has_key("size"))::
+        model["size"]=numpy.zeros((len(pglangy),len(pglangx),4))
+        for gly,glangy in enumerate(pglangy):
+            for glx,glangx in enumerate(pglangx):
+                lminym=[]
+                lminxm=[]
+                #laddy=[]
+                #laddx=[]
+                #precompute max and min size
+                for w in model["ww"]:
+                    #mm=model["ww"][l]
+                    angy=w.ay+glangy
+                    angx=w.ax+glangx
+                    #laddy.append(-hsize/2.0*(numpy.cos(angy/180.0*numpy.pi)))
+                    nposy=w.y*numpy.cos(glangy/180.0*numpy.pi)-hsize/2.0*(numpy.cos(angy/180.0*numpy.pi))-w.z*numpy.sin(angy/180.0*numpy.pi)
+                    nposx=w.x*numpy.cos(glangx/180.0*numpy.pi)-hsize/2.0*(numpy.cos(angx/180.0*numpy.pi))-w.z*numpy.sin(angx/180.0*numpy.pi)
+                    #lminym.append(nposy-hsize/2.0*(numpy.cos(angy/180.0*numpy.pi)))
+                    lminym.append(nposy)
+                    lminym.append(nposy+hsize/2.0*(numpy.cos(angy/180.0*numpy.pi)))
+                    #lminxm.append(nposx-hsize/2.0*(numpy.cos(angx/180.0*numpy.pi)))
+                    lminxm.append(nposx)
+                    lminxm.append(nposx+hsize/2.0*(numpy.cos(angx/180.0*numpy.pi)))
+                #print angx,numpy.cos(angx/180.0*numpy.pi)
+                minym=numpy.min(lminym)#*numpy.cos(angy/180.0*numpy.pi)
+                minxm=numpy.min(lminxm)#*numpy.cos(angx/180.0*numpy.pi)
+                maxym=numpy.max(lminym)#*numpy.cos(angy/180.0*numpy.pi)#project.pattern4_bis(angy).shape[1]
+                maxxm=numpy.max(lminxm)#*numpy.cos(angx/180.0*numpy.pi)#project.pattern4_bis(angx).shape[1]
+                model["size"][gly,glx]=(minym,minxm,maxym,maxxm)#numpy.round((minym,minxm,maxym,maxxm))
     return model["size"]
 
 def det(model,hog,pglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],pglangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],bis=True):
@@ -183,8 +221,10 @@ def det2(model,hog,ppglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglan
     minxm=numpy.min(model["size"][:,:,1])#-1#numpy.max([el.x for el in model["ww"]])+1
     deltay=maxym-minym
     deltax=maxxm-minxm
-    maxmy = deltay+1
-    maxmx = deltax+1
+    maxmy = (deltay+1)
+    maxmx = (deltax+1)
+    #maxmy = numpy.round(deltay+1)
+    #maxmx = numpy.round(deltax+1)
     hsize=model["ww"][0].mask.shape[0]
     #minym=hsize/2
     #minxm=hsize/2

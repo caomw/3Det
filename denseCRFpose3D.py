@@ -243,8 +243,9 @@ elif cfg.db=="MultiPIEunif":
 
 elif cfg.db=="MultiPIE2":
     #cameras=["11_0","12_0","09_0","08_0","13_0","14_0","05_1","05_0","04_1","19_0","20_0","01_0","24_0"]
-    #cameras=["110","120","090","080","130","140","051","050","041","190","200","010","240"]
-    cameras=["080","130","140","051","050","041","190"]
+    cameras=["110","120","090","080","130","140","051","050","041","190","200","010","240"]
+    #cameras=["090","080","130","140","051","050","041","190","200"]
+    #cameras=["080","130","140","051","050","041","190"]
     #conditions=2
     #subjects=1#25
     aux=getRecord(MultiPIE2(basepath=cfg.dbpath),cfg.maxpos,facial=True,pose=True)
@@ -440,7 +441,7 @@ for idm,m in enumerate(models[:cfg.numcl]):
         waux.append(model.model2w(models[idm],False,False,False,useCRF=True,k=cfg.k))
     rr.append(models[idm]["rho"])
     w1=numpy.concatenate((w1,waux[-1],-numpy.array([models[idm]["rho"]])/bias))
-    sizereg[idm]=13*13
+    #sizereg[idm]=13*13
 #w2=w #old w
 w=w1
 
@@ -476,6 +477,7 @@ for idl,l in enumerate(trPosImages):
         else:
             arg.append({"idim":idl,"file":l["name"],"idbb":idb,"bbox":b,"models":models,"facial":l["facial"],"pose":l["pose"],"cfg":cfg,"flip":False})    
 totPosEx=len(arg)
+
 
 lg.info("Starting Main loop!")
 ####################### repeat scan positives
