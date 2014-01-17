@@ -132,7 +132,8 @@ if __name__ == '__main__':
     #det=util.load("data/AFW/AWF4.det")["det"]
     #det=util.load("AWFpose.det")["det"]    
     #det=util.load("/users/visics/mpederso/code/git/facial/CRFdet/data/MultiPIE/face2_PIE600_trpos.det")["det"]
-    det=util.load("PIEfull4.det")["det"]    
+    #det=util.load("PIEfull4.det")["det"]    
+    det=util.load("face1_flat.det")["det"]    
     #imgpath=cfg.dbpath+"multiPIE//"
     imgpath=cfg.dbpath+"afw/testimages/"
     #imgpath=cfg.dbpath+"VOC2007/VOCdevkit/VOC2007/JPEGImages/"
@@ -166,9 +167,11 @@ if __name__ == '__main__':
         if len(ovr)>0:
             #print "Best ovr",max(ovr)
             if max(ovr)>=0.5:
-                detectCRF.visualize2([l],cfg.N,img,text="rank:%d ovr:%.3f scl:%d"%(idl,max(ovr),l["hog"]),bb=gt[l["idim"]],color="w",line=line)
+                #detectCRF.visualize2([l],cfg.N,img,text="rank:%d ovr:%.3f scl:%d"%(idl,max(ovr),l["hog"]),bb=gt[l["idim"]],color="w",line=line)
+                detectCRF.visualize3D([l],cfg.N,img,bb=gt[l["idim"]],color="w")
             else:
-                detectCRF.visualize2([l],cfg.N,img,text="rank:%d ovr:%.3f scl:%d"%(idl,max(ovr),l["hog"]),bb=gt[l["idim"]],color="r",line=line)
+                detectCRF.visualize3D([l],cfg.N,img,bb=gt[l["idim"]],color="r")
+                #detectCRF.visualize2([l],cfg.N,img,text="rank:%d ovr:%.3f scl:%d"%(idl,max(ovr),l["hog"]),bb=gt[l["idim"]],color="r",line=line)
         else:
             detectCRF.visualize2([l],cfg.N,img,text="rank:%d"%(idl),color="r",line=line)
         #pl.figure(100)        

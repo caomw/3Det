@@ -246,6 +246,7 @@ elif cfg.db=="MultiPIE2":
     cameras=["110","120","090","080","130","140","051","050","041","190","200","010","240"]
     #cameras=["090","080","130","140","051","050","041","190","200"]
     #cameras=["080","130","140","051","050","041","190"]
+    #cameras=["051"]
     #conditions=2
     #subjects=1#25
     aux=getRecord(MultiPIE2(basepath=cfg.dbpath),cfg.maxpos,facial=True,pose=True)

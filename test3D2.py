@@ -1,3 +1,4 @@
+#from numba import autojit
 
 class part3D(object):
     def __init__(self,mask,y,x,z,ay,ax):
@@ -14,8 +15,12 @@ import drawHOG
 import pylab
 import numpy
 import project
+#import project_fast as project
 
-def showModel(model,glangy,glangx,hsize=4,pixh=15,border=2,nhog=30,bis=True,val=None):
+BIS=False
+
+#@autojit
+def showModel(model,glangy,glangx,hsize=4,pixh=15,border=2,nhog=30,bis=BIS,val=None):
     size=modelsize(model,[glangy],[glangx],force=True)[0,0]
     nhogy=size[2]-size[0]+3
     nhogx=size[3]-size[1]+3
@@ -50,7 +55,8 @@ def showModel(model,glangy,glangx,hsize=4,pixh=15,border=2,nhog=30,bis=True,val=
     pylab.show()
     #raw_input()
 
-def showHOG(model,lhog,glangy,glangx,hsize=4,pixh=15,border=2,nhog=30,bis=True,val=None):
+#@autojit
+def showHOG(model,lhog,glangy,glangx,hsize=4,pixh=15,border=2,nhog=30,bis=BIS,val=None):
     img=numpy.zeros((pixh*nhog,pixh*nhog))
     img2=numpy.zeros((pixh*nhog,pixh*nhog))
     for idh,h in enumerate(lhog):
@@ -106,6 +112,7 @@ def modelsize_old(model,pglangy,pglangx,force=False):
                 model["size"][gly,glx]=(minym,minxm,maxym,maxxm)#numpy.round((minym,minxm,maxym,maxxm))
     return model["size"]
 
+#@autojit
 def modelsize(model,pglangy,pglangx,force=False):
     hsize=model["ww"][0].mask.shape[0]
     if force or not(model.has_key("size")) or (model.has_key("size") and model["size"].shape!=(len(pglangy),len(pglangx),4)):#not(model.has_key("size"))::
@@ -138,7 +145,8 @@ def modelsize(model,pglangy,pglangx,force=False):
                 model["size"][gly,glx]=(minym,minxm,maxym,maxxm)#numpy.round((minym,minxm,maxym,maxxm))
     return model["size"]
 
-def det(model,hog,pglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],pglangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],bis=True):
+#@autojit
+def det(model,hog,pglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],pglangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],bis=BIS):
     hsy=hog.shape[0]
     hsx=hog.shape[1]
     prec=[]
@@ -204,7 +212,8 @@ def det(model,hog,pglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],pglangx=
                 #res[4-w.y:4-w.y+hsy+4,4-w.x:4-w.x+hsx+4]=project.project(prec[l],ang0,ang0)
     return res                
 
-def det2(model,hog,ppglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],selangy=None,selangx=None,bis=True,k=1):
+#@autojit
+def det2(model,hog,ppglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],selangy=None,selangx=None,bis=BIS,k=1):
     if selangy==None:
         selangy=range(len(ppglangy))
     if selangx==None:
@@ -238,8 +247,8 @@ def det2(model,hog,ppglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglan
             minym=model["size"][gly,glx,0];minxm=model["size"][gly,glx,1]
             for l in range(len(model["ww"])):
                 mm=model["ww"][l]
-                angy=mm.ay+ppglangy[gly]
-                angx=mm.ax+ppglangx[glx]
+                angy=(mm.ay+ppglangy[gly])
+                angx=(mm.ax+ppglangx[glx])
                 if bis:
                     scr=project.project_bis(prec[l],project.pattern4_bis(angy),project.pattern4_bis(angx))
                 else:
@@ -265,8 +274,7 @@ def det2(model,hog,ppglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglan
                 #res[4-w.y:4-w.y+hsy+4,4-w.x:4-w.x+hsx+4]=project.project(prec[l],ang0,ang0)
     return res                
 
-
-
+#@autojit
 def drawdet(ldet):
     if type(ldet)!=list:
         ldet=[ldet]
@@ -275,7 +283,8 @@ def drawdet(ldet):
        pylab.text(l["bbox"][1],l["bbox"][0],"(%d,%d,%d,%d)"%(idl,l["scr"],l["ang"][0],l["ang"][1]))
        #print res[dd],l,dd[0],dd[1]
 
-def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],interv=5,sbin=4,maxdet=1000,sort="scr",bbox=None,selangy=None,selangx=None,numhyp=1000,k=1):
+#@autojit
+def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],interv=5,sbin=4,maxdet=1000,sort="scr",bbox=None,selangy=None,selangx=None,numhyp=1000,k=1,bis=BIS):
     hog=pyrHOG2.pyrHOG(img,interv=interv,cformat=True,sbin=sbin)
     modelsize(model,angy,angx)
     hsize=model["ww"][0].mask.shape[0]
@@ -294,7 +303,7 @@ def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-9
         if show:
             pylab.figure()
             pylab.imshow(img)
-        res=det2(model,hog.hog[idr],ppglangy=angy,ppglangx=angx,selangy=selangy,selangx=selangx,k=k)
+        res=det2(model,hog.hog[idr],ppglangy=angy,ppglangx=angx,selangy=selangy,selangx=selangx,k=k,bis=bis)
         order=(-res).argsort(None)
         for l in range(min(numhyp,len(order))):
             dd=numpy.unravel_index(order[l],res.shape)
@@ -320,7 +329,8 @@ def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-9
         ldet.sort(key=lambda by: -by["ovr"])
     return hog,ldet[:maxdet]
 
-def getfeat(model,hog,angy,angx,ang,pos,k):
+#@autojit
+def getfeat(model,hog,angy,angx,ang,pos,k,bis=BIS):
     import project
     lhog=[]
     hsize=model["ww"][0].mask.shape[0]
@@ -351,10 +361,16 @@ def getfeat(model,hog,angy,angx,ang,pos,k):
         disty=nposy-posy
         distx=nposx-posx
         #print posy,posx
-        auxhog=auxhog+project.invprjhog_bis(m2pad[deltay+pos[0]+posy:,deltax+pos[1]+posx:],project.pattern4_bis(langy),project.pattern4_bis(langx))*(1-disty)*(1-distx)
-        auxhog=auxhog+project.invprjhog_bis(m2pad[deltay+pos[0]+posy:,deltax+pos[1]+posx+1:],project.pattern4_bis(langy),project.pattern4_bis(langx))*(1-disty)*(distx)
-        auxhog=auxhog+project.invprjhog_bis(m2pad[deltay+pos[0]+posy+1:,deltax+pos[1]+posx:],project.pattern4_bis(langy),project.pattern4_bis(langx))*(disty)*(1-distx)
-        auxhog=auxhog+project.invprjhog_bis(m2pad[deltay+pos[0]+posy+1:,deltax+pos[1]+posx+1:],project.pattern4_bis(langy),project.pattern4_bis(langx))*(disty)*(distx)
+        if bis:
+            auxhog=auxhog+project.invprjhog_bis(m2pad[deltay+pos[0]+posy:,deltax+pos[1]+posx:],project.pattern4_bis(langy),project.pattern4_bis(langx))*(1-disty)*(1-distx)
+            auxhog=auxhog+project.invprjhog_bis(m2pad[deltay+pos[0]+posy:,deltax+pos[1]+posx+1:],project.pattern4_bis(langy),project.pattern4_bis(langx))*(1-disty)*(distx)
+            auxhog=auxhog+project.invprjhog_bis(m2pad[deltay+pos[0]+posy+1:,deltax+pos[1]+posx:],project.pattern4_bis(langy),project.pattern4_bis(langx))*(disty)*(1-distx)
+            auxhog=auxhog+project.invprjhog_bis(m2pad[deltay+pos[0]+posy+1:,deltax+pos[1]+posx+1:],project.pattern4_bis(langy),project.pattern4_bis(langx))*(disty)*(distx)
+        else:
+            auxhog=auxhog+project.invprjhog(m2pad[deltay+pos[0]+posy:,deltax+pos[1]+posx:],project.pattern4(langy),project.pattern4(langx))*(1-disty)*(1-distx)
+            auxhog=auxhog+project.invprjhog(m2pad[deltay+pos[0]+posy:,deltax+pos[1]+posx+1:],project.pattern4(langy),project.pattern4(langx))*(1-disty)*(distx)
+            auxhog=auxhog+project.invprjhog(m2pad[deltay+pos[0]+posy+1:,deltax+pos[1]+posx:],project.pattern4(langy),project.pattern4(langx))*(disty)*(1-distx)
+            auxhog=auxhog+project.invprjhog(m2pad[deltay+pos[0]+posy+1:,deltax+pos[1]+posx+1:],project.pattern4(langy),project.pattern4(langx))*(disty)*(distx)
         lhog.append(auxhog)
         scr+=numpy.sum(model["ww"][idp].mask*lhog[idp])
     biases=numpy.zeros((13,13),dtype=numpy.float32)
@@ -399,33 +415,36 @@ if __name__ == "__main__":
     #lmask[5].z=1;lmask[6].z=1;lmask[9].z=1;lmask[10].z=1;
 
     model={"ww":lmask}
+    model["biases"]=numpy.zeros((13,13))
+    model["rho"]=0
     #model={"ww":[part3D(mask0,0,0,0,0,0),part3D(mask1,0,4,0,0,0),part3D(mask2,4,0,0,0,0),part3D(mask3,4,4,0,0,0)]}
 
     im2=util.myimread("./a.png",resize=2.0)
 
     glangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
     glangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
-    fhog,ldet=rundet(im2,model,angy=glangy,angx=glangx,selangy=[6],selangx=[1])
+    fhog,ldet=rundet(im2,model,angy=glangy,angx=glangx,selangy=[6],selangx=range(13))
     #fhog,ldet=rundet(im2,model,angy=[0],angx=[-60,-45,-30,-15,0,15,30,45,60],bbox=[100,100,200,150])
+    sfdsd
     pylab.figure(100)
     pylab.imshow(im2)
-    for ld in ldet:
-        feat,scr=getfeat(model,fhog.hog[ld["hog"]],glangy,glangx,ld["ang"],ld["fpos"])
+    for ld in ldet[:1]:
+        feat,biases,scr=getfeat(model,fhog.hog[ld["hog"]],glangy,glangx,ld["ang"],ld["fpos"],1)
         assert((abs(scr-ld["scr"])/(scr+0.0001))<0.0001)
         pylab.figure(110)
         pylab.clf()
-        showHOG(model,feat,glangy[ld["ang"][0]],glangx[ld["ang"][1]],nhog=60,bis=False,val=1)
+        showHOG(model,feat,glangy[ld["ang"][0]],glangx[ld["ang"][1]],nhog=60,val=1)
         pylab.figure(120)
         pylab.clf()
-        showHOG(model,feat,0,0,nhog=60,bis=False,val=1)
+        showHOG(model,feat,0,0,nhog=60,val=1)
         pylab.figure(100)
         drawdet(ld)
         pylab.draw()
         print ld
-        raw_input()
+        #raw_input()
     #fhog,ldet=rundet(im2,model,angy=[0],angx=[0])
     #res=det(model,myhog)
-    fsfs
+    exit()
     #util.imshow(res[0,0])
     #dsgf
 

@@ -51,7 +51,7 @@ def runtest(models,tsImages,cfg,parallel=True,numcore=4,detfun=detectCRF.test,sa
             im=myimread(arg[ii]["file"],resize=cfg.resize)
             if tsImages[ii]["bbox"]!=[]:
                 #detectCRF.visualize2(res[:3],cfg.N,im,bb=tsImages[ii]["bbox"][0])
-                detectCRF.visualize3D(res[:3],cfg.N,im,bb=tsImages[ii]["bbox"][0])
+                detectCRF.visualize3D(res[:5],cfg.N,im,bb=tsImages[ii]["bbox"][0])
             else:
                 detectCRF.visualize3D(res[:3],cfg.N,im)
             print [x["scr"] for x in res[:5]]
@@ -310,7 +310,9 @@ if __name__ == '__main__':
     #testname="data/condor2/person3_full_condor219"
     #testname="data/condor_lowres/person2_morerigid_final"
     #testname="data/test2/face1_3Dfullright_final"
-    testname="data/test4/face1_test3Dfixed21"
+    #testname="data/test4/face1_test3Dperfect5"
+    #testname="data/test4/face1_test3Donlyfrontal_final"
+    testname="data/test5/face1_test3Dnobis4"
     #testname="data/test3/face1_3Dnewfull3"
     cfg.trunc=1
     models=util.load("%s.model"%(testname))
@@ -328,6 +330,6 @@ if __name__ == '__main__':
 #        models[idm]["cost"]=newc
     ##############test
     #import itertools
-    #runtest(models,tsImages,cfg,parallel=False,numcore=4,detfun=lambda x :detectCRF.test(x,numhyp=1,show=False),show=True)#,save="%s%d"%(testname,it))
-    runtest(models,tsImages,cfg,parallel=True,numcore=4,show=True,detfun=testINC03,save="./face1_flat")
+    #runtest(models,tsImages,cfg,parallel=False,numcore=4,detfun=lambda x :detectCRF.test(x,numhyp=1,show=False),show=True)#,save="%s%d"%(testname,it))[196] is the many faces
+    runtest(models,tsImages,cfg,parallel=False,numcore=3,show=True,detfun=testINC03,save="./face1_0")
 
