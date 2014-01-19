@@ -12,7 +12,7 @@ CFLAGS = -O3 -g -march=nocona -fomit-frame-pointer -fopenmp
 #CFLAGS = -xP -fast
 #OMPFLAGS = -openmp
 
-LIB_TARGETS = libresize.so libexcorr.so libhog.so libfastpegasos.so libcrf2.so libfastDP.so
+LIB_TARGETS = libresize.so libexcorr.so libhog.so libfastpegasos.so libcrf2.so libfastDP.so cproject.so
 all:	$(LIB_TARGETS)
 
 libcrf2.so: ./MRF2.1/myexample2.cpp Makefile
@@ -23,6 +23,9 @@ libfastDP.so: ./fastDP/src/myFast_PD.cpp ./fastDP/src/Fast_PD.h ./fastDP/src/max
 
 libexcorr.so: excorr.c Makefile
 	$(CC) $(CFLAGS) -shared -Wl,-soname=libexcorr.so -fPIC excorr.c -o libexcorr.so #libmyrmf.so.1.0.1
+
+cproject.so: cproject.c Makefile
+	$(CC) $(CFLAGS) -shared -Wl,-soname=cproject.so -fPIC cproject.c -o cproject.so 
 
 libfastpegasos.so: fast_pegasos.c Makefile
 	$(CC) $(CFLAGS) -shared -Wl,-soname=libfastpegasos.so -fPIC -lc fast_pegasos.c -o libfastpegasos.so

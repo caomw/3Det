@@ -308,7 +308,7 @@ def test(el,docluster=True,show=False,inclusion=False,onlybest=False,ovr=0.5):
         angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
         angx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
         import test3D2
-        [f,det]=test3D2.rundet(img,models[0],angy=angy,angx=angx,selangy=[6],k=cfg.k)#[0,1,2,3,4,5,6,7,8,9,10,11,12],k=cfg.k)
+        [f,det]=test3D2.rundet(img,models[0],angy=angy,angx=angx,k=cfg.k)#[0,1,2,3,4,5,6,7,8,9,10,11,12],k=cfg.k)
     else:
         if cfg.usebbTEST:
             if cfg.useswTEST:

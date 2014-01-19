@@ -13,6 +13,9 @@ import copy
 import itertools
 import sys
 
+def cmp(a,b):
+    return a[1]<b[1]
+
 if __name__ == '__main__':
 
     if 0: #use the configuration file
@@ -56,10 +59,12 @@ if __name__ == '__main__':
     #det=util.load("./data/CRF/12_10_02_parts_full/bicycle2_testN1_final.det")["det"]
     #det=util.load("./data/CRF/12_10_02_parts_full/bicycle2_testN2_final.txt")
     #fl=open("./data/CRF/12_10_02_parts_full/bicycle2_testN2_final.txt")
-    fl=open("./data/inria1_inria3.txt")
+    #fl=open("./data/inria1_inria3.txt")
+    fl=open("/users/visics/mmathias/faces_marco2.txt")
     det=fl.readlines()
-    imgpath=cfg.dbpath+"VOC2007/VOCdevkit/VOC2007/JPEGImages/"#VOC
-    imgpath=cfg.dbpath+"INRIAPerson/Test/pos/"#inria
+    imgpath=cfg.dbpath+"/afw/testimages/"#VOC
+    #imgpath=cfg.dbpath+"VOC2007/VOCdevkit/VOC2007/JPEGImages/"#VOC
+    #imgpath=cfg.dbpath+"INRIAPerson/Test/pos/"#inria
     for idl,l in enumerate(det):
         imname,scr,b0,b1,b2,b3=l.split()
         try:

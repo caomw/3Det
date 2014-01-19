@@ -24,15 +24,15 @@ def pattern4(a):
     """
     a=abs(a)
     if a==0 or a==15 or a==30:
-        pattern=numpy.array([[0,1,2,3]])
+        pattern=numpy.array([[0,1,2,3]],dtype=numpy.int32)
     elif a==45:
-        pattern=numpy.array([[0,1,2],[1,2,3]])
+        pattern=numpy.array([[0,1,2],[1,2,3]],dtype=numpy.int32)
     elif a==60:
-        pattern=numpy.array([[0,3],[1,2]])
+        pattern=numpy.array([[0,3],[1,2]],dtype=numpy.int32)
     elif a==75:
-        pattern=numpy.array([[0],[3]])
+        pattern=numpy.array([[0],[3]],dtype=numpy.int32)
     elif a>=90:
-        pattern=numpy.array([[]])
+        pattern=numpy.array([[]],dtype=numpy.int32)
     return pattern
 
 #@autojit
@@ -58,16 +58,36 @@ def pattern4_bis(a):
 #@autojit
 def prjhog(mask,pty,ptx):
     hog=numpy.zeros((pty.shape[1],ptx.shape[1],mask.shape[2]),dtype=mask.dtype)
+    spty=float(pty.shape[0])
+    sptx=float(ptx.shape[0])
     for py in range(pty.shape[1]):
         for pym in range(pty.shape[0]):
             for px in range(ptx.shape[1]):
                 for pxm in range(ptx.shape[0]):
                     #if pty[pym,py]!=-1 and ptx[pxm,px]!=-1: 
-                    hog[py,px]=hog[py,px]+mask[pty[pym,py],ptx[pxm,px]]/float(pty.shape[0])/float(ptx.shape[0])
+                    hog[py,px]=hog[py,px]+mask[pty[pym,py],ptx[pxm,px]]/spty/sptx
     return hog
 
-#@autojit
+from ctypes import *
+cdll.LoadLibrary("./cproject.so")
+pr=CDLL("cproject.so")
+pr.cproject.argtypes=[c_int,c_int,c_int,c_int,numpy.ctypeslib.ndpointer(dtype=c_float,ndim=4,flags="C_CONTIGUOUS"),c_int,c_int,numpy.ctypeslib.ndpointer(dtype=c_int,ndim=2,flags="C_CONTIGUOUS"),c_int,c_int,numpy.ctypeslib.ndpointer(dtype=c_int,ndim=2,flags="C_CONTIGUOUS"),numpy.ctypeslib.ndpointer(dtype=c_float,ndim=2,flags="C_CONTIGUOUS")]
+
 def project(res,pty,ptx):
+    szy=res.shape[0]
+    szx=res.shape[1]
+    hy=res.shape[2]
+    hx=res.shape[3]
+    res2=numpy.zeros((hy+szy,hx+szx),dtype=numpy.float32)
+    pr.cproject(res.shape[0],res.shape[1],res.shape[2],res.shape[3],res,pty.shape[0],pty.shape[1],pty,ptx.shape[0],ptx.shape[1],ptx,res2)
+    #if not(numpy.all(res2==0)):
+    #    print "Stop!!!"
+    #    sdfs
+    return res2
+
+
+@autojit
+def project_(res,pty,ptx):
     """
     compute the correlation with angles ax and ay
     assumes a part of 4x4 hogs
@@ -80,11 +100,12 @@ def project(res,pty,ptx):
     sptx=float(ptx.shape[0])
     res2=numpy.zeros((hy+szy,hx+szx),dtype=numpy.float32)
     for py in range(pty.shape[1]):
-            for pym in range(pty.shape[0]):
-                for px in range(ptx.shape[1]):
-                    for pxm in range(ptx.shape[0]):
-                        #res2[py:py+hy,px:px+hx]=res2[py:py+hy,px:px+hx]+res[pty[pym,py],ptx[pxm,px]]/float(pty.shape[0])/float(ptx.shape[0])
-                        res2[szy-py:szy-py+hy,szx-px:szx-px+hx]=res2[szy-py:szy-py+hy,szx-px:szx-px+hx]+res[pty[pym,py],ptx[pxm,px]]/spty/sptx
+        for pym in range(pty.shape[0]):
+            for px in range(ptx.shape[1]):
+                for pxm in range(ptx.shape[0]):
+                    res2[szy-py:szy-py+hy,szx-px:szx-px+hx]+=res[pty[pym,py],ptx[pxm,px]]/spty/sptx
+                    #res2[py:py+hy,px:px+hx]=res2[py:py+hy,px:px+hx]+res[pty[pym,py],ptx[pxm,px]]/float(pty.shape[0])/float(ptx.shape[0])
+                    #res2[szy-py:szy-py+hy,szx-px:szx-px+hx]=res2[szy-py:szy-py+hy,szx-px:szx-px+hx]+res[pty[pym,py],ptx[pxm,px]]/spty/sptx
     return res2
 
 #@autojit
@@ -98,14 +119,14 @@ def prjhog_bis(mask,pty,ptx):
                         hog[py,px]=hog[py,px]+mask[pty[pym,py],ptx[pxm,px]]
     return hog
 
-def prjhog(mask,pty,ptx):
-    hog=numpy.zeros((pty.shape[1],ptx.shape[1],mask.shape[2]),dtype=mask.dtype)
-    for py in range(pty.shape[1]):
-        for pym in range(pty.shape[0]):
-            for px in range(ptx.shape[1]):
-                for pxm in range(ptx.shape[0]):
-                    hog[py,px]=hog[py,px]+mask[pty[pym,py],ptx[pxm,px]]/float(pty.shape[0])/float(ptx.shape[0])
-    return hog
+#def prjhog(mask,pty,ptx):
+#    hog=numpy.zeros((pty.shape[1],ptx.shape[1],mask.shape[2]),dtype=mask.dtype)
+#    for py in range(pty.shape[1]):
+#        for pym in range(pty.shape[0]):
+#            for px in range(ptx.shape[1]):
+#                for pxm in range(ptx.shape[0]):
+#                    hog[py,px]=hog[py,px]+mask[pty[pym,py],ptx[pxm,px]]/float(pty.shape[0])/float(ptx.shape[0])
+#    return hog
 
 #@autojit
 def invprjhog(hog,pty,ptx):
