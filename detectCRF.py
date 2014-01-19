@@ -307,8 +307,9 @@ def test(el,docluster=True,show=False,inclusion=False,onlybest=False,ovr=0.5):
     if cfg.use3D:
         angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
         angx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
+        angz=[-10,0,10]
         import test3D2
-        [f,det]=test3D2.rundet(img,models[0],angy=angy,angx=angx,k=cfg.k)#[0,1,2,3,4,5,6,7,8,9,10,11,12],k=cfg.k)
+        [f,det]=test3D2.rundet(img,models[0],angy=angy,angx=angx,angz=angz,selangy=[3,4,5,6,7,8,9],selangx=[3,4,5,6,7,8,9],selangz=[0,1,2],k=cfg.k)#[0,1,2,3,4,5,6,7,8,9,10,11,12],k=cfg.k)
     else:
         if cfg.usebbTEST:
             if cfg.useswTEST:
@@ -637,7 +638,7 @@ def visualize3D(det,N,img,bb=[],text="",color=None,line=False,norec=True,nograph
         pl.subplot(1,subp,1)
         if det[l].has_key("bbox"):
             util.box(det[l]["bbox"][0],det[l]["bbox"][1],det[l]["bbox"][2],det[l]["bbox"][3],lw=lw,col="w")#col[cc%10])
-        pylab.text(det[l]["bbox"][1],det[l]["bbox"][0],"%.2f %d %d"%(det[l]["scr"],det[l]["ang"][0],det[l]["ang"][1]),backgroundcolor = 'w', color = 'k')
+        pylab.text(det[l]["bbox"][1],det[l]["bbox"][0],"%.2f %d %d %d"%(det[l]["scr"],det[l]["ang"][0],det[l]["ang"][1],det[l]["ang"][2]),backgroundcolor = 'w', color = 'k')
     pl.axis([0,img.shape[1],img.shape[0],0])
     pl.draw()
     pl.show()

@@ -21,15 +21,23 @@ from numba import autojit
 
 BIS=False
 
+from ctypes import cdll,CDLL,c_float,c_int,byref,POINTER
+cdll.LoadLibrary("./cproject.so")
+pr=CDLL("cproject.so")
+pr.getproj.argtypes=[c_float,c_float,c_int,c_int,c_int,c_int,c_int,c_float,c_float,c_float,c_int,POINTER(c_float),POINTER(c_float)]
+pr.interpolate.argtypes=[c_int,c_int,c_int,c_int,c_int,numpy.ctypeslib.ndpointer(dtype=c_float,ndim=5,flags="C_CONTIGUOUS"),c_int,c_int,c_int,c_int,c_int,c_int,c_int,c_int,c_int,c_int,c_float,c_float,numpy.ctypeslib.ndpointer(dtype=c_float,ndim=2,flags="C_CONTIGUOUS")]
+
+
 #@autojit
-def showModel(model,glangy,glangx,hsize=4,pixh=15,border=2,nhog=30,bis=BIS,val=None):
-    size=modelsize(model,[glangy],[glangx],force=True)[0,0]
+def showModel(model,glangy,glangx,glangz,hsize=4,pixh=15,border=2,nhog=30,bis=BIS,val=None):
+    size=modelsize(model,[glangy],[glangx],[glangz],force=True)[0,0,0]
     nhogy=size[2]-size[0]+3
     nhogx=size[3]-size[1]+3
     #nhog=100
     nnhog=0
     img=numpy.zeros((pixh*nhogy,pixh*nhogx))
     img2=numpy.zeros((pixh*nhogy,pixh*nhogx))
+    cposy=c_float(0.0);cposx=c_float(0.0)
     for w in model["ww"]:
         angy=w.ay+glangy
         angx=w.ax+glangx
@@ -37,8 +45,10 @@ def showModel(model,glangy,glangx,hsize=4,pixh=15,border=2,nhog=30,bis=BIS,val=N
             part=drawHOG.drawHOG(project.prjhog_bis(w.mask,project.pattern4_bis(angy),project.pattern4_bis(angx)),hogpix=pixh,border=border,val=val)
         else:
             part=drawHOG.drawHOG(project.prjhog(w.mask,project.pattern4(angy),project.pattern4(angx)),hogpix=pixh,border=border,val=val)
-        nposy=-size[0]+w.y*cos(glangy/180.0*numpy.pi)-hsize/2.0*(cos(angy/180.0*numpy.pi))-w.z*sin(angy/180.0*numpy.pi)
-        nposx=-size[1]+w.x*cos(glangx/180.0*numpy.pi)-hsize/2.0*(cos(angx/180.0*numpy.pi))-w.z*sin(angx/180.0*numpy.pi)
+        pr.getproj(size[1],size[0],glangx,glangy,glangz,angx,angy,w.x,w.y,w.z,hsize,byref(cposx),byref(cposy))
+        nposy=cposy.value;nposx=cposx.value
+        #nposy=-size[0]+w.y*cos(glangy/180.0*numpy.pi)-hsize/2.0*(cos(angy/180.0*numpy.pi))-w.z*sin(angy/180.0*numpy.pi)
+        #nposx=-size[1]+w.x*cos(glangx/180.0*numpy.pi)-hsize/2.0*(cos(angx/180.0*numpy.pi))-w.z*sin(angx/180.0*numpy.pi)
         #print nposy,nposx,glangx,angx,w.x*cos(glangx/180.0*numpy.pi),-w.z*sin(angx/180.0*numpy.pi),-hsize/2.0*(cos(angx/180.0*numpy.pi)),w.x*cos(glangx/180.0*numpy.pi)-hsize/2.0*(cos(angx/180.0*numpy.pi))-w.z*sin(angx/180.0*numpy.pi)
         img[nnhog/2*pixh+numpy.round(nposy*pixh):nnhog/2*pixh+numpy.round(nposy*pixh)+part.shape[0],nnhog/2*pixh+numpy.round(nposx*pixh):nnhog/2*pixh+numpy.round(nposx*pixh)+part.shape[1]]=part        
         #img2[nhog/2*pixh+nposy*pixh:nhog/2*pixh+nposy*pixh+part.shape[0],nhog/2*pixh+nposx*pixh:nhog/2*pixh+nposx*pixh+part.shape[1]]=part2        
@@ -115,106 +125,44 @@ def modelsize_old(model,pglangy,pglangx,force=False):
     return model["size"]
 
 #@autojit
-def modelsize(model,pglangy,pglangx,force=False):
+def modelsize(model,pglangy,pglangx,pglangz,force=False):
     hsize=model["ww"][0].mask.shape[0]
-    if force or not(model.has_key("size")) or (model.has_key("size") and model["size"].shape!=(len(pglangy),len(pglangx),4)):#not(model.has_key("size"))::
-        model["size"]=numpy.zeros((len(pglangy),len(pglangx),4))
+    if force or not(model.has_key("size")) or (model.has_key("size") and model["size"].shape!=(len(pglangy),len(pglangx),len(pglangz),4)):#not(model.has_key("size"))::
+        model["size"]=numpy.zeros((len(pglangy),len(pglangx),len(pglangz),4))
+        cposy=c_float(0.0);cposx=c_float(0.0)
         for gly,glangy in enumerate(pglangy):
             for glx,glangx in enumerate(pglangx):
-                lminym=[]
-                lminxm=[]
-                #laddy=[]
-                #laddx=[]
-                #precompute max and min size
-                for w in model["ww"]:
-                    #mm=model["ww"][l]
-                    angy=w.ay+glangy
-                    angx=w.ax+glangx
-                    #laddy.append(-hsize/2.0*(cos(angy/180.0*numpy.pi)))
-                    nposy=w.y*cos(glangy/180.0*numpy.pi)-hsize/2.0*(cos(angy/180.0*numpy.pi))-w.z*sin(angy/180.0*numpy.pi)
-                    nposx=w.x*cos(glangx/180.0*numpy.pi)-hsize/2.0*(cos(angx/180.0*numpy.pi))-w.z*sin(angx/180.0*numpy.pi)
-                    #lminym.append(nposy-hsize/2.0*(cos(angy/180.0*numpy.pi)))
-                    lminym.append(nposy)
-                    lminym.append(nposy+hsize/2.0*(cos(angy/180.0*numpy.pi)))
-                    #lminxm.append(nposx-hsize/2.0*(cos(angx/180.0*numpy.pi)))
-                    lminxm.append(nposx)
-                    lminxm.append(nposx+hsize/2.0*(cos(angx/180.0*numpy.pi)))
-                #print angx,cos(angx/180.0*numpy.pi)
-                minym=numpy.min(lminym)#*cos(angy/180.0*numpy.pi)
-                minxm=numpy.min(lminxm)#*cos(angx/180.0*numpy.pi)
-                maxym=numpy.max(lminym)#*cos(angy/180.0*numpy.pi)#project.pattern4_bis(angy).shape[1]
-                maxxm=numpy.max(lminxm)#*cos(angx/180.0*numpy.pi)#project.pattern4_bis(angx).shape[1]
-                model["size"][gly,glx]=(minym,minxm,maxym,maxxm)#numpy.round((minym,minxm,maxym,maxxm))
+                for glz,glangz in enumerate(pglangz):
+                    lminym=[]
+                    lminxm=[]
+                    #laddy=[]
+                    #laddx=[]
+                    #precompute max and min size
+                    for w in model["ww"]:
+                        #mm=model["ww"][l]
+                        angy=w.ay+glangy
+                        angx=w.ax+glangx
+                        #laddy.append(-hsize/2.0*(cos(angy/180.0*numpy.pi)))
+                        pr.getproj(0,0,glangx,glangy,glangz,angx,angy,w.x,w.y,w.z,hsize,byref(cposx),byref(cposy))
+                        #nposy=w.y*cos(glangy/180.0*numpy.pi)-hsize/2.0*(cos(angy/180.0*numpy.pi))-w.z*sin(angy/180.0*numpy.pi)
+                        #nposx=w.x*cos(glangx/180.0*numpy.pi)-hsize/2.0*(cos(angx/180.0*numpy.pi))-w.z*sin(angx/180.0*numpy.pi)
+                        #lminym.append(nposy-hsize/2.0*(cos(angy/180.0*numpy.pi)))
+                        nposy=cposy.value
+                        nposx=cposx.value
+                        #print glangy,glangx,glangz,nposy,nposx
+                        lminym.append(nposy)
+                        lminym.append(nposy+hsize/2.0*(cos(angy/180.0*numpy.pi)))
+                        #lminxm.append(nposx-hsize/2.0*(cos(angx/180.0*numpy.pi)))
+                        lminxm.append(nposx)
+                        lminxm.append(nposx+hsize/2.0*(cos(angx/180.0*numpy.pi)))
+                    #print angx,cos(angx/180.0*numpy.pi)
+                    minym=numpy.min(lminym)#*cos(angy/180.0*numpy.pi)
+                    minxm=numpy.min(lminxm)#*cos(angx/180.0*numpy.pi)
+                    maxym=numpy.max(lminym)#*cos(angy/180.0*numpy.pi)#project.pattern4_bis(angy).shape[1]
+                    maxxm=numpy.max(lminxm)#*cos(angx/180.0*numpy.pi)#project.pattern4_bis(angx).shape[1]
+                    model["size"][gly,glx,glz]=(minym,minxm,maxym,maxxm)#numpy.round((minym,minxm,maxym,maxxm))
     return model["size"]
 
-#@autojit
-def det(model,hog,pglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],pglangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],bis=BIS):
-    hsy=hog.shape[0]
-    hsx=hog.shape[1]
-    prec=[]
-    for w in model["ww"]:
-        prec.append(project.precompute(w.mask,hog))
-    modelsize(model,pglangy,pglangx)
-    maxym=numpy.max(model["size"][:,:,2])+1#numpy.max([el.y for el in model["ww"]])+1
-    maxxm=numpy.max(model["size"][:,:,3])+1#numpy.max([el.x for el in model["ww"]])+1
-    minym=numpy.min(model["size"][:,:,0])+1#numpy.max([el.y for el in model["ww"]])+1
-    minxm=numpy.min(model["size"][:,:,1])+1#numpy.max([el.x for el in model["ww"]])+1
-    maxmy=maxym
-    maxmx=maxxm
-    hsize=model["ww"][0].mask.shape[0]
-    #minym=hsize/2
-    #minxm=hsize/2
-    #res=numpy.zeros((len(pglangy),len(pglangx),hsy+-maxmy+hsize,hsx+maxmx+hsize),dtype=numpy.float32)
-    res=numpy.zeros((len(pglangy),len(pglangx),hsy-minym+maxym+hsize,hsx-minxm+maxxm+hsize),dtype=numpy.float32)
-    for gly,glangy in enumerate(pglangy):
-        for glx,glangx in enumerate(pglangx):
-            lminym=[]
-            lminxm=[]
-            #precompute max and min size
-            #for w in model["ww"]:
-            #    #mm=model["ww"][l]
-            #    angy=w.ay+glangy
-            #    angx=w.ax+glangx
-            #    nposy=w.y*cos(glangy/180.0*numpy.pi)-hsize/2.0*(cos(angy/180.0*numpy.pi))-w.z*sin(angy/180.0*numpy.pi)
-            #    nposx=w.x*cos(glangx/180.0*numpy.pi)-hsize/2.0*(cos(angx/180.0*numpy.pi))-w.z*sin(angx/180.0*numpy.pi)
-            #    lminym.append(nposy)
-            #    lminxm.append(nposx)
-            #minym=numpy.min(lminym)
-            #minxm=numpy.min(lminxm)
-            #maxym=numpy.max(lminym)+project.pattern4_bis(angy).shape[1]
-            #maxxm=numpy.max(lminxm)+project.pattern4_bis(angx).shape[1]
-            #model["size"][gly,glx]=(minym,minxm,maxym,maxxm)
-            minym=model["size"][gly,glx,0];minxm=model["size"][gly,glx,1]
-            maxym=model["size"][gly,glx,2];maxxm=model["size"][gly,glx,3]
-            for l in range(len(model["ww"])):
-                mm=model["ww"][l]
-                #lres.append(project.project(prec[l],ang0,ang0))
-                #res[:hsy+4,:hsx+4]=res[:hsy+4,:hsx+4]+project.project(prec[l],ang0,ang0)
-                angy=mm.ay+glangy
-                angx=mm.ax+glangx
-                if abs(angx)>90 or abs(angy)>90:
-                    continue
-                if bis:
-                    scr=project.project_bis(prec[l],project.pattern4_bis(angy),project.pattern4_bis(angx))
-                else:
-                    scr=project.project(prec[l],project.pattern4(angy),project.pattern4(angx))
-                nposy=-minym+mm.y*cos(glangy/180.0*numpy.pi)-hsize/2.0*(cos(angy/180.0*numpy.pi))-mm.z*sin(angy/180.0*numpy.pi)
-                nposx=-minxm+mm.x*cos(glangx/180.0*numpy.pi)-hsize/2.0*(cos(angx/180.0*numpy.pi))-mm.z*sin(angx/180.0*numpy.pi)
-                posy=int(floor((nposy)))
-                posx=int(floor((nposx)))
-                disty=nposy-posy
-                distx=nposx-posx
-                #print maxmy-posy,maxmx-posx,nposy,nposx,glangx,angx
-                res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-posx:maxmx-posx+hsx+hsize]=res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-posx:maxmx-posx+hsx+hsize]+(1-disty)*(1-distx)*scr
-                res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]=res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+(1-disty)*(distx)*scr
-                res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]+(disty)*(1-distx)*scr
-                res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]=res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+(disty)*(distx)*scr
-                #res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-posx:maxmx-posx+hsx+hsize]=res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-posx:maxmx-posx+hsx+hsize]+(1-disty)*(1-distx)*scr
-                #res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]=res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+(1-disty)*(distx)*scr
-                #res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]+(disty)*(1-distx)*scr
-                #res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]=res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+(disty)*(distx)*scr
-                #res[4-w.y:4-w.y+hsy+4,4-w.x:4-w.x+hsx+4]=project.project(prec[l],ang0,ang0)
-    return res                
 
 def det2(model,hog,ppglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglangz=[-30,-15,0,15,30],selangy=None,selangx=None,selangz=None,bis=BIS,k=1):
     if selangy==None:
@@ -223,13 +171,7 @@ def det2(model,hog,ppglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglan
         selangx=range(len(ppglangx))
     if selangz==None:
         selangz=range(len(ppglangz))
-    return det2_(model,hog,ppglangy,ppglangx,selangy,selangx,selangz,bis,k)
-
-from ctypes import cdll,CDLL,c_float,c_int,byref,POINTER
-cdll.LoadLibrary("./cproject.so")
-pr=CDLL("cproject.so")
-pr.getproj.argtypes=[c_float,c_float,c_int,c_int,c_int,c_int,c_int,c_float,c_float,c_float,c_int,POINTER(c_float),POINTER(c_float)]
-pr.interpolate.argtypes=[c_int,c_int,c_int,c_int,numpy.ctypeslib.ndpointer(dtype=c_float,ndim=4,flags="C_CONTIGUOUS"),c_int,c_int,c_int,c_int,c_int,c_int,c_int,c_int,c_int,c_float,c_float,numpy.ctypeslib.ndpointer(dtype=c_float,ndim=2,flags="C_CONTIGUOUS")]
+    return det2_(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,k)
 
 #@autojit
 def det2_(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,k):
@@ -243,11 +185,11 @@ def det2_(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,k):
     prec=[]
     for w in model["ww"]:
         prec.append(project.precompute(w.mask,hog))
-    modelsize(model,ppglangy,ppglangx)
-    maxym=numpy.max(model["size"][:,:,2])#+1#numpy.max([el.y for el in model["ww"]])+1
-    maxxm=numpy.max(model["size"][:,:,3])#+1#numpy.max([el.x for el in model["ww"]])+1
-    minym=numpy.min(model["size"][:,:,0])#-1#numpy.max([el.y for el in model["ww"]])+1
-    minxm=numpy.min(model["size"][:,:,1])#-1#numpy.max([el.x for el in model["ww"]])+1
+    modelsize(model,ppglangy,ppglangx,ppglangz)
+    maxym=numpy.max(model["size"][:,:,:,2])#+1#numpy.max([el.y for el in model["ww"]])+1
+    maxxm=numpy.max(model["size"][:,:,:,3])#+1#numpy.max([el.x for el in model["ww"]])+1
+    minym=numpy.min(model["size"][:,:,:,0])#-1#numpy.max([el.y for el in model["ww"]])+1
+    minxm=numpy.min(model["size"][:,:,:,1])#-1#numpy.max([el.x for el in model["ww"]])+1
     deltay=maxym-minym
     deltax=maxxm-minxm
     maxmy = int(deltay+1)
@@ -283,7 +225,7 @@ def det2_(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,k):
                     #print scr.shape
                     #nposy=-minym+mm.y*cos(ppglangy[gly]/180.0*numpy.pi)-hsize/2.0*(cos(angy/180.0*numpy.pi))-mm.z*sin(angy/180.0*numpy.pi)
                     #nposx=-minxm+mm.x*cos(ppglangx[glx]/180.0*numpy.pi)-hsize/2.0*(cos(angx/180.0*numpy.pi))-mm.z*sin(angx/180.0*numpy.pi)
-                    pr.getproj(minxm,minym,ppglangx[glx],ppglangy[gly],pplangz[glz],angx,angy,mm.x,mm.y,mm.z,hsize,byref(nposx),byref(nposy))
+                    pr.getproj(minxm,minym,ppglangx[glx],ppglangy[gly],ppglangz[glz],angx,angy,mm.x,mm.y,mm.z,hsize,byref(nposx),byref(nposy))
                     #print nposy,nposx
                     #nposy=-miny+project.getproj(mm.y,mm.z,glangy,angy)
                     #nposx=-minx+project.getproj(mm.x,mm.z,glangx,angx)
@@ -298,7 +240,7 @@ def det2_(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,k):
                     #res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+=(1-disty)*(distx)*scr
                     #res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]+=(disty)*(1-distx)*scr
                     #res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+=(disty)*(distx)*scr
-                    pr.interpolate(res.shape[0],res.shape[1],res.shape[2],res.shape[3],res,glx,gly,maxmx,maxmy,posx,posy,hsx,hsy,hsize,distx,disty,scr)
+                    pr.interpolate(res.shape[0],res.shape[1],res.shape[2],res.shape[3],res.shape[4],res,glx,gly,glz,maxmx,maxmy,posx,posy,hsx,hsy,hsize,distx,disty,scr)
     return res                
 
 #@autojit
@@ -311,14 +253,14 @@ def drawdet(ldet):
        #print res[dd],l,dd[0],dd[1]
 
 #@autojit
-def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angz=[-30,-15,0,15,30],interv=5,sbin=4,maxdet=1000,sort="scr",bbox=None,selangy=None,selangx=None,numhyp=1000,k=1,bis=BIS):
+def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angz=[-10,0,10],interv=5,sbin=4,maxdet=1000,sort="scr",bbox=None,selangy=None,selangx=None,selangz=None,numhyp=1000,k=1,bis=BIS):
     hog=pyrHOG2.pyrHOG(img,interv=interv,cformat=True,sbin=sbin)
-    modelsize(model,angy,angx)
+    modelsize(model,angy,angx,angz)
     hsize=model["ww"][0].mask.shape[0]
-    maxym=numpy.max(model["size"][:,:,2])#numpy.max([el.y for el in model["ww"]])+1
-    maxxm=numpy.max(model["size"][:,:,3])#numpy.max([el.x for el in model["ww"]])+1
-    minym=numpy.min(model["size"][:,:,0])#numpy.max([el.y for el in model["ww"]])+1
-    minxm=numpy.min(model["size"][:,:,1])#numpy.max([el.x for el in model["ww"]])+1
+    maxym=numpy.max(model["size"][:,:,:,2])#numpy.max([el.y for el in model["ww"]])+1
+    maxxm=numpy.max(model["size"][:,:,:,3])#numpy.max([el.x for el in model["ww"]])+1
+    minym=numpy.min(model["size"][:,:,:,0])#numpy.max([el.y for el in model["ww"]])+1
+    minxm=numpy.min(model["size"][:,:,:,1])#numpy.max([el.x for el in model["ww"]])+1
     deltay=maxym-minym+hsize+1
     deltax=maxxm-minxm+hsize+1
     #maxmy=#numpy.max(model["size"][:,:,2])+hsize+1#numpy.max([el.y for el in model["ww"]])+hsize+1
@@ -335,12 +277,12 @@ def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-9
         order=(-res).argsort(None)
         for l in range(min(numhyp,len(order))):
             dd=numpy.unravel_index(order[l],res.shape)
-            (minym,minxm,maxym,maxxm)=model["size"][dd[0],dd[1]]
-            pcy1=(dd[2]-deltay+hsize/2)*sbin/hog.scale[idr]
-            pcx1=(dd[3]-deltax+hsize/2)*sbin/hog.scale[idr]
-            pcy2=(dd[2]-deltay+(maxym-minym)+hsize/2)*sbin/hog.scale[idr]
-            pcx2=(dd[3]-deltax+(maxxm-minxm)+hsize/2)*sbin/hog.scale[idr]
-            ldet.append({"id":0,"bbox":[pcy1,pcx1,pcy2,pcx2],"ang":(dd[0],dd[1]),"scr":res[dd]-model["rho"],"scl":hog.scale[idr],"hog":idr,"pos":(dd[2],dd[3]),"fpos":(dd[2]-deltay,dd[3]-deltax)})
+            (minym,minxm,maxym,maxxm)=model["size"][dd[0],dd[1],dd[2]]
+            pcy1=(dd[3]-deltay+hsize/2)*sbin/hog.scale[idr]
+            pcx1=(dd[4]-deltax+hsize/2)*sbin/hog.scale[idr]
+            pcy2=(dd[3]-deltay+(maxym-minym)+hsize/2)*sbin/hog.scale[idr]
+            pcx2=(dd[4]-deltax+(maxxm-minxm)+hsize/2)*sbin/hog.scale[idr]
+            ldet.append({"id":0,"bbox":[pcy1,pcx1,pcy2,pcx2],"ang":(dd[0],dd[1],dd[2]),"scr":res[dd]-model["rho"],"scl":hog.scale[idr],"hog":idr,"pos":(dd[2],dd[3]),"fpos":(dd[2]-deltay,dd[3]-deltax)})
             if bbox!=None:
                 ldet[-1]["ovr"]=util.overlap(ldet[-1]["bbox"],bbox)
             if show:
@@ -358,13 +300,14 @@ def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-9
     return hog,ldet[:maxdet]
 
 #@autojit
-def getfeat(model,hog,angy,angx,ang,pos,k,bis=BIS):
+def getfeat(model,hog,angy,angx,angz,ang,pos,k,bis=BIS):
     import project
     lhog=[]
     hsize=model["ww"][0].mask.shape[0]
     glangy=angy[ang[0]]
     glangx=angx[ang[1]]
-    modelsize(model,angy,angx)
+    glangz=angz[ang[2]]
+    modelsize(model,angy,angx,angz)#,force=True)
     maxym=numpy.max(model["size"][:,:,2])#numpy.max([el.y for el in model["ww"]])+1
     maxxm=numpy.max(model["size"][:,:,3])#numpy.max([el.x for el in model["ww"]])+1
     minym=numpy.min(model["size"][:,:,0])#numpy.max([el.y for el in model["ww"]])+1
@@ -376,14 +319,18 @@ def getfeat(model,hog,angy,angx,ang,pos,k,bis=BIS):
     m2pad[deltay:deltay+m2.shape[0],deltax:deltax+m2.shape[1]]=m2
     #hog=m2pad
     scr=0
+    cposx=c_float(0.0);cposy=c_float(.0)
     for idp,p in enumerate(model["ww"]):
-        minym=model["size"][ang[0],ang[1],0];minxm=model["size"][ang[0],ang[1],1]
+        minym=model["size"][ang[0],ang[1],ang[2],0];minxm=model["size"][ang[0],ang[1],ang[2],1]
         #lhog.append(hog[pos[0]:pos[0]+hsize,pos[1]:pos[1]+hsize])
         auxhog=numpy.zeros((hsize,hsize,model["ww"][0].mask.shape[2]),dtype=model["ww"][0].mask.dtype)
         langy=glangy+p.ay
         langx=glangx+p.ax
-        nposy=-minym+project.getproj(p.y,p.z,glangy,langy)#+deltay
-        nposx=-minxm+project.getproj(p.x,p.z,glangx,langx)#+deltax
+        pr.getproj(minxm,minym,glangx,glangy,glangz,langx,langy,p.x,p.y,p.z,hsize,byref(cposx),byref(cposy))
+        nposy=cposy.value#+deltay
+        nposx=cposx.value#+deltax
+        ##nposy=-minym+project.getproj(p.y,p.z,glangy,langy)#+deltay
+        ##nposx=-minxm+project.getproj(p.x,p.z,glangx,langx)#+deltax
         posy=int(numpy.floor((nposy)))#+deltay
         posx=int(numpy.floor((nposx)))#+deltax
         disty=nposy-posy
@@ -401,6 +348,7 @@ def getfeat(model,hog,angy,angx,ang,pos,k,bis=BIS):
             auxhog=auxhog+project.invprjhog(m2pad[deltay+pos[0]+posy+1:,deltax+pos[1]+posx+1:],project.pattern4(langy),project.pattern4(langx))*(disty)*(distx)
         lhog.append(auxhog)
         scr+=numpy.sum(model["ww"][idp].mask*lhog[idp])
+        sdfs
     biases=numpy.zeros((13,13),dtype=numpy.float32)
     biases[ang[0],ang[1]]=1.0#model["biases"][ang[0],ang[1]]
     scr+=model["biases"][ang[0],ang[1]]*k
@@ -451,13 +399,13 @@ if __name__ == "__main__":
 
     glangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
     glangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
-    fhog,ldet=rundet(im2,model,angy=glangy,angx=glangx,selangy=range(13),selangx=range(13))
+    glangz=[-30,-15,0,15,30]
+    fhog,ldet=rundet(im2,model,angy=glangy,angx=glangx,angz=glangz,selangy=[6],selangx=[6],selangz=[2,3,4])
     #fhog,ldet=rundet(im2,model,angy=[0],angx=[-60,-45,-30,-15,0,15,30,45,60],bbox=[100,100,200,150])
-    sfdsd
     pylab.figure(100)
     pylab.imshow(im2)
     for ld in ldet[:1]:
-        feat,biases,scr=getfeat(model,fhog.hog[ld["hog"]],glangy,glangx,ld["ang"],ld["fpos"],1)
+        feat,biases,scr=getfeat(model,fhog.hog[ld["hog"]],glangy,glangx,glangz,ld["ang"],ld["fpos"],1)
         assert((abs(scr-ld["scr"])/(scr+0.0001))<0.0001)
         pylab.figure(110)
         pylab.clf()
@@ -552,6 +500,76 @@ if __name__ == "__main__":
         res[maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]=res[maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+(disty)*(distx)*scr
         #res[4-w.y:4-w.y+hsy+4,4-w.x:4-w.x+hsx+4]=project.project(prec[l],ang0,ang0)
 
+######no longer used
+
+#@autojit
+def det(model,hog,pglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],pglangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],bis=BIS):
+    hsy=hog.shape[0]
+    hsx=hog.shape[1]
+    prec=[]
+    for w in model["ww"]:
+        prec.append(project.precompute(w.mask,hog))
+    modelsize(model,pglangy,pglangx)
+    maxym=numpy.max(model["size"][:,:,2])+1#numpy.max([el.y for el in model["ww"]])+1
+    maxxm=numpy.max(model["size"][:,:,3])+1#numpy.max([el.x for el in model["ww"]])+1
+    minym=numpy.min(model["size"][:,:,0])+1#numpy.max([el.y for el in model["ww"]])+1
+    minxm=numpy.min(model["size"][:,:,1])+1#numpy.max([el.x for el in model["ww"]])+1
+    maxmy=maxym
+    maxmx=maxxm
+    hsize=model["ww"][0].mask.shape[0]
+    #minym=hsize/2
+    #minxm=hsize/2
+    #res=numpy.zeros((len(pglangy),len(pglangx),hsy+-maxmy+hsize,hsx+maxmx+hsize),dtype=numpy.float32)
+    res=numpy.zeros((len(pglangy),len(pglangx),hsy-minym+maxym+hsize,hsx-minxm+maxxm+hsize),dtype=numpy.float32)
+    for gly,glangy in enumerate(pglangy):
+        for glx,glangx in enumerate(pglangx):
+            lminym=[]
+            lminxm=[]
+            #precompute max and min size
+            #for w in model["ww"]:
+            #    #mm=model["ww"][l]
+            #    angy=w.ay+glangy
+            #    angx=w.ax+glangx
+            #    nposy=w.y*cos(glangy/180.0*numpy.pi)-hsize/2.0*(cos(angy/180.0*numpy.pi))-w.z*sin(angy/180.0*numpy.pi)
+            #    nposx=w.x*cos(glangx/180.0*numpy.pi)-hsize/2.0*(cos(angx/180.0*numpy.pi))-w.z*sin(angx/180.0*numpy.pi)
+            #    lminym.append(nposy)
+            #    lminxm.append(nposx)
+            #minym=numpy.min(lminym)
+            #minxm=numpy.min(lminxm)
+            #maxym=numpy.max(lminym)+project.pattern4_bis(angy).shape[1]
+            #maxxm=numpy.max(lminxm)+project.pattern4_bis(angx).shape[1]
+            #model["size"][gly,glx]=(minym,minxm,maxym,maxxm)
+            minym=model["size"][gly,glx,0];minxm=model["size"][gly,glx,1]
+            maxym=model["size"][gly,glx,2];maxxm=model["size"][gly,glx,3]
+            for l in range(len(model["ww"])):
+                mm=model["ww"][l]
+                #lres.append(project.project(prec[l],ang0,ang0))
+                #res[:hsy+4,:hsx+4]=res[:hsy+4,:hsx+4]+project.project(prec[l],ang0,ang0)
+                angy=mm.ay+glangy
+                angx=mm.ax+glangx
+                if abs(angx)>90 or abs(angy)>90:
+                    continue
+                if bis:
+                    scr=project.project_bis(prec[l],project.pattern4_bis(angy),project.pattern4_bis(angx))
+                else:
+                    scr=project.project(prec[l],project.pattern4(angy),project.pattern4(angx))
+                nposy=-minym+mm.y*cos(glangy/180.0*numpy.pi)-hsize/2.0*(cos(angy/180.0*numpy.pi))-mm.z*sin(angy/180.0*numpy.pi)
+                nposx=-minxm+mm.x*cos(glangx/180.0*numpy.pi)-hsize/2.0*(cos(angx/180.0*numpy.pi))-mm.z*sin(angx/180.0*numpy.pi)
+                posy=int(floor((nposy)))
+                posx=int(floor((nposx)))
+                disty=nposy-posy
+                distx=nposx-posx
+                #print maxmy-posy,maxmx-posx,nposy,nposx,glangx,angx
+                res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-posx:maxmx-posx+hsx+hsize]=res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-posx:maxmx-posx+hsx+hsize]+(1-disty)*(1-distx)*scr
+                res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]=res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+(1-disty)*(distx)*scr
+                res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]+(disty)*(1-distx)*scr
+                res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]=res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+(disty)*(distx)*scr
+                #res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-posx:maxmx-posx+hsx+hsize]=res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-posx:maxmx-posx+hsx+hsize]+(1-disty)*(1-distx)*scr
+                #res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]=res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+(1-disty)*(distx)*scr
+                #res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]+(disty)*(1-distx)*scr
+                #res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]=res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+(disty)*(distx)*scr
+                #res[4-w.y:4-w.y+hsy+4,4-w.x:4-w.x+hsx+4]=project.project(prec[l],ang0,ang0)
+    return res                
             
 
 

@@ -66,9 +66,17 @@ nposx=-minxm+mm.x*cos(ppglangx[glx]/180.0*numpy.pi)-hsize/2.0*(cos(angx/180.0*nu
 void getproj(float minx,float miny,int glangx,int glangy,int glangz,int angx,int angy,float x,float y,float z,int hsize,float *projx, float *projy)
 {
     float co=cos(glangz/180.0*M_PI),si=sin(glangz/180.0*M_PI);
-    float xr=x*co-y*si,yr=x*si+y*co;
-    *projx=-minx+xr*cos(glangx/180.0*M_PI)-hsize/2.0*(cos(angx/180.0*M_PI))-z*sin(angx/180.0*M_PI);
-    *projy=-miny+yr*cos(glangy/180.0*M_PI)-hsize/2.0*(cos(angy/180.0*M_PI))-z*sin(angy/180.0*M_PI);
+    //float xr=x*co-y*si;
+    //float yr=x*si+y*co;
+    float xr=x*cos(glangx/180.0*M_PI)-hsize/2.0*(cos(angx/180.0*M_PI))-z*sin(angx/180.0*M_PI);
+    float yr=y*cos(glangy/180.0*M_PI)-hsize/2.0*(cos(angy/180.0*M_PI))-z*sin(angy/180.0*M_PI);
+    //printf("angz %d co %f si %f \n",glangz,co,si);
+    float xp=xr*co-yr*si;
+    float yp=xr*si+yr*co;
+    *projx=-minx+xp;
+    *projy=-miny+yp;
+    //*projx=-minx+x*cos(glangx/180.0*M_PI)-hsize/2.0*(cos(angx/180.0*M_PI))-z*sin(angx/180.0*M_PI);
+    //*projy=-miny+y*cos(glangy/180.0*M_PI)-hsize/2.0*(cos(angy/180.0*M_PI))-z*sin(angy/180.0*M_PI);
 }
 
 /*
@@ -78,7 +86,7 @@ res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-posx:maxmx-posx+hsx+hsize]+=(
                 res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+=(disty)*(distx)*scr
 */
 
-void interpolate(int res0,int res1,int res2,int res3,float *res,int glx,int gly,int maxmx,int maxmy, int posx, int posy,int hsx,int hsy,int hsize, float distx,float disty,float *scr)
+void interpolate(int res0,int res1,int res2,int res3,int res4,float *res,int glx,int gly,int glz,int maxmx,int maxmy, int posx, int posy,int hsx,int hsy,int hsize, float distx,float disty,float *scr)
 {
     int c,d;
     for (c=1;c<hsy+hsize;c++)
@@ -89,7 +97,7 @@ void interpolate(int res0,int res1,int res2,int res3,float *res,int glx,int gly,
             res[gly*(res1*res2*res3)+glx*(res2*res3)+(maxmy-posy+c)*res3+(maxmx-posx+1+d)]+=(1-disty)*(distx)*scr[c*(hsx+hsize)+d];
             res[gly*(res1*res2*res3)+glx*(res2*res3)+(maxmy-posy+1+c)*res3+(maxmx-posx+d)]+=(disty)*(1-distx)*scr[c*(hsx+hsize)+d];
             res[gly*(res1*res2*res3)+glx*(res2*res3)+(maxmy-posy+1+c)*res3+(maxmx-posx+1+d)]+=(disty)*(distx)*scr[c*(hsx+hsize)+d];*/
-           res[gly*(res1*res2*res3)+glx*(res2*res3)+(maxmy-posy+c)*res3+(maxmx-posx+d)]+=(1-disty)*(1-distx)*scr[c*(hsx+hsize)+d]+(1-disty)*(distx)*scr[c*(hsx+hsize)+d-1]+(disty)*(1-distx)*scr[(c-1)*(hsx+hsize)+d]+(disty)*(distx)*scr[(c-1)*(hsx+hsize)+d-1];     
+           res[gly*(res1*res2*res3*res4)+glx*(res2*res3*res4)+glz*(res3*res4)+(maxmy-posy+c)*res4+(maxmx-posx+d)]+=(1-disty)*(1-distx)*scr[c*(hsx+hsize)+d]+(1-disty)*(distx)*scr[c*(hsx+hsize)+d-1]+(disty)*(1-distx)*scr[(c-1)*(hsx+hsize)+d]+(disty)*(distx)*scr[(c-1)*(hsx+hsize)+d-1];     
         }
     }
 }
