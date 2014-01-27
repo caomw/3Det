@@ -1107,7 +1107,7 @@ def VOColdap(rec,prec):
         ap=ap+p/11.0;
     return ap
 
-def drawPrfast(tp,fp,tot,show=True):
+def drawPrfast(tp,fp,tot,show=True,col="g"):
     tp=numpy.cumsum(tp)
     fp=numpy.cumsum(fp)
     rec=tp/tot
@@ -1121,7 +1121,7 @@ def drawPrfast(tp,fp,tot,show=True):
         ap=ap+p/11;
     ap1=VOCap(rec,prec)
     if show:    
-        pylab.plot(rec,prec,'-g')
+        pylab.plot(rec,prec,'-%s'%col)
         pylab.title("AP=%.1f 11pt(%.1f)"%(ap1*100,ap*100))
         pylab.xlabel("Recall")
         pylab.ylabel("Precision")
@@ -1184,7 +1184,7 @@ def drawMissRatePerImage(tp,fp,tot,nimg,show=True):
     return fppi,miss,ap
 
 
-def drawPr(tp,fp,tot,show=True):
+def drawPr(tp,fp,tot,show=True,col="g"):
     """
         draw the precision recall curve
     """
@@ -1209,7 +1209,7 @@ def drawPr(tp,fp,tot,show=True):
             p=0
         ap=ap+p/11
     if show:
-        pylab.plot(rc,pr,'-g')
+        pylab.plot(rc,pr,'-%s'%col)
         pylab.title("AP=%.3f"%(ap))
         pylab.xlabel("Recall")
         pylab.ylabel("Precision")

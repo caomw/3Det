@@ -298,6 +298,15 @@ if __name__ == '__main__':
     cfg.N=3
     cfg.useclip=True
     cfg.useFastDP=True
+    #angles available to reduce memory
+    cfg.cangx=[-45,-30,-15,0,15,30,45]
+    cfg.cangy=[-30,-15,0,15,30]#[-30,0,+30]
+    cfg.cangz=[-15,0,15]#[-10,0,10]
+    #selected
+    cfg.angx=range(len(cfg.cangx))#[1,3,5,6,7,9,11]
+    cfg.angy=range(len(cfg.cangy))#[4,6,8]
+    cfg.angz=range(len(cfg.cangz))#[1,2,3]
+
     #cfg.resize=2.0
     #testname="./data/CRF/12_10_02_parts_full/bicycle2_testN2_final"
     #testname="./data/person1_testN2best0"#inria1_inria3"bicycle2_testN4aiter3_final
@@ -312,10 +321,11 @@ if __name__ == '__main__':
     #testname="data/test2/face1_3Dfullright_final"
     #testname="data/test4/face1_test3Dperfect5"
     #testname="data/test4/face1_test3Donlyfrontal_final"
-    testname="data/test5/face1_test3Dnobis4"
+    testname="data/test6/face1_3Drot2_final"
     #testname="data/test3/face1_3Dnewfull3"
     cfg.trunc=1
     models=util.load("%s.model"%(testname))
+    models[0]["biases"]=numpy.zeros((13,13))
     #del models[0]
     #cfg.numcl=1
     #cfg.E=1
@@ -331,5 +341,5 @@ if __name__ == '__main__':
     ##############test
     #import itertools
     #runtest(models,tsImages,cfg,parallel=False,numcore=4,detfun=lambda x :detectCRF.test(x,numhyp=1,show=False),show=True)#,save="%s%d"%(testname,it))[196] is the many faces
-    runtest(models,tsImages,cfg,parallel=True,numcore=2,show=True,detfun=testINC03,save="./face1_rot")
+    runtest(models,tsImages,cfg,parallel=True,numcore=3,show=True,detfun=testINC03,save="./face1_rotsub")
 

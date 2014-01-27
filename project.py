@@ -68,7 +68,7 @@ def prjhog(mask,pty,ptx):
                     hog[py,px]=hog[py,px]+mask[pty[pym,py],ptx[pxm,px]]/spty/sptx
     return hog
 
-from ctypes import *
+from ctypes import c_int,c_float,CDLL,cdll
 cdll.LoadLibrary("./cproject.so")
 pr=CDLL("cproject.so")
 pr.cproject.argtypes=[c_int,c_int,c_int,c_int,numpy.ctypeslib.ndpointer(dtype=c_float,ndim=4,flags="C_CONTIGUOUS"),c_int,c_int,numpy.ctypeslib.ndpointer(dtype=c_int,ndim=2,flags="C_CONTIGUOUS"),c_int,c_int,numpy.ctypeslib.ndpointer(dtype=c_int,ndim=2,flags="C_CONTIGUOUS"),numpy.ctypeslib.ndpointer(dtype=c_float,ndim=2,flags="C_CONTIGUOUS")]

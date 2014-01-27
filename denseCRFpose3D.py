@@ -862,7 +862,7 @@ for it in range(cpit,cfg.posit):
         import test3D2
         pylab.figure(400,figsize=(10,10))
         pylab.clf()
-        test3D2.showModel(models[0],0,0,nhog=50,bis=False)
+        test3D2.showModel(models[0],0,0,0,nhog=50,bis=False)
         pylab.draw()
         pylab.show()
         pylab.savefig("%s_3D%dq.png"%(testname,it))

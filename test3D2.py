@@ -164,7 +164,7 @@ def modelsize(model,pglangy,pglangx,pglangz,force=False):
     return model["size"]
 
 
-def det2(model,hog,ppglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglangz=[-30,-15,0,15,30],selangy=None,selangx=None,selangz=None,bis=BIS,k=1):
+def det2(model,hog,ppglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglangz=[-20,-10,0,10,20],selangy=None,selangx=None,selangz=None,bis=BIS,k=1):
     if selangy==None:
         selangy=range(len(ppglangy))
     if selangx==None:
@@ -199,11 +199,13 @@ def det2_(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,k):
     hsize=model["ww"][0].mask.shape[0]
     #res=-1000*numpy.ones((len(ppglangy),len(ppglangx),hsy-minym+maxym+hsize+2,hsx-minxm+maxxm+hsize+2),dtype=numpy.float32)      
     res=numpy.ones((len(ppglangy),len(ppglangx),len(ppglangz),hsy-minym+maxym+hsize+2,hsx-minxm+maxxm+hsize+2),dtype=numpy.float32)*numpy.float32(-1000.0)
+    #resc=res.copy()
     nposy=c_float(0.0);nposx=c_float(0.0)
     for gly in selangy:
         for glx in selangx:
             for glz in selangz:
                 res[gly,glx,glz]=model["biases"][gly,glx]*k#0
+                #resc[gly,glx,glz]=model["biases"][gly,glx]*k#0
                 lminym=[]
                 lminxm=[]
                 minym=model["size"][gly,glx,glz,0];minxm=model["size"][gly,glx,glz,1]
@@ -236,11 +238,13 @@ def det2_(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,k):
                     disty=pposy-posy
                     distx=pposx-posx
                     #print maxmy-posy,maxmx-posx,nposy,nposx,glangx,angx
-                    #res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-posx:maxmx-posx+hsx+hsize]+=(1-disty)*(1-distx)*scr
-                    #res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+=(1-disty)*(distx)*scr
-                    #res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]+=(disty)*(1-distx)*scr
-                    #res[gly,glx][maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+=(disty)*(distx)*scr
-                    pr.interpolate(res.shape[0],res.shape[1],res.shape[2],res.shape[3],res.shape[4],res,glx,gly,glz,maxmx,maxmy,posx,posy,hsx,hsy,hsize,distx,disty,scr)
+                    res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-posx:maxmx-posx+hsx+hsize]+=(1-disty)*(1-distx)*scr
+                    res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+=(1-disty)*(distx)*scr
+                    res[gly,glx,glz,maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]+=(disty)*(1-distx)*scr
+                    res[gly,glx,glz,maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+=(disty)*(distx)*scr
+                    #pr.interpolate(res.shape[0],res.shape[1],res.shape[2],res.shape[3],res.shape[4],res,glx,gly,glz,maxmx,maxmy,posx,posy,hsx,hsy,hsize,distx,disty,scr)
+    #if numpy.sum(numpy.abs(res-resc))>0.0001:
+    #    gsdgdf
     return res                
 
 #@autojit
@@ -282,7 +286,7 @@ def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-9
             pcx1=(dd[4]-deltax+hsize/2)*sbin/hog.scale[idr]
             pcy2=(dd[3]-deltay+(maxym-minym)+hsize/2)*sbin/hog.scale[idr]
             pcx2=(dd[4]-deltax+(maxxm-minxm)+hsize/2)*sbin/hog.scale[idr]
-            ldet.append({"id":0,"bbox":[pcy1,pcx1,pcy2,pcx2],"ang":(dd[0],dd[1],dd[2]),"scr":res[dd]-model["rho"],"scl":hog.scale[idr],"hog":idr,"pos":(dd[2],dd[3]),"fpos":(dd[2]-deltay,dd[3]-deltax)})
+            ldet.append({"id":0,"bbox":[pcy1,pcx1,pcy2,pcx2],"ang":(dd[0],dd[1],dd[2]),"scr":res[dd]-model["rho"],"scl":hog.scale[idr],"hog":idr,"pos":(dd[3],dd[4]),"fpos":(dd[3]-deltay,dd[4]-deltax)})
             if bbox!=None:
                 ldet[-1]["ovr"]=util.overlap(ldet[-1]["bbox"],bbox)
             if show:
@@ -308,10 +312,10 @@ def getfeat(model,hog,angy,angx,angz,ang,pos,k,bis=BIS):
     glangx=angx[ang[1]]
     glangz=angz[ang[2]]
     modelsize(model,angy,angx,angz)#,force=True)
-    maxym=numpy.max(model["size"][:,:,2])#numpy.max([el.y for el in model["ww"]])+1
-    maxxm=numpy.max(model["size"][:,:,3])#numpy.max([el.x for el in model["ww"]])+1
-    minym=numpy.min(model["size"][:,:,0])#numpy.max([el.y for el in model["ww"]])+1
-    minxm=numpy.min(model["size"][:,:,1])#numpy.max([el.x for el in model["ww"]])+1
+    maxym=numpy.max(model["size"][:,:,:,2])#numpy.max([el.y for el in model["ww"]])+1
+    maxxm=numpy.max(model["size"][:,:,:,3])#numpy.max([el.x for el in model["ww"]])+1
+    minym=numpy.min(model["size"][:,:,:,0])#numpy.max([el.y for el in model["ww"]])+1
+    minxm=numpy.min(model["size"][:,:,:,1])#numpy.max([el.x for el in model["ww"]])+1
     deltay=maxym-minym+1#numpy.ceil(maxym-minym)
     deltax=maxxm-minxm+1#numpy.ceil(maxxm-minxm)
     m2=hog
@@ -329,8 +333,8 @@ def getfeat(model,hog,angy,angx,angz,ang,pos,k,bis=BIS):
         pr.getproj(minxm,minym,glangx,glangy,glangz,langx,langy,p.x,p.y,p.z,hsize,byref(cposx),byref(cposy))
         nposy=cposy.value#+deltay
         nposx=cposx.value#+deltax
-        ##nposy=-minym+project.getproj(p.y,p.z,glangy,langy)#+deltay
-        ##nposx=-minxm+project.getproj(p.x,p.z,glangx,langx)#+deltax
+        #nposy=-minym+project.getproj(p.y,p.z,glangy,langy)#+deltay
+        #nposx=-minxm+project.getproj(p.x,p.z,glangx,langx)#+deltax
         posy=int(numpy.floor((nposy)))#+deltay
         posx=int(numpy.floor((nposx)))#+deltax
         disty=nposy-posy
@@ -348,7 +352,6 @@ def getfeat(model,hog,angy,angx,angz,ang,pos,k,bis=BIS):
             auxhog=auxhog+project.invprjhog(m2pad[deltay+pos[0]+posy+1:,deltax+pos[1]+posx+1:],project.pattern4(langy),project.pattern4(langx))*(disty)*(distx)
         lhog.append(auxhog)
         scr+=numpy.sum(model["ww"][idp].mask*lhog[idp])
-        sdfs
     biases=numpy.zeros((13,13),dtype=numpy.float32)
     biases[ang[0],ang[1]]=1.0#model["biases"][ang[0],ang[1]]
     scr+=model["biases"][ang[0],ang[1]]*k
@@ -400,7 +403,7 @@ if __name__ == "__main__":
     glangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
     glangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
     glangz=[-30,-15,0,15,30]
-    fhog,ldet=rundet(im2,model,angy=glangy,angx=glangx,angz=glangz,selangy=[6],selangx=[6],selangz=[2,3,4])
+    fhog,ldet=rundet(im2,model,angy=glangy,angx=glangx,angz=glangz,selangy=[6],selangx=[6],selangz=[2])
     #fhog,ldet=rundet(im2,model,angy=[0],angx=[-60,-45,-30,-15,0,15,30,45,60],bbox=[100,100,200,150])
     pylab.figure(100)
     pylab.imshow(im2)
