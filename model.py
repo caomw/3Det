@@ -44,14 +44,27 @@ def initmodel3D(mtype=3):
         #        lmask.append(test3D2.part3D(0.00001*numpy.ones((4,4,31),dtype=numpy.float32),(py-4)*2,0,-17-5*numpy.cos(ang[px]),0,ang[px]+90))
         #    for px in range(len(ang)/2,len(ang)):
         #        lmask.append(test3D2.part3D(0.00001*numpy.ones((4,4,31),dtype=numpy.float32),(py-4)*2,0,-17-5*numpy.cos(ang[px]),0,ang[px]-90))
-    elif mtype==3:#with orthogonal faces too
+    elif mtype==3:#cilinder
         ang=numpy.array([-165,-150,-135,-120,-105,-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90,105,120,135,150,165])
         #z=numpy.array([0,3,4,5,5,5,4,3,0])*2
         for py in range(6):
             for px in range(len(ang)):
                 #lmask.append(test3D2.part3D(0.00001*numpy.ones((4,4,31),dtype=numpy.float32),(py-4)*4,0,-9-9*numpy.cos(ang[px]/180.0*numpy.pi),0,ang[px]))
                 lmask.append(test3D2.part3D(0.00001*numpy.ones((4,4,31),dtype=numpy.float32),(py-4)*4,0,-9,0,ang[px]))#-9*numpy.cos(ang
-
+    elif mtype==5:#cube
+        hsize=[3,5,9]#y,x,z
+        #for py in range(hsize[0]):
+        #    for px in range(hsize[1]):
+                #lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(py-hsize[0]/2.0)*4,(px-hsize[1]/2.0)*4,(hsize[2]/2.0)*4,0,0))#frontal 
+                #lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(py-hsize[0]/2.0)*4,(px-hsize[1]/2.0)*4,(hsize[2]/2.0)*4,0,-180))#backward
+        for py in range(hsize[0]):
+            for pz in range(hsize[2]):
+                lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(py-hsize[0]/2.0)*4,(pz-hsize[2]/2.0)*4,0,0,90))#frontal #(hsize[1]/2.0)*4,0(pz-hsize[2]/2.0)*4,0,90))#frontal 
+        #        lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(py-hsize[0]/2.0)*4,(pz-hsize[2]/2.0)*4,-(hsize[1]/2.0)*4,0,-90))#backward
+        #for px in range(hsize[1]):
+        #    for pz in range(hsize[2]):
+        #        lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(px-hsize[1]/2.0)*4,(pz-hsize[2]/2.0)*4,(hsize[0]/2.0)*4,90,0))#frontal 
+        #        lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(px-hsize[1]/2.0)*4,(pz-hsize[2]/2.0)*4,-(hsize[0]/2.0)*4,-90,0))#backward        
 
     biases=numpy.zeros((13,13),dtype=numpy.float32)
     models=[{"ww":lmask,"biases":biases,"rho":0}]

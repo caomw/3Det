@@ -327,6 +327,23 @@ elif cfg.db=="MultiPIEfron":
     #tsImages=getRecord(MultiPIE(basepath=cfg.dbpath,session="session02"),cfg.maxtest,facial=True,pose=True)#cfg.useFacial)
     tsImagesFull=tsImages
 
+elif cfg.db=="epfl":
+    #trPosImagesInit=getRecord(epfl(select="pos",cl="%s"%cfg.cls,
+    #                    basepath=cfg.dbpath,#"/home/databases/",
+    #                    usetr=True,usedf=False,initimg=0,double=0),1)
+    trPosImagesFull=getRecord(epfl(select="pos",cl="%s"%cfg.cls,
+                        basepath=cfg.dbpath,#"/home/databases/",
+                        usetr=True,usedf=False,initimg=0,double=0),10000,pose=True)#[:20]#[:cfg.posit]#88]#[22:]#[8:]
+    #trPosImagesFull=trPosImagesFull[sframe:eframe]
+    trPosImages=trPosImagesFull
+    #trPosImages=trPosImagesFull[0:1]#getRecord(track(select="pos",cl="%s"%cfg.cls,
+                        #basepath=cfg.dbpath,#"/home/databases/",
+                        #usetr=True,usedf=False),cfg.maxpos)
+    trPosImagesInit=trPosImages
+    trPosImagesNoTrunc=trPosImages
+    trNegImages=getRecord(DirImages(imagepath=cfg.dbpath+"INRIAPerson/train_64x128_H96/neg/"),cfg.maxneg)#[:9]
+    #trNegImages=getRecord(track(select="neg",cl="%s_frames.txt"%cfg.cls,
+    #                    basepath=cfg.dbpath,#"/home/databases/",#"/share/ISE/marcopede/database/",
 
 ########################compute aspect ratio and dector size 
 import stats
@@ -414,7 +431,7 @@ if initial:
     cpit=0
     cnit=0
     
-    models=model.initmodel3D()
+    models=model.initmodel3D(cfg.model3D)
 
     #########add thresholds
     for m in models:
@@ -457,6 +474,9 @@ clsize=numpy.array(clsize)
 
 util.save("%s%d.model"%(testname,0),models)
 lg.info("Built first model")    
+
+util.save("init.model",models)
+fsf
 
 total=[]
 posratio=[]
@@ -693,7 +713,7 @@ for it in range(cpit,cfg.posit):
         trposcl.append(l["id"]%cfg.numcl)
         dscr=numpy.sum(trpos[-1]*w[cumsize[trposcl[-1]]:cumsize[trposcl[-1]+1]])#-models[0]["rho"]
         #print "Error:",abs(dscr-l["scr"])
-        if (abs(dscr-l["scr"])/dscr>0.0002):
+        if (abs(dscr-l["scr"])/dscr>0.0007):
             print "Error in checking the score function"
             print "Feature score",dscr,"CRF score",l["scr"]
             lg.info("Error in checking the score function")
@@ -770,7 +790,7 @@ for it in range(cpit,cfg.posit):
             #dscr=numpy.sum(trneg[-1]*w[cumsize[trnegcl[-1]]:cumsize[trnegcl[-1]+1]])
             #print "Error:",abs(dscr-l["scr"])
             if not(skipos):#do not check if loaded trneg from checkpoint
-                if (abs((dscr-l["scr"])/dscr)>0.0002):
+                if (abs((dscr-l["scr"])/dscr)>0.0007):
                     print "Error in checking the score function"
                     print "Feature score",dscr,"CRF score",l["scr"]
                     lg.info("Error in checking the score function")

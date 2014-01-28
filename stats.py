@@ -170,6 +170,9 @@ def build_components_pose(trPosImages,cfg):
     elif cfg.db=="MultiPIE2":
         cl=numpy.zeros(r.shape)
         cl=numpy.round((numpy.abs(trPosImages["pose"])/90.0*cfg.numcl).astype(numpy.float)).astype(numpy.int)
+    elif cfg.db=="epfl":
+        cl=numpy.zeros(r.shape)
+        cl=numpy.round((numpy.abs(trPosImages["pose"])/90.0*cfg.numcl).astype(numpy.float)).astype(numpy.int)
     trpos={"name":name,"bb":bb,"ratio":r,"area":a}
     import scipy.cluster.vq as vq
     numcl=cfg.numcl

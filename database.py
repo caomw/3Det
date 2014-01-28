@@ -155,12 +155,11 @@ def getRecord(data,total=-1,pos=True,pose=False,facial=False):
         total=data.getTotal()
     else:
         total=min(data.getTotal(),total)
+    arrPos=numpy.zeros(total,dtype=[("id",numpy.int32),("name",object),("bbox",list)])
     if facial:
         arrPos=numpy.zeros(total,dtype=[("id",numpy.int32),("name",object),("bbox",list),("facial",object)])
-        if pose:
-            arrPos=numpy.zeros(total,dtype=[("id",numpy.int32),("name",object),("bbox",list),("facial",object),("pose",object)])
-    else:
-        arrPos=numpy.zeros(total,dtype=[("id",numpy.int32),("name",object),("bbox",list)])
+    if pose:
+        arrPos=numpy.zeros(total,dtype=[("id",numpy.int32),("name",object),("bbox",list),("facial",object),("pose",object)])
     for i in range(total):
         arrPos[i]["id"]=i
         arrPos[i]["name"]=data.getImageName(i)
@@ -998,6 +997,115 @@ class AFLW(VOC06Data):
             self.cur.execute("SELECT descr,FeatureCoords.x,FeatureCoords.y FROM FeatureCoords,FeatureCoordTypes WHERE face_id = '%s'"%l)
             facial+=self.cur.fetchall()
         return facial
+
+class epfl(VOC06Data):
+    """
+    VOC07 instance (you can choose positive or negative images with the option select)
+    """
+    def __init__(self,select="all",cl="person_train.txt",
+                basepath="media/DADES-2/",
+                trainfile="videos/epfl-gims08/tripod-seq/bbox_%s.txt",
+                imagepath="videos/epfl-gims08/tripod-seq/",
+                annpath="videos/epfl-gims08/tripod-seq/",
+                local="VOC2007/VOCdevkit/local/VOC2007/",
+                usetr=False,usedf=False,mina=0,initimg=0,double=0):
+        self.cl=cl
+        self.usetr=usetr
+        self.usedf=usedf
+        self.local=basepath+local
+        self.trainfile=basepath+trainfile%(cl)
+        self.imagepath=basepath+imagepath
+        self.annpath=basepath+annpath
+        self.initimg=initimg
+        fd=open(self.trainfile,"r")
+        self.trlines=fd.readlines()
+        fd.close()
+        self.double=double
+        self.nseq = 20;
+        # number of frames
+        self.nframes = [118,111,114,111,84,96,129,170,104,142,92,119,113,142,92,136,129,116,106,75]
+        # number of frames covering 360 degrees
+        self.nframes_360 = [109,97,105,110,79,89,122,163,93,136,81,109,106,134,84,126,118,108,96,72]
+        # frame number of frontal pose
+        self.frontal_frame = [50,75,2,107,23,46,64,93,28,6,61,13,68,109,4,10,63,88,51,54]
+        # rotation sense is +1 for clock-wise rotation when viewed from top, -1 for ccw
+        self.rotate_direction = [1,1,1,1,-1,1,1,1,1,-1,-1,-1,1,-1,-1,-1,1,-1,-1,1]
+        ff=open(self.annpath+"times.txt")
+        self.times=ff.readlines()
+        if select=="all":#All images
+            self.str=""
+        if select=="pos":#Positives images
+            self.str="1\n"
+        if select=="neg":#Negatives images
+            self.str="-1\n"
+        self.selines=self.__selected()
+        self.mina=mina
+        
+    def __selected(self):
+        lst=[]
+        for id,it in enumerate(self.trlines):
+            if self.str=="" or it.split(" ")[-1]==self.str:
+                lst.append(it)
+        return lst
+
+    def getDBname(self):
+        return "track"
+    
+    def getStorageDir(self):
+        return self.local#"/media/DADES-2/VOC2007/VOCdevkit/local/VOC2007/"
+        
+    def getImage(self,i):
+        try:
+            filename=self.annpath%self.cl+"img%05d.png"%(i+self.initimg)#+item.split(" ")[0]+".xml"item=self.selines[i]
+            img=myimread(filename)
+            self.img=True
+        except:
+            filename=self.annpath%self.cl+"%05d.jpg"%(i+self.initimg)
+            img=myimread(filename)
+            self.img=False
+        return img
+    
+    def getImageRaw(self,i):
+        item=self.selines[i]
+        return im.open((self.imagepath+item.split(" ")[0])+".jpg")#pil.imread((self.imagepath+item.split(" ")[0])+".jpg")    
+    
+    def getImageByName(self,name):
+        return myimread(name)
+    
+    def getImageByName2(self,name):
+        return myimread(self.imagepath+name+".jpg")
+
+    def getImageName(self,i):
+        #if self.img:
+        filename=self.annpath+"tripod_seq_%s_%03d.jpg"%(self.cl,i+1)#+item.split(" ")[0]+".xml"
+        #item=self.selines[i]
+        #else:
+        #    filename=self.annpath+"%05d.jpg"%(i+self.initimg)#+item.split(" ")[0]+".xml"
+        return filename#(self.imagepath+item.split(" ")[0]+".jpg")
+    
+    def getTotal(self):
+        return len(self.trlines)
+    
+    def getBBox(self,i,cl=None,usetr=None,usedf=None):
+        auxb=numpy.array(self.trlines[i].split(" ")).astype(numpy.float)
+        if self.double>0:
+            d=numpy.array(auxb[2:4])*self.double
+        else:
+            d=[0,0]
+        auxb[2:4]=auxb[0:2]+auxb[2:4]
+        return [numpy.array([auxb[1]-d[1],auxb[0]-d[0],auxb[3]+d[1],auxb[2]+d[0],0,0])]
+
+    def getPose(self,i):
+        #self.nframes 
+        #self.nframes_360 
+        #self.frontal_frame 
+        #self.rotate_direction 
+        idd=int(self.cl)-1
+        tt=self.times[idd].strip().split(" ")
+        speed=360/float(tt[self.nframes_360[idd]])
+        ang=speed*self.rotate_direction[idd]*(int(tt[self.frontal_frame[idd]])-int(tt[i]))
+        return ang
+
 
 class MultiPIE(VOC06Data):
     """
