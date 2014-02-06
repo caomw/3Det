@@ -63,7 +63,7 @@ nposx=-minxm+mm.x*cos(ppglangx[glx]/180.0*numpy.pi)-hsize/2.0*(cos(angx/180.0*nu
 //    res[0] = v[0]*cos(a) - v[1]*sin(a)
 //    res[1] = v[0]*sin(a) + v[1]*cos(a)
 
-void getproj(float minx,float miny,int glangx,int glangy,int glangz,int angx,int angy,float x,float y,float z,int hsize,float *projx, float *projy)
+void getproj_old(float minx,float miny,int glangx,int glangy,int glangz,int angx,int angy,float x,float y,float z,int hsize,float *projx, float *projy)
 {
     float co=cos(glangz/180.0*M_PI),si=sin(glangz/180.0*M_PI);
     //float xr=x*co-y*si;
@@ -75,6 +75,82 @@ void getproj(float minx,float miny,int glangx,int glangy,int glangz,int angx,int
     float yp=xr*si+yr*co;
     *projx=-minx+xp;
     *projy=-miny+yp;
+    //*projx=-minx+x*cos(glangx/180.0*M_PI)-hsize/2.0*(cos(angx/180.0*M_PI))-z*sin(angx/180.0*M_PI);
+    //*projy=-miny+y*cos(glangy/180.0*M_PI)-hsize/2.0*(cos(angy/180.0*M_PI))-z*sin(angy/180.0*M_PI);
+}
+
+void getproj_last(float minx,float miny,int glangx,int glangy,int glangz,int angx,int angy,float x,float y,float z,float lz,int hsize,float *projx, float *projy)
+{
+    float co=cos(glangz/180.0*M_PI),si=sin(glangz/180.0*M_PI);
+    //float co=cos(glangz/180.0*M_PI),si=sin(glangz/180.0*M_PI);
+    //float xr=x*co-y*si;
+    //float yr=x*si+y*co;
+    //float xr=x*cos(glangx/180.0*M_PI)+y*sin(glangy/180.0*M_PI)+z*sin(glangx/180.0*M_PI)-hsize/2.0*(cos(angx/180.0*M_PI))-lz*sin(angx/180.0*M_PI);
+    float xr=x*cos(glangx/180.0*M_PI)+z*sin(glangx/180.0*M_PI)-hsize/2.0*(cos(angx/180.0*M_PI))-lz*sin(angx/180.0*M_PI);
+    //float yr=-x*sin(glangx/180.0*M_PI)+y*cos(glangy/180.0*M_PI)+z*sin(glangy/180.0*M_PI)-hsize/2.0*(cos(angy/180.0*M_PI))-lz*sin(angy/180.0*M_PI);
+    float yr=y*cos(glangy/180.0*M_PI)+z*sin(glangy/180.0*M_PI)-hsize/2.0*(cos(angy/180.0*M_PI))-lz*sin(angy/180.0*M_PI);
+    //printf("angz %d co %f si %f \n",glangz,co,si);
+    float xp=xr*co-yr*si;
+    float yp=xr*si+yr*co;
+    *projx=-minx+xp;
+    *projy=-miny+yp;
+    //*projx=-minx+x*cos(glangx/180.0*M_PI)-hsize/2.0*(cos(angx/180.0*M_PI))-z*sin(angx/180.0*M_PI);
+    //*projy=-miny+y*cos(glangy/180.0*M_PI)-hsize/2.0*(cos(angy/180.0*M_PI))-z*sin(angy/180.0*M_PI);
+}
+
+void rotate(float vx,float vy,int a,float *res)
+{
+    float co=cos(a/180.0*M_PI),si=sin(a/180.0*M_PI);
+    res[0] = vx*co - vy*si;
+    res[1] = vx*si + vy*co;
+}    
+
+/*
+def rotatex(v,a):
+    res=rotate([v[1],v[2]],a)
+    return [v[0],res[0],res[1]]
+
+def rotatey(v,a):
+    res=rotate([v[0],v[2]],a)
+    return [res[0],v[1],res[1]]
+
+def rotatez(v,a):
+    res=rotate([v[0],v[1]],a)
+    return [res[0],res[1],v[2]]
+*/
+
+void getproj(float minx,float miny,int glangx,int glangy,int glangz,int angx,int angy,float x,float y,float z,float lz,int hsize,float *projx, float *projy)
+{
+    //printf("Hsize%d",hsize);
+    //printf("before x=%f,y+%f,z=%f    ",x,y,z);
+    float res[2],tmpx,tmpy,tmpz,yr,xr;
+    rotate(-hsize/2.0,lz,angx,res);//rotatey
+    //rotate(0.0,lz,angx,res);//rotatey
+    tmpx=res[0];tmpy=-hsize/2.0;tmpz=res[1];
+    //tmpx=res[0];tmpy=-hsize/2.0;tmpz=res[1];
+    rotate(tmpy,tmpz,angy,res);//rotatex
+    tmpx=tmpx;tmpy=res[0],tmpz=res[1];
+    //printf("middle x=%f,y+%f,z=%f    ",tmpx,tmpy,tmpz);
+    tmpx+=x;tmpy+=y;tmpz+=z;
+    rotate(tmpx,tmpz,glangx,res);//rotate y
+    tmpx=res[0];tmpy=tmpy;tmpz=res[1];
+    rotate(tmpy,tmpz,glangy,res);//rotate x
+    tmpx=tmpx;tmpy=res[0];tmpz=res[1];
+    xr=tmpx;yr=tmpy;
+    float co=cos(glangz/180.0*M_PI),si=sin(glangz/180.0*M_PI);
+    //float co=cos(glangz/180.0*M_PI),si=sin(glangz/180.0*M_PI);
+    //float xr=x*co-y*si;
+    //float yr=x*si+y*co;
+    //float xr=x*cos(glangx/180.0*M_PI)+y*sin(glangy/180.0*M_PI)+z*sin(glangx/180.0*M_PI)-hsize/2.0*(cos(angx/180.0*M_PI))-lz*sin(angx/180.0*M_PI);
+    //float xr=x*cos(glangx/180.0*M_PI)+z*sin(glangx/180.0*M_PI)-hsize/2.0*(cos(angx/180.0*M_PI))-lz*sin(angx/180.0*M_PI);
+    //float yr=-x*sin(glangx/180.0*M_PI)+y*cos(glangy/180.0*M_PI)+z*sin(glangy/180.0*M_PI)-hsize/2.0*(cos(angy/180.0*M_PI))-lz*sin(angy/180.0*M_PI);
+    //float yr=y*cos(glangy/180.0*M_PI)+z*sin(glangy/180.0*M_PI)-hsize/2.0*(cos(angy/180.0*M_PI))-lz*sin(angy/180.0*M_PI);
+    //printf("angz %d co %f si %f \n",glangz,co,si);
+    float xp=xr*co-yr*si;
+    float yp=xr*si+yr*co;
+    *projx=-minx+xp;
+    *projy=-miny+yp;
+    //printf("x=%f,y+%f,z=%f \n",xp,yp,tmpz);
     //*projx=-minx+x*cos(glangx/180.0*M_PI)-hsize/2.0*(cos(angx/180.0*M_PI))-z*sin(angx/180.0*M_PI);
     //*projy=-miny+y*cos(glangy/180.0*M_PI)-hsize/2.0*(cos(angy/180.0*M_PI))-z*sin(angy/180.0*M_PI);
 }

@@ -74,7 +74,8 @@ def refinePos(el):
     selangy=cfg.angy#[3,4,5,6,7,8,9]
     selangx=[mypose]
     selangz=cfg.angz#[0,1,2]
-    print "Pose",pose,"Angle",selangx
+    print "Pose",pose,"Val",selangx[0],"Angle",angx[selangx[0]]
+    #raw_input()
     msize=test3D2.modelsize(models[0],angy,angx,angz)
     dmaxy=numpy.max(msize[:,:,:,2])+1#numpy.max([el.y for el in model["ww"]])+1
     dmaxx=numpy.max(msize[:,:,:,3])+1#numpy.max([el.x for el in model["ww"]])+1
@@ -204,9 +205,9 @@ def hardNeg(el):
         img=util.myimread(imname,resize=cfg.resize)
     #imageflip=el["flip"]
     if cfg.use3D:
-        angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
-        angx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
-        angz=[-20,-10,0,10,20]
+        angy=cfg.cangy#[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
+        angx=cfg.cangx#[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
+        angz=cfg.cangz#[-20,-10,0,10,20]
         import test3D2
         [f,det]=test3D2.rundet(img,models[0],angy=angy,angx=angx,angz=angz,selangy=cfg.angy,selangx=cfg.angx,selangz=cfg.angz,k=cfg.k)
     else:
@@ -429,6 +430,9 @@ def getfeature3D(det,f,model,angy,angx,angz,k,trunc=0):
         m2pad[deltay:deltay+m2.shape[0],deltax:deltax+m2.shape[1]]=m2
         for ld in det:
             feat,biases,scr=test3D2.getfeat(m1,m2pad,angy,angx,angz,ld["ang"],numpy.array(ld["fpos"])+[deltay,deltax],k)
+            #if abs((scr-ld["scr"]-m1["rho"])/scr)>0.0001:
+                #print "Error",scr-ld["scr"]-m1["rho"],(scr-ld["scr"]-m1["rho"])/scr
+                #raw_input()
             assert(abs((scr-ld["scr"]-m1["rho"])/scr)<0.0001)
         lfeat.append(feat)
         lbiases.append(biases)

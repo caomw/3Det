@@ -52,21 +52,22 @@ def initmodel3D(mtype=3):
                 #lmask.append(test3D2.part3D(0.00001*numpy.ones((4,4,31),dtype=numpy.float32),(py-4)*4,0,-9-9*numpy.cos(ang[px]/180.0*numpy.pi),0,ang[px]))
                 lmask.append(test3D2.part3D(0.00001*numpy.ones((4,4,31),dtype=numpy.float32),(py-4)*4,0,-9,0,ang[px]))#-9*numpy.cos(ang
     elif mtype==5:#cube
-        hsize=[3,5,9]#y,x,z
-        #for py in range(hsize[0]):
-        #    for px in range(hsize[1]):
-                #lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(py-hsize[0]/2.0)*4,(px-hsize[1]/2.0)*4,(hsize[2]/2.0)*4,0,0))#frontal 
-                #lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(py-hsize[0]/2.0)*4,(px-hsize[1]/2.0)*4,(hsize[2]/2.0)*4,0,-180))#backward
+        hsize=[4,5,8]#y,x,z
+        lz=0
+        for py in range(hsize[0]):
+            for px in range(hsize[1]):
+                lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(py-hsize[0]/2.0)*4+2,(px-hsize[1]/2.0)*4+2,(hsize[2]/2.0)*4,lz,0,180))#frontal 
+                lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(py-hsize[0]/2.0)*4+2,(px-hsize[1]/2.0)*4+2,-(hsize[2]/2.0)*4,lz,0,0))#backward
         for py in range(hsize[0]):
             for pz in range(hsize[2]):
-                lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(py-hsize[0]/2.0)*4,(pz-hsize[2]/2.0)*4,0,0,90))#frontal #(hsize[1]/2.0)*4,0(pz-hsize[2]/2.0)*4,0,90))#frontal 
-        #        lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(py-hsize[0]/2.0)*4,(pz-hsize[2]/2.0)*4,-(hsize[1]/2.0)*4,0,-90))#backward
-        #for px in range(hsize[1]):
-        #    for pz in range(hsize[2]):
-        #        lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(px-hsize[1]/2.0)*4,(pz-hsize[2]/2.0)*4,(hsize[0]/2.0)*4,90,0))#frontal 
-        #        lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(px-hsize[1]/2.0)*4,(pz-hsize[2]/2.0)*4,-(hsize[0]/2.0)*4,-90,0))#backward        
+                lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(py-hsize[0]/2.0)*4+2,(hsize[1]/2.0)*4,(pz-hsize[2]/2.0)*4+2,lz,0,90))
+                lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(py-hsize[0]/2.0)*4+2,-(hsize[1]/2.0)*4,(pz-hsize[2]/2.0)*4+2,lz,0,-90))#frontal #(hsize[1]/2.0)*4,0(pz-hsiz
+        for px in range(hsize[1]):
+            for pz in range(hsize[2]):
+                lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(hsize[0]/2.0)*4,(px-hsize[1]/2.0)*4+2,(pz-hsize[2]/2.0)*4+2,lz,90,0))#frontal 
+                lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),-(hsize[0]/2.0)*4,(px-hsize[1]/2.0)*4+2,(pz-hsize[2]/2.0)*4+2,lz,-90,0))#backward        
 
-    biases=numpy.zeros((13,13),dtype=numpy.float32)
+    biases=numpy.array([])#numpy.zeros((24,24),dtype=numpy.float32)
     models=[{"ww":lmask,"biases":biases,"rho":0}]
     return models
 
@@ -237,7 +238,7 @@ def model2w3D(model):
     for l in range(len(model["ww"])):
         #print "here"#,item
         w=numpy.concatenate((w,model["ww"][l].mask.flatten()))
-    w=numpy.concatenate((w,model["biases"].flatten()))
+    #w=numpy.concatenate((w,model["biases"].flatten()))
     return w
 
 def w2model(descr,N,E,rho,lev,fsz,fy=[],fx=[],bin=5,siftsize=2,deform=False,usemrf=False,usefather=False,k=1,norm=1,mindef=0.001,useoccl=False,usebow=False,useCRF=False,small2=False):
@@ -284,7 +285,7 @@ def w2model3D(oldmodel,descr,rho):
     hshape=oldmodel["ww"][0].mask.shape
     for idl,l in enumerate(oldmodel["ww"]):
         oldmodel["ww"][idl].mask=descr[idl*hsize:(idl+1)*hsize].reshape(hshape)
-    oldmodel["biases"]=descr[(idl+1)*hsize:(idl+1)*hsize+13*13].reshape((13,13))
+    ##oldmodel["biases"]=descr[(idl+1)*hsize:(idl+1)*hsize+13*13].reshape((13,13))
     oldmodel["rho"]=rho
     return oldmodel
 

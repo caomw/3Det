@@ -277,71 +277,34 @@ elif cfg.db=="MultiPIE2":
     #tsImages=getRecord(MultiPIE(basepath=cfg.dbpath,session="session02"),cfg.maxtest,facial=True,pose=True)#cfg.useFacial)
     tsImagesFull=tsImages
 
-
-elif cfg.db=="MultiPIEramanan":
-    cameras=["11_0","12_0","09_0","08_0","13_0","14_0","05_1","05_0","04_1","19_0","20_0","01_0","24_0"]
-    cameras2=["110","120","090","080","130","140","051","050","041","190","200","010","240"]
-    #conditions=2
-    #subjects=1#25
-    aux=getRecord(MultiPIE(basepath=cfg.dbpath),cfg.maxpos,facial=True,pose=True)
-    trPosImages=numpy.array([],dtype=aux.dtype)
-    #for ss in range(subjects):
-    #    trPosImages=numpy.concatenate((trPosImages,getRecord(MultiPIE(basepath=cfg.dbpath,camera=cameras[6],subject="%03d"%ss),conditions,facial=True,pose=True)))
-    conditions=1
-    subjects=5#0 #to reach 600
-    #13*50=650   
-    for cc in cameras: 
-        for ss in range(subjects):
-            trPosImages=numpy.concatenate((trPosImages,getRecord(MultiPIE(basepath=cfg.dbpath,camera=cc,subject="%03d"%ss),conditions,facial=True,pose=True)))
-
-    trPosImagesNoTrunc=trPosImages
-    trNegImages=getRecord(InriaNegData(basepath=cfg.dbpath),cfg.maxneg)#check if it works better like this
-    trNegImagesFull=getRecord(InriaNegData(basepath=cfg.dbpath),cfg.maxnegfull)
-    #test
-    subjects=10
-    conditions=2
-    tsImages=numpy.array([],dtype=aux.dtype)
-    for ss in range(subjects):
-        tsImages=numpy.concatenate((tsImages,getRecord(MultiPIE(basepath=cfg.dbpath,session="session02",camera=cameras[6],subject="%03d"%ss),conditions,facial=True,pose=True)))
-    #tsImages=getRecord(MultiPIE(basepath=cfg.dbpath,session="session02"),cfg.maxtest,facial=True,pose=True)#cfg.useFacial)
-    tsImagesFull=tsImages
-
-
-elif cfg.db=="MultiPIEfron":
-    cameras=["11_0","12_0","09_0","06_0","13_0","14_0","05_1","05_0","04_1","19_0","20_0","01_0","24_0"]
-    conditions=2
-    subjects=150
-    aux=getRecord(MultiPIE(basepath=cfg.dbpath),cfg.maxpos,facial=True,pose=True)
-    trPosImages=numpy.array([],dtype=aux.dtype)
-    for ss in range(subjects):
-        trPosImages=numpy.concatenate((trPosImages,getRecord(MultiPIE(basepath=cfg.dbpath,camera=cameras[6],subject="%03d"%ss),conditions,facial=True,pose=True)))
-    trPosImagesNoTrunc=trPosImages
-    trNegImages=getRecord(InriaNegData(basepath=cfg.dbpath),cfg.maxneg)#check if it works better like this
-    trNegImagesFull=getRecord(InriaNegData(basepath=cfg.dbpath),cfg.maxnegfull)
-    #test
-    subjects=10
-    conditions=2
-    tsImages=numpy.array([],dtype=aux.dtype)
-    for ss in range(subjects):
-        tsImages=numpy.concatenate((tsImages,getRecord(MultiPIE(basepath=cfg.dbpath,session="session02",camera=cameras[6],subject="%03d"%ss),conditions,facial=True,pose=True)))
-    #tsImages=getRecord(MultiPIE(basepath=cfg.dbpath,session="session02"),cfg.maxtest,facial=True,pose=True)#cfg.useFacial)
-    tsImagesFull=tsImages
-
 elif cfg.db=="epfl":
     #trPosImagesInit=getRecord(epfl(select="pos",cl="%s"%cfg.cls,
     #                    basepath=cfg.dbpath,#"/home/databases/",
     #                    usetr=True,usedf=False,initimg=0,double=0),1)
-    trPosImagesFull=getRecord(epfl(select="pos",cl="%s"%cfg.cls,
+    aux=getRecord(epfl(select="pos",cl="01",basepath=cfg.dbpath),cfg.maxpos,pose=True)
+    trPosImages=numpy.array([],dtype=aux.dtype)
+    numtrcars=1
+    numtscars=1
+    trcars=range(1,10)
+    tscars=range(11,20)
+    for car in trcars[:numtrcars]:
+        trPosImages=numpy.concatenate((trPosImages,getRecord(epfl(select="pos",cl="%02d"%car,
                         basepath=cfg.dbpath,#"/home/databases/",
-                        usetr=True,usedf=False,initimg=0,double=0),10000,pose=True)#[:20]#[:cfg.posit]#88]#[22:]#[8:]
+                        usetr=True,usedf=False,initimg=0,double=0),10000,pose=True)))#[:20]#[:cfg.posit]#88]#[22:]#[8:]
     #trPosImagesFull=trPosImagesFull[sframe:eframe]
-    trPosImages=trPosImagesFull
+    trPosImagesFull=trPosImages
     #trPosImages=trPosImagesFull[0:1]#getRecord(track(select="pos",cl="%s"%cfg.cls,
                         #basepath=cfg.dbpath,#"/home/databases/",
                         #usetr=True,usedf=False),cfg.maxpos)
     trPosImagesInit=trPosImages
     trPosImagesNoTrunc=trPosImages
     trNegImages=getRecord(DirImages(imagepath=cfg.dbpath+"INRIAPerson/train_64x128_H96/neg/"),cfg.maxneg)#[:9]
+    tsPosImages=numpy.array([],dtype=aux.dtype)
+    for car in tscars[:numtscars]:
+        tsPosImages=numpy.concatenate((tsPosImages,getRecord(epfl(select="pos",cl="%02d"%car,
+                        basepath=cfg.dbpath,#"/home/databases/",
+                        usetr=True,usedf=False,initimg=0,double=0),10000,pose=True)))#[:20]
+
     #trNegImages=getRecord(track(select="neg",cl="%s_frames.txt"%cfg.cls,
     #                    basepath=cfg.dbpath,#"/home/databases/",#"/share/ISE/marcopede/database/",
 
@@ -475,8 +438,16 @@ clsize=numpy.array(clsize)
 util.save("%s%d.model"%(testname,0),models)
 lg.info("Built first model")    
 
-util.save("init.model",models)
-fsf
+if 0:
+    util.save("init.model",models)
+    import test3D2
+    for pp in numpy.linspace(0,360,36):
+        pylab.figure();test3D2.showModel(models[0],0,int(pp),0)
+        pylab.figure();test3D2.showModel(models[0],int(pp),0,0)
+        pylab.figure();test3D2.showModel(models[0],0,0,int(pp))
+    #pylab.figure();test3D2.showModel(models[0],-15,0,0)
+    #pylab.figure();test3D2.showModel(models[0],15,0,0)
+    #sdfs
 
 total=[]
 posratio=[]
@@ -525,7 +496,7 @@ for it in range(cpit,cfg.posit):
         for idp,p in enumerate(models[idm]["ww"]):
             scr=scr+numpy.sum(p.mask*lpfeat[idl][idp])
         #scr+=numpy.sum(lpedge[idl])
-        scr+=models[idm]["biases"][ang[0],ang[1]]*cfg.k
+        #scr+=models[idm]["biases"][ang[0],ang[1]]*cfg.k
         lpdet[idl]["scr"]=scr-models[idm]["rho"]#numpy.sum(models[idm]["ww"][0]*lpfeat[idl])+numpy.sum(models[idm]["cost"]*lpedge[idl])-models[idm]["rho"]#-rr[idm]/bias
 
     if not cfg.checkpoint or not loadedchk:
@@ -800,7 +771,7 @@ for it in range(cpit,cfg.posit):
         #if no negative sample add empty negatives
         for l in range(cfg.numcl):
             if numpy.sum(numpy.array(trnegcl)==l)==0:
-                trneg.append(numpy.concatenate((numpy.zeros(models[l]["ww"][0].mask.size*len(models[l]["ww"]),dtype=models[l]["ww"][0].mask.dtype),numpy.zeros(13*13,dtype=numpy.float32),[bias])))
+                trneg.append(numpy.concatenate((numpy.zeros(models[l]["ww"][0].mask.size*len(models[l]["ww"]),dtype=models[l]["ww"][0].mask.dtype),[bias])))#,numpy.zeros(13*13,dtype=numpy.float32),[bias])))
                 trnegcl.append(l)
                 lg.info("No negative samples; add empty negatives")
 
@@ -922,7 +893,7 @@ for it in range(cpit,cfg.posit):
             scr=0
             for idp,p in enumerate(models[idm]["ww"]):
                 scr=scr+numpy.sum(p.mask*lnfeat[idl][idp])
-            scr+=models[idm]["biases"][ang[0],ang[1]]*cfg.k#numpy.sum(lnedge[idl])
+            #scr+=models[idm]["biases"][ang[0],ang[1]]*cfg.k#numpy.sum(lnedge[idl])
             lndet[idl]["scr"]=scr-models[idm]["rho"]#numpy.sum(models[idm]["ww"][0]*lpfeat[idl])+numpy.sum(models[idm
             #lndet[idl]["scr"]=numpy.sum(models[idm]["ww"][0]*lnfeat[idl])+numpy.sum(models[idm]["cost"]*lnedge[idl])-models[idm]["rho"]#-rr[idm]/bias
 

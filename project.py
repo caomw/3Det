@@ -1,6 +1,7 @@
 #project masks to different rotations
 from numba import autojit
-import  numpy
+import numpy
+from math import sin,cos
 
 #@autojit
 def precompute(mask,hog):
@@ -22,7 +23,9 @@ def pattern4(a):
     """
     score depends on the number of hog cells occupied in the image
     """
-    a=abs(a)
+    a=abs(a%180)
+    if a>90:
+        a=90-(a-90)
     if a==0 or a==15 or a==30:
         pattern=numpy.array([[0,1,2,3]],dtype=numpy.int32)
     elif a==45:
@@ -31,9 +34,38 @@ def pattern4(a):
         pattern=numpy.array([[0,3],[1,2]],dtype=numpy.int32)
     elif a==75:
         pattern=numpy.array([[0],[3]],dtype=numpy.int32)
-    elif a>=90:
+    elif a==90:
         pattern=numpy.array([[]],dtype=numpy.int32)
     return pattern
+
+def pattern4_cos(c):
+    """
+    score depends on the number of hog cells occupied in the image
+    """
+    c=abs(c)
+    #pattern=numpy.array([[]],dtype=numpy.int32)
+    if c<sin(37.5/180.0*numpy.pi):
+        pattern=numpy.array([[0,1,2,3]],dtype=numpy.int32)
+    elif c<sin(52.5/180.0*numpy.pi):
+        pattern=numpy.array([[0,1,2],[1,2,3]],dtype=numpy.int32)
+    elif c<sin(67.5/180.0*numpy.pi):
+        pattern=numpy.array([[0,3],[1,2]],dtype=numpy.int32)
+    elif c<sin(82.5/180.0*numpy.pi):
+        pattern=numpy.array([[0],[3]],dtype=numpy.int32)
+    else:
+        pattern=numpy.array([[]],dtype=numpy.int32)
+    #if c>cos(37.5/180.0*numpy.pi):
+    #    pattern=numpy.array([[0,1,2,3]],dtype=numpy.int32)
+    #elif c>cos(52.5/180.0*numpy.pi):
+    #    pattern=numpy.array([[0,1,2],[1,2,3]],dtype=numpy.int32)
+    #elif c>cos(67.5/180.0*numpy.pi):
+    #    pattern=numpy.array([[0,3],[1,2]],dtype=numpy.int32)
+    #elif c>cos(82.5/180.0*numpy.pi):
+    #    pattern=numpy.array([[0],[3]],dtype=numpy.int32)
+    #else:
+    #    pattern=numpy.array([[]],dtype=numpy.int32)
+    return pattern
+
 
 #@autojit
 def pattern4_bis(a):
