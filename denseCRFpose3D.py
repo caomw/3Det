@@ -283,8 +283,8 @@ elif cfg.db=="epfl":
     #                    usetr=True,usedf=False,initimg=0,double=0),1)
     aux=getRecord(epfl(select="pos",cl="01",basepath=cfg.dbpath),cfg.maxpos,pose=True)
     trPosImages=numpy.array([],dtype=aux.dtype)
-    numtrcars=1
-    numtscars=1
+    numtrcars=4
+    numtscars=2
     trcars=range(1,10)
     tscars=range(11,20)
     for car in trcars[:numtrcars]:
@@ -304,7 +304,7 @@ elif cfg.db=="epfl":
         tsPosImages=numpy.concatenate((tsPosImages,getRecord(epfl(select="pos",cl="%02d"%car,
                         basepath=cfg.dbpath,#"/home/databases/",
                         usetr=True,usedf=False,initimg=0,double=0),10000,pose=True)))#[:20]
-
+    tsImages=tsPosImages
     #trNegImages=getRecord(track(select="neg",cl="%s_frames.txt"%cfg.cls,
     #                    basepath=cfg.dbpath,#"/home/databases/",#"/share/ISE/marcopede/database/",
 
@@ -805,7 +805,7 @@ for it in range(cpit,cfg.posit):
 
         #import pegasos   
         if cfg.useSGD:
-            w,r,prloss=pegasos.trainCompSGD(trpos,trneg,"",trposcl,trnegcl,oldw=w,pc=cfg.svmc,k=numcore*2,numthr=numcore,eps=0.001,sizereg=sizereg,valreg=cfg.valreg,lb=cfg.lb)#,notreg=notreg)
+            w,r,prloss=pegasos.trainCompSGD(trpos,trneg,"",trposcl,trnegcl,oldw=w,pc=cfg.svmc,k=numcore*2,numthr=numcore,eps=0.01,sizereg=sizereg,valreg=cfg.valreg,lb=cfg.lb)#,notreg=notreg)
         else:
             w,r,prloss=pegasos.trainCompBFG(trpos,trneg,"",trposcl,trnegcl,oldw=w,pc=cfg.svmc,k=numcore*2,numthr=numcore,eps=0.001,sizereg=sizereg,valreg=cfg.valreg,lb=cfg.lb)#,notreg=notreg)
 
