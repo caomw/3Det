@@ -499,7 +499,7 @@ for it in range(cpit,cfg.posit):
             scr=scr+numpy.sum(p.mask*lpfeat[idl][idp])
         #scr+=numpy.sum(lpedge[idl])
         if cfg.usebiases:
-            scr+=models[idm]["biases"][ang[0],ang[1],ang[2]]*cfg.k
+            scr+=models[idm]["biases"][ang[0],ang[1],ang[2]]#*cfg.k
         lpdet[idl]["scr"]=scr-models[idm]["rho"]#numpy.sum(models[idm]["ww"][0]*lpfeat[idl])+numpy.sum(models[idm]["cost"]*lpedge[idl])-models[idm]["rho"]#-rr[idm]/bias
 
     if not cfg.checkpoint or not loadedchk:
@@ -683,7 +683,7 @@ for it in range(cpit,cfg.posit):
         if lpdet[idl]["id"]>=cfg.numcl:#flipped version
             efeat=pyrHOG2.hogflip(efeat)
             #eedge=pyrHOG2.crfflip(eedge)
-        trpos.append(numpy.concatenate((model.feat2flatten(efeat),eedge.flatten()*cfg.k,[bias])))
+        trpos.append(numpy.concatenate((model.feat2flatten(efeat),eedge.flatten(),[bias])))
         trposcl.append(l["id"]%cfg.numcl)
         dscr=numpy.sum(trpos[-1]*w[cumsize[trposcl[-1]]:cumsize[trposcl[-1]+1]])#-models[0]["rho"]
         #print "Error:",abs(dscr-l["scr"])
@@ -757,7 +757,7 @@ for it in range(cpit,cfg.posit):
                 efeat=pyrHOG2.hogflip(efeat)
             #    eedge=pyrHOG2.crfflip(eedge)
             #trneg.append(numpy.concatenate((efeat.flatten(),cfg.k*eedge.flatten(),[bias])))
-            trneg.append(numpy.concatenate((model.feat2flatten(efeat),eedge.flatten()*cfg.k,[bias])))
+            trneg.append(numpy.concatenate((model.feat2flatten(efeat),eedge.flatten(),[bias])))
             trnegcl.append(l["id"]%cfg.numcl)
             dscr=numpy.sum(trneg[-1]*w[cumsize[trnegcl[-1]]:cumsize[trnegcl[-1]+1]])
             #trnegcl.append(lndet[idl]["id"]%cfg.numcl)
@@ -830,7 +830,7 @@ for it in range(cpit,cfg.posit):
         #from w to model m1
         for idm,m in enumerate(models[:cfg.numcl]):
             #models[idm]=model.w2model(w[cumsize[idm]:cumsize[idm+1]-1],cfg.N,cfg.E,-w[cumsize[idm+1]-1]*bias,len(m["ww"]),lenf,m["ww"][0].shape[0],m["ww"][0].shape[1],useCRF=True,k=cfg.k)
-            models[idm]=model.w2model3D(models[idm],w[:-1],-w[-1]*bias,cfg.usebiases,k=cfg.k)
+            models[idm]=model.w2model3D(models[idm],w[:-1],-w[-1]*bias,cfg.usebiases)
             models[idm]["id"]=idm
             #models[idm]["ra"]=w[cumsize[idm+1]-1]
             #from model to w #changing the clip...
@@ -900,7 +900,7 @@ for it in range(cpit,cfg.posit):
             for idp,p in enumerate(models[idm]["ww"]):
                 scr=scr+numpy.sum(p.mask*lnfeat[idl][idp])
             if cfg.usebiases:
-                scr+=models[idm]["biases"][ang[0],ang[1],ang[2]]*cfg.k#numpy.sum(lnedge[idl])
+                scr+=models[idm]["biases"][ang[0],ang[1],ang[2]]#numpy.sum(lnedge[idl])
             lndet[idl]["scr"]=scr-models[idm]["rho"]#numpy.sum(models[idm]["ww"][0]*lpfeat[idl])+numpy.sum(models[idm
             #lndet[idl]["scr"]=numpy.sum(models[idm]["ww"][0]*lnfeat[idl])+numpy.sum(models[idm]["cost"]*lnedge[idl])-models[idm]["rho"]#-rr[idm]/bias
 

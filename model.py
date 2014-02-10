@@ -283,13 +283,13 @@ def w2model(descr,N,E,rho,lev,fsz,fy=[],fx=[],bin=5,siftsize=2,deform=False,usem
         return m
 
 
-def w2model3D(oldmodel,descr,rho,usebiases,k=1):
+def w2model3D(oldmodel,descr,rho,usebiases):
     hsize=oldmodel["ww"][0].mask.size
     hshape=oldmodel["ww"][0].mask.shape
     for idl,l in enumerate(oldmodel["ww"]):
         oldmodel["ww"][idl].mask=descr[idl*hsize:(idl+1)*hsize].reshape(hshape)
     if usebiases:
-        oldmodel["biases"]=(descr[(idl+1)*hsize:(idl+1)*hsize+oldmodel["biases"].size]*k).reshape(oldmodel["biases"].shape)#.reshape((13,13))
+        oldmodel["biases"]=(descr[(idl+1)*hsize:(idl+1)*hsize+oldmodel["biases"].size]).reshape(oldmodel["biases"].shape)#.reshape((13,13))
     oldmodel["rho"]=rho
     return oldmodel
 
