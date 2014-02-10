@@ -23,7 +23,7 @@ def refinePos(el):
     models=el["models"]
     cfg=el["cfg"]
     imageflip=el["flip"]
-    pose=el["pose"]
+    pose=(el["pose"]+180)%360-180
     dratios=[]
     fy=[]
     fx=[]
@@ -122,7 +122,7 @@ def refinePos(el):
         #t1=time.time()
         if cfg.use3D:
             import test3D2
-            [f,det]=test3D2.rundet(img,models[0],bbox=extnewbbox,angy=angy,angx=angx,angz=angz,selangy=selangy,selangx=selangx,selangz=selangz,sort=cfg.mysort,k=cfg.k)
+            [f,det]=test3D2.rundet(img,models[0],bbox=extnewbbox,angy=angy,angx=angx,angz=angz,selangy=selangy,selangx=selangx,selangz=selangz,sort=cfg.mysort,k=cfg.k,usebiases=cfg.usebiases)
             print "Bbox",det[0]["bbox"]
         elif cfg.usebbPOS:
             [f,det]=rundetbb(img,cfg.N,cfg.E,selmodels,numdet=cfg.numhypPOS, interv=cfg.intervPOS,aiter=cfg.aiterPOS,restart=cfg.restartPOS,trunc=cfg.trunc,useFastDP=cfg.useFastDP)
@@ -164,7 +164,7 @@ aiterPOS,restart=cfg.restartPOS,trunc=cfg.trunc,bbox=extnewbbox,useFastDP=cfg.us
         if cfg.show:
             visualize([det[best]],cfg.N,f,img)
         #feat,edge=getfeature([det[best]],cfg.N,cfg.E,f,models,cfg.trunc)
-        feat,biases=getfeature3D([det[best]],f,models,angy,angx,angz,cfg.k,cfg.trunc)
+        feat,biases=getfeature3D([det[best]],f,models,angy,angx,angz,cfg.k,cfg.trunc,usebiases=cfg.usebiases)
         #add image name and bbx so that each annotation is unique
         if imageflip:
             det[best]["idim"]=el["file"].split("/")[-1]+".flip"
@@ -209,7 +209,7 @@ def hardNeg(el):
         angx=cfg.cangx#[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
         angz=cfg.cangz#[-20,-10,0,10,20]
         import test3D2
-        [f,det]=test3D2.rundet(img,models[0],angy=angy,angx=angx,angz=angz,selangy=cfg.angy,selangx=cfg.angx,selangz=cfg.angz,k=cfg.k)
+        [f,det]=test3D2.rundet(img,models[0],angy=angy,angx=angx,angz=angz,selangy=cfg.angy,selangx=cfg.angx,selangz=cfg.angz,k=cfg.k,usebiases=cfg.usebiases)
     else:
         if cfg.usebbNEG:
             [f,det]=rundetbb(img,cfg.N,cfg.E,models,minthr=-1.0,numdet=cfg.numhypNEG,interv=cfg.intervNEG,aiter=cfg.aiterNEG,restart=cfg.restartNEG,trunc=cfg.trunc,useFastDP=cfg.useFastDP)
@@ -231,7 +231,7 @@ def hardNeg(el):
         if det[idl]["scr"]>-1:
             det[idl]["idim"]=el["file"].split("/")[-1]
             ldet.append(det[idl])
-            feat,biases=getfeature3D([det[idl]],f,models,angy,angx,angz,cfg.k,cfg.trunc)
+            feat,biases=getfeature3D([det[idl]],f,models,angy,angx,angz,cfg.k,cfg.trunc,cfg.usebiases)
             #feat,edge=getfeature([det[idl]],cfg.N,cfg.E,f,models,cfg.trunc)
             lfeat+=feat
             ledge+=biases
@@ -322,7 +322,7 @@ def test(el,docluster=True,show=False,inclusion=False,onlybest=False,ovr=0.5):
         if cfg.__dict__.has_key("cangz"):
             angz=cfg.cangz   
         import test3D2
-        [f,det]=test3D2.rundet(img,models[0],angy=angy,angx=angx,angz=angz,selangy=cfg.angy,selangx=cfg.angx,selangz=cfg.angz,k=cfg.k)#[0,1,2,3,4,5,6,7,8,9,10,11,12],k=cfg.k)
+        [f,det]=test3D2.rundet(img,models[0],angy=angy,angx=angx,angz=angz,selangy=cfg.angy,selangx=cfg.angx,selangz=cfg.angz,k=cfg.k,usebiases=cfg.usebiases)#[0,1,2,3,4,5,6,7,8,9,10,11,12],k=cfg.k)
     else:
         if cfg.usebbTEST:
             if cfg.useswTEST:
@@ -412,7 +412,7 @@ def getfeature(det,N,E,f,models,trunc=0):
             #raw_input()
     return lfeat,ledge
 
-def getfeature3D(det,f,model,angy,angx,angz,k,trunc=0):
+def getfeature3D(det,f,model,angy,angx,angz,k,trunc=0,usebiases=False):
     """ check if score of detections and score from features are correct"""
     import test3D2
     lfeat=[]
@@ -429,7 +429,7 @@ def getfeature3D(det,f,model,angy,angx,angz,k,trunc=0):
         m2pad=numpy.zeros((m2.shape[0]+2*deltay,m2.shape[1]+2*deltax,m2.shape[2]),dtype=m2.dtype)
         m2pad[deltay:deltay+m2.shape[0],deltax:deltax+m2.shape[1]]=m2
         for ld in det:
-            feat,biases,scr=test3D2.getfeat(m1,m2pad,angy,angx,angz,ld["ang"],numpy.array(ld["fpos"])+[deltay,deltax],k)
+            feat,biases,scr=test3D2.getfeat(m1,m2pad,angy,angx,angz,ld["ang"],numpy.array(ld["fpos"])+[deltay,deltax],k,usebiases=usebiases)
             #if abs((scr-ld["scr"]-m1["rho"])/scr)>0.0001:
                 #print "Error",scr-ld["scr"]-m1["rho"],(scr-ld["scr"]-m1["rho"])/scr
                 #raw_input()

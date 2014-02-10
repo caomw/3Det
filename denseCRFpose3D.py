@@ -283,8 +283,8 @@ elif cfg.db=="epfl":
     #                    usetr=True,usedf=False,initimg=0,double=0),1)
     aux=getRecord(epfl(select="pos",cl="01",basepath=cfg.dbpath),cfg.maxpos,pose=True)
     trPosImages=numpy.array([],dtype=aux.dtype)
-    numtrcars=4
-    numtscars=2
+    numtrcars=10
+    numtscars=10
     trcars=range(1,10)
     tscars=range(11,20)
     for car in trcars[:numtrcars]:
@@ -299,12 +299,14 @@ elif cfg.db=="epfl":
     trPosImagesInit=trPosImages
     trPosImagesNoTrunc=trPosImages
     trNegImages=getRecord(DirImages(imagepath=cfg.dbpath+"INRIAPerson/train_64x128_H96/neg/"),cfg.maxneg)#[:9]
+    trNegImagesFull=getRecord(InriaNegData(basepath=cfg.dbpath),cfg.maxnegfull)
     tsPosImages=numpy.array([],dtype=aux.dtype)
     for car in tscars[:numtscars]:
         tsPosImages=numpy.concatenate((tsPosImages,getRecord(epfl(select="pos",cl="%02d"%car,
                         basepath=cfg.dbpath,#"/home/databases/",
                         usetr=True,usedf=False,initimg=0,double=0),10000,pose=True)))#[:20]
     tsImages=tsPosImages
+    tsImagesFull=tsImages
     #trNegImages=getRecord(track(select="neg",cl="%s_frames.txt"%cfg.cls,
     #                    basepath=cfg.dbpath,#"/home/databases/",#"/share/ISE/marcopede/database/",
 
@@ -394,7 +396,7 @@ if initial:
     cpit=0
     cnit=0
     
-    models=model.initmodel3D(cfg.model3D)
+    models=model.initmodel3D(cfg.model3D,cfg.usebiases,cfg.cangy,cfg.cangx,cfg.cangz)
 
     #########add thresholds
     for m in models:
@@ -496,7 +498,8 @@ for it in range(cpit,cfg.posit):
         for idp,p in enumerate(models[idm]["ww"]):
             scr=scr+numpy.sum(p.mask*lpfeat[idl][idp])
         #scr+=numpy.sum(lpedge[idl])
-        #scr+=models[idm]["biases"][ang[0],ang[1]]*cfg.k
+        if cfg.usebiases:
+            scr+=models[idm]["biases"][ang[0],ang[1],ang[2]]*cfg.k
         lpdet[idl]["scr"]=scr-models[idm]["rho"]#numpy.sum(models[idm]["ww"][0]*lpfeat[idl])+numpy.sum(models[idm]["cost"]*lpedge[idl])-models[idm]["rho"]#-rr[idm]/bias
 
     if not cfg.checkpoint or not loadedchk:
@@ -684,7 +687,7 @@ for it in range(cpit,cfg.posit):
         trposcl.append(l["id"]%cfg.numcl)
         dscr=numpy.sum(trpos[-1]*w[cumsize[trposcl[-1]]:cumsize[trposcl[-1]+1]])#-models[0]["rho"]
         #print "Error:",abs(dscr-l["scr"])
-        if (abs(dscr-l["scr"])/dscr>0.0007):
+        if (abs(dscr-l["scr"])/dscr>0.0001):
             print "Error in checking the score function"
             print "Feature score",dscr,"CRF score",l["scr"]
             lg.info("Error in checking the score function")
@@ -761,7 +764,7 @@ for it in range(cpit,cfg.posit):
             #dscr=numpy.sum(trneg[-1]*w[cumsize[trnegcl[-1]]:cumsize[trnegcl[-1]+1]])
             #print "Error:",abs(dscr-l["scr"])
             if not(skipos):#do not check if loaded trneg from checkpoint
-                if (abs((dscr-l["scr"])/dscr)>0.0007):
+                if (abs((dscr-l["scr"])/dscr)>0.0001):
                     print "Error in checking the score function"
                     print "Feature score",dscr,"CRF score",l["scr"]
                     lg.info("Error in checking the score function")
@@ -771,7 +774,10 @@ for it in range(cpit,cfg.posit):
         #if no negative sample add empty negatives
         for l in range(cfg.numcl):
             if numpy.sum(numpy.array(trnegcl)==l)==0:
-                trneg.append(numpy.concatenate((numpy.zeros(models[l]["ww"][0].mask.size*len(models[l]["ww"]),dtype=models[l]["ww"][0].mask.dtype),[bias])))#,numpy.zeros(13*13,dtype=numpy.float32),[bias])))
+                if cfg.usebiases:
+                    trneg.append(numpy.concatenate((numpy.zeros(models[l]["ww"][0].mask.size*len(models[l]["ww"]),dtype=models[l]["ww"][0].mask.dtype),numpy.zeros(models[l]["biases"].size,dtype=numpy.float32),[bias])))
+                else:
+                    trneg.append(numpy.concatenate((numpy.zeros(models[l]["ww"][0].mask.size*len(models[l]["ww"]),dtype=models[l]["ww"][0].mask.dtype),[bias])))#,numpy.zeros(13*13,dtype=numpy.float32),[bias])))
                 trnegcl.append(l)
                 lg.info("No negative samples; add empty negatives")
 
@@ -824,7 +830,7 @@ for it in range(cpit,cfg.posit):
         #from w to model m1
         for idm,m in enumerate(models[:cfg.numcl]):
             #models[idm]=model.w2model(w[cumsize[idm]:cumsize[idm+1]-1],cfg.N,cfg.E,-w[cumsize[idm+1]-1]*bias,len(m["ww"]),lenf,m["ww"][0].shape[0],m["ww"][0].shape[1],useCRF=True,k=cfg.k)
-            models[idm]=model.w2model3D(models[idm],w[:-1],-w[-1]*bias)
+            models[idm]=model.w2model3D(models[idm],w[:-1],-w[-1]*bias,cfg.usebiases,k=cfg.k)
             models[idm]["id"]=idm
             #models[idm]["ra"]=w[cumsize[idm+1]-1]
             #from model to w #changing the clip...
@@ -893,7 +899,8 @@ for it in range(cpit,cfg.posit):
             scr=0
             for idp,p in enumerate(models[idm]["ww"]):
                 scr=scr+numpy.sum(p.mask*lnfeat[idl][idp])
-            #scr+=models[idm]["biases"][ang[0],ang[1]]*cfg.k#numpy.sum(lnedge[idl])
+            if cfg.usebiases:
+                scr+=models[idm]["biases"][ang[0],ang[1],ang[2]]*cfg.k#numpy.sum(lnedge[idl])
             lndet[idl]["scr"]=scr-models[idm]["rho"]#numpy.sum(models[idm]["ww"][0]*lpfeat[idl])+numpy.sum(models[idm
             #lndet[idl]["scr"]=numpy.sum(models[idm]["ww"][0]*lnfeat[idl])+numpy.sum(models[idm]["cost"]*lnedge[idl])-models[idm]["rho"]#-rr[idm]/bias
 

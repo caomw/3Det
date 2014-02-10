@@ -269,7 +269,7 @@ def det2_(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,k):
     for gly in selangy:
         for glx in selangx:
             for glz in selangz:
-                res[gly,glx,glz]=model["biases"][gly,glx]*k#0
+                res[gly,glx,glz]=model["biases"][gly,glx,glz]*k#0
                 #resc[gly,glx,glz]=model["biases"][gly,glx]*k#0
                 lminym=[]
                 lminxm=[]
@@ -351,7 +351,7 @@ def det2_cache(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,
         for glx in selangx:
             for glz in selangz:
                 if usebiases:
-                    res[gly,glx,glz]=model["biases"][gly,glx]*k#0
+                    res[gly,glx,glz]=model["biases"][gly,glx,glz]*k#0
                 else:
                     res[gly,glx,glz]=0
                 #resc[gly,glx,glz]=model["biases"][gly,glx]*k#0
@@ -426,7 +426,7 @@ def drawdet(ldet):
        #print res[dd],l,dd[0],dd[1]
 
 #@autojit
-def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angz=[-10,0,10],interv=5,sbin=4,maxdet=1000,sort="scr",bbox=None,selangy=None,selangx=None,selangz=None,numhyp=1000,k=1,bis=BIS):
+def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angz=[-10,0,10],interv=5,sbin=4,maxdet=1000,sort="scr",bbox=None,selangy=None,selangx=None,selangz=None,numhyp=1000,k=1,bis=BIS,usebiases=USEBIASES):
     hog=pyrHOG2.pyrHOG(img,interv=interv,cformat=True,sbin=sbin)
     modelsize(model,angy,angx,angz)
     hsize=model["ww"][0].mask.shape[0]
@@ -445,7 +445,7 @@ def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-9
         if show:
             pylab.figure()
             pylab.imshow(img)
-        res=det2(model,hog.hog[idr],ppglangy=angy,ppglangx=angx,ppglangz=angz,selangy=selangy,selangx=selangx,selangz=selangz,k=k,bis=bis)
+        res=det2(model,hog.hog[idr],ppglangy=angy,ppglangx=angx,ppglangz=angz,selangy=selangy,selangx=selangx,selangz=selangz,k=k,bis=bis,usebiases=usebiases)
         #dsfsd
         order=(-res).argsort(None)
         for l in range(min(numhyp,len(order))):
@@ -532,9 +532,9 @@ def getfeat(model,hog,angy,angx,angz,ang,pos,k,bis=BIS,usebiases=USEBIASES):
         lhog.append(auxhog)
         scr+=numpy.sum(model["ww"][idp].mask*lhog[idp])
     if usebiases:
-        biases=numpy.zeros((24,24),dtype=numpy.float32)
-        biases[ang[0],ang[1]]=1.0#model["biases"][ang[0],ang[1]]    
-        scr+=model["biases"][ang[0],ang[1]]*k
+        biases=numpy.zeros((model["biases"].shape[0],model["biases"].shape[1],model["biases"].shape[2]),dtype=numpy.float32)
+        biases[ang[0],ang[1],ang[2]]=1.0#model["biases"][ang[0],ang[1]]    
+        scr+=model["biases"][ang[0],ang[1],ang[2]]*k
         return lhog,biases,scr
     return lhog,numpy.array([]),scr
 
