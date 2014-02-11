@@ -298,8 +298,14 @@ elif cfg.db=="epfl":
                         #usetr=True,usedf=False),cfg.maxpos)
     trPosImagesInit=trPosImages
     trPosImagesNoTrunc=trPosImages
-    trNegImages=getRecord(DirImages(imagepath=cfg.dbpath+"INRIAPerson/train_64x128_H96/neg/"),cfg.maxneg)#[:9]
-    trNegImagesFull=getRecord(InriaNegData(basepath=cfg.dbpath),cfg.maxnegfull)
+    trNegImages=getRecord(VOC07Data(select="neg",cl="%s_trainval.txt"%"car",
+                        basepath=cfg.dbpath,#"/home/databases/",#"/share/ISE/marcopede/database/",
+                        usetr=True,usedf=False),cfg.maxneg)
+    trNegImagesFull=getRecord(VOC07Data(select="neg",cl="%s_trainval.txt"%"car",
+                        basepath=cfg.dbpath,usetr=True,usedf=False),cfg.maxnegfull)
+
+    #trNegImages=getRecord(DirImages(imagepath=cfg.dbpath+"INRIAPerson/train_64x128_H96/neg/"),cfg.maxneg)#[:9]
+    #trNegImagesFull=getRecord(InriaNegData(basepath=cfg.dbpath),cfg.maxnegfull)
     tsPosImages=numpy.array([],dtype=aux.dtype)
     for car in tscars[:numtscars]:
         tsPosImages=numpy.concatenate((tsPosImages,getRecord(epfl(select="pos",cl="%02d"%car,
@@ -499,7 +505,7 @@ for it in range(cpit,cfg.posit):
             scr=scr+numpy.sum(p.mask*lpfeat[idl][idp])
         #scr+=numpy.sum(lpedge[idl])
         if cfg.usebiases:
-            scr+=models[idm]["biases"][ang[0],ang[1],ang[2]]#*cfg.k
+            scr+=models[idm]["biases"][ang[0],ang[1],ang[2]]*cfg.k
         lpdet[idl]["scr"]=scr-models[idm]["rho"]#numpy.sum(models[idm]["ww"][0]*lpfeat[idl])+numpy.sum(models[idm]["cost"]*lpedge[idl])-models[idm]["rho"]#-rr[idm]/bias
 
     if not cfg.checkpoint or not loadedchk:
@@ -687,7 +693,7 @@ for it in range(cpit,cfg.posit):
         trposcl.append(l["id"]%cfg.numcl)
         dscr=numpy.sum(trpos[-1]*w[cumsize[trposcl[-1]]:cumsize[trposcl[-1]+1]])#-models[0]["rho"]
         #print "Error:",abs(dscr-l["scr"])
-        if (abs(dscr-l["scr"])/dscr>0.0001):
+        if (abs(dscr-l["scr"])/dscr>0.0005):
             print "Error in checking the score function"
             print "Feature score",dscr,"CRF score",l["scr"]
             lg.info("Error in checking the score function")
@@ -769,7 +775,7 @@ for it in range(cpit,cfg.posit):
                     print "Feature score",dscr,"CRF score",l["scr"]
                     lg.info("Error in checking the score function")
                     lg.info("Feature score %f CRF score %f"%(dscr,l["scr"]))
-                    #raw_input()
+                    raw_input()
 
         #if no negative sample add empty negatives
         for l in range(cfg.numcl):
@@ -900,7 +906,7 @@ for it in range(cpit,cfg.posit):
             for idp,p in enumerate(models[idm]["ww"]):
                 scr=scr+numpy.sum(p.mask*lnfeat[idl][idp])
             if cfg.usebiases:
-                scr+=models[idm]["biases"][ang[0],ang[1],ang[2]]#numpy.sum(lnedge[idl])
+                scr+=models[idm]["biases"][ang[0],ang[1],ang[2]]*cfg.k#numpy.sum(lnedge[idl])
             lndet[idl]["scr"]=scr-models[idm]["rho"]#numpy.sum(models[idm]["ww"][0]*lpfeat[idl])+numpy.sum(models[idm
             #lndet[idl]["scr"]=numpy.sum(models[idm]["ww"][0]*lnfeat[idl])+numpy.sum(models[idm]["cost"]*lnedge[idl])-models[idm]["rho"]#-rr[idm]/bias
 

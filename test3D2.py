@@ -269,8 +269,10 @@ def det2_(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,k):
     for gly in selangy:
         for glx in selangx:
             for glz in selangz:
-                res[gly,glx,glz]=model["biases"][gly,glx,glz]*k#0
-                #resc[gly,glx,glz]=model["biases"][gly,glx]*k#0
+                if usebiases:
+                    res[gly,glx,glz]=model["biases"][gly,glx,glz]*k#0
+                else:
+                    res[gly,glx,glz]=0
                 lminym=[]
                 lminxm=[]
                 minym=model["size"][gly,glx,glz,0];minxm=model["size"][gly,glx,glz,1]
@@ -282,26 +284,8 @@ def det2_(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,k):
                     #print "Angles",angy,angx,n,n[2]>0.0001
                     if n[2]<0.0001:#face not visible
                         continue
-                    #angy=(mm.ay+ppglangy[gly]+180)%360-180#(w.ay+glangy+180)%360-180
-                    #angx=(mm.ax+ppglangx[glx]+180)%360-180
-                    #angz=(ppglangz[glz]+180)%360-180
-                    #if abs(angx)>90 or abs(angy)>90:
-                    #    continue               
-                    #if bis:
-                    #    scr=project.project_bis(prec[l],project.pattern4_bis(angy),project.pattern4_bis(angx))
-                    #else:
-                    #NOTICE that now bis does not work!!!!
                     scr=project.project(prec[l],project.pattern4_cos(n[0]),project.pattern4_cos(n[1]))
-                    #if type(scr)!=numpy.ndarray:
-                    #    print type(scr)
-                    #    dsfsd
-                    #print scr.shape
-                    #nposy=-minym+mm.y*cos(ppglangy[gly]/180.0*numpy.pi)-hsize/2.0*(cos(angy/180.0*numpy.pi))-mm.z*sin(angy/180.0*numpy.pi)
-                    #nposx=-minxm+mm.x*cos(ppglangx[glx]/180.0*numpy.pi)-hsize/2.0*(cos(angx/180.0*numpy.pi))-mm.z*sin(angx/180.0*numpy.pi)
                     pr.getproj(minxm,minym,ppglangx[glx],ppglangy[gly],ppglangz[glz],mm.ax,mm.ay,mm.x,mm.y,mm.z,mm.lz,hsize,byref(nposx),byref(nposy))
-                    #print nposy,nposx
-                    #nposy=-miny+project.getproj(mm.y,mm.z,glangy,angy)
-                    #nposx=-minx+project.getproj(mm.x,mm.z,glangx,angx)
                     pposy=nposy.value
                     pposx=nposx.value
                     posy=int(floor(pposy))
@@ -309,11 +293,11 @@ def det2_(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,k):
                     disty=pposy-posy
                     distx=pposx-posx
                     #print maxmy-posy,maxmx-posx,nposy,nposx,glangx,angx
-                    #res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-posx:maxmx-posx+hsx+hsize]+=(1-disty)*(1-distx)*scr
-                    #res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+=(1-disty)*(distx)*scr
-                    #res[gly,glx,glz,maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]+=(disty)*(1-distx)*scr
-                    #res[gly,glx,glz,maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+=(disty)*(distx)*scr
-                    pr.interpolate(res.shape[0],res.shape[1],res.shape[2],res.shape[3],res.shape[4],res,glx,gly,glz,maxmx,maxmy,posx,posy,hsx,hsy,hsize,distx,disty,scr)
+                    res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-posx:maxmx-posx+hsx+hsize]+=(1-disty)*(1-distx)*scr
+                    res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+=(1-disty)*(distx)*scr
+                    res[gly,glx,glz,maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]+=(disty)*(1-distx)*scr
+                    res[gly,glx,glz,maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+=(disty)*(distx)*scr
+                    #pr.interpolate(res.shape[0],res.shape[1],res.shape[2],res.shape[3],res.shape[4],res,glx,gly,glz,maxmx,maxmy,posx,posy,hsx,hsy,hsize,distx,disty,scr)
     #if numpy.sum(numpy.abs(res-resc))>0.0001:
     #    gsdgdf
     return res                
@@ -350,8 +334,15 @@ def det2_cache(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,
     for gly in selangy:
         for glx in selangx:
             for glz in selangz:
-                if usebiases:
-                    res[gly,glx,glz]=model["biases"][gly,glx,glz]*k#0
+                if usebiases:#NOTE: it works properly only if the model did not use gly and glz
+                    if glz>=model["biases"].shape[2] and gly>=model["biases"].shape[0]:
+                        res[gly,glx,glz]=model["biases"][0,glx]*k#0
+                    elif glz>=model["biases"].shape[2]:
+                        res[gly,glx,glz]=model["biases"][gly,glx,0]*k#0
+                    elif gly>=model["biases"].shape[0]:
+                        res[gly,glx,glz]=model["biases"][0,glx,glz]*k#0
+                    else:
+                        res[gly,glx,glz]=model["biases"][gly,glx,glz]*k#0
                 else:
                     res[gly,glx,glz]=0
                 #resc[gly,glx,glz]=model["biases"][gly,glx]*k#0
@@ -533,7 +524,7 @@ def getfeat(model,hog,angy,angx,angz,ang,pos,k,bis=BIS,usebiases=USEBIASES):
         scr+=numpy.sum(model["ww"][idp].mask*lhog[idp])
     if usebiases:
         biases=numpy.zeros((model["biases"].shape[0],model["biases"].shape[1],model["biases"].shape[2]),dtype=numpy.float32)
-        biases[ang[0],ang[1],ang[2]]=1.0#model["biases"][ang[0],ang[1]]    
+        biases[ang[0],ang[1],ang[2]]=1.0*k#model["biases"][ang[0],ang[1]]    
         scr+=model["biases"][ang[0],ang[1],ang[2]]*k
         return lhog,biases,scr
     return lhog,numpy.array([]),scr

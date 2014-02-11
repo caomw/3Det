@@ -137,7 +137,7 @@ if __name__ == '__main__':
     cfg.dbpath="/users/visics/mpederso/databases/"
     cfg.testpath="./data/test3/"#"./data/CRF/12_09_19/"
     cfg.testspec="3Dortogonal6"#"full2"
-    cfg.db="AFW"#"LFW"#"AFLW"#"MultiPIE2"#"VOC"
+    cfg.db="epfl"#"AFW"#"LFW"#"AFLW"#"MultiPIE2"#"VOC"
     cfg.maxtest=2000
     cfg.maxneg=200
     cfg.use3D=True
@@ -259,6 +259,32 @@ if __name__ == '__main__':
     elif cfg.db=="AFW":
         tsImages=getRecord(AFW(basepath=cfg.dbpath),cfg.maxpos,facial=True)
         tsImagesFull=tsImages
+    elif cfg.db=="epfl":
+        aux=getRecord(epfl(select="pos",cl="01",basepath=cfg.dbpath),cfg.maxpos,pose=True)
+        trPosImages=numpy.array([],dtype=aux.dtype)
+        numtrcars=10
+        numtscars=10
+        trcars=range(1,10)
+        tscars=range(11,20)
+        for car in trcars[:numtrcars]:
+            trPosImages=numpy.concatenate((trPosImages,getRecord(epfl(select="pos",cl="%02d"%car,
+                            basepath=cfg.dbpath,#"/home/databases/",
+                            usetr=True,usedf=False,initimg=0,double=0),10000,pose=True)))
+        trPosImagesInit=trPosImages
+        trPosImagesNoTrunc=trPosImages
+        trNegImages=getRecord(VOC07Data(select="neg",cl="%s_trainval.txt"%"car",
+                            basepath=cfg.dbpath,#"/home/databases/",#"/share/ISE/marcopede/database/",
+                            usetr=True,usedf=False),cfg.maxneg)
+        trNegImagesFull=getRecord(VOC07Data(select="neg",cl="%s_trainval.txt"%"car",
+                            basepath=cfg.dbpath,usetr=True,usedf=False),cfg.maxnegfull)
+        tsPosImages=numpy.array([],dtype=aux.dtype)
+        for car in tscars[:numtscars]:
+            tsPosImages=numpy.concatenate((tsPosImages,getRecord(epfl(select="pos",cl="%02d"%car,
+                            basepath=cfg.dbpath,#"/home/databases/",
+                            usetr=True,usedf=False,initimg=0,double=0),10000,pose=True)))#[:20]
+        tsImages=tsPosImages
+        tsImagesFull=tsImages
+
     ##############load model
     for l in range(cfg.posit):
         try:
@@ -325,11 +351,13 @@ if __name__ == '__main__':
     #testname="data/test4/face1_test3Dperfect5"
     #testname="data/test4/face1_test3Donlyfrontal_final"
     #testname="data/test6/face1_3Drot2_final"
-    testname="data/test7/face1_3Dsferefull_final"
+    testname="data/test/car1_3DVOC4"
     #testname="data/test3/face1_3Dnewfull3"
-    cfg.trunc=1
+    #cfg.trunc=1
+    cfg.usebiases=True
+    cfg.k=1.0
     models=util.load("%s.model"%(testname))
-    models[0]["biases"]=numpy.zeros((13,13))
+    #models[0]["biases"]=0#numpy.zeros((1,25))
     #del models[0]
     #cfg.numcl=1
     #cfg.E=1
@@ -345,5 +373,5 @@ if __name__ == '__main__':
     ##############test
     #import itertools
     #runtest(models,tsImages,cfg,parallel=False,numcore=4,detfun=lambda x :detectCRF.test(x,numhyp=1,show=False),show=True)#,save="%s%d"%(testname,it))[196] is the many faces
-    runtest(models,tsImages,cfg,parallel=True,numcore=12,show=True,detfun=testINC03,save="./face1_spherefinal")
+    runtest(models,tsImages[:200],cfg,parallel=True,numcore=4,show=True,detfun=testINC03,save="./face1_spherefinal")
 
