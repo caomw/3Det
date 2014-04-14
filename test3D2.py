@@ -10,7 +10,7 @@ from math import sin,cos,floor,pi
 #from numba import autojit
 
 class part3D(object):
-    def __init__(self,mask,y,x,z,lz,ay,ax):
+    def __init__(self,mask,y,x,z,lz,ay,ax,dfay=1.0,dfax=1.0,dfaz=1.0,dfby=0,dfbx=0,dfbz=0):
         self.mask=mask
         self.y=y
         self.x=x
@@ -18,6 +18,15 @@ class part3D(object):
         self.lz=lz
         self.ay=ay
         self.ax=ax
+        #quadratic cost
+        self.dfay=dfay
+        self.dfax=dfax
+        self.dfaz=dfaz
+        #translation
+        #not needed because using onlt lz
+        #self.dfby=dfby #set to 0?
+        #self.dfbx=dfbx #set to 0?
+        #self.dfbz=dfbz #allow only translation in z
 
 def rotate(v,a):
     a=a/180.0*pi
@@ -53,12 +62,19 @@ pr.interpolate.argtypes=[c_int,c_int,c_int,c_int,c_int,numpy.ctypeslib.ndpointer
 #    p=rotatex(p,angy)
 #    return p[2]>0
 
-def normal(angy,angx,glangy,glangx):
-    p=[0,0,1.0];
+def normal(angy,angx,glangy,glangx,p=[0,0,1.0]):
+    #p=[0,0,1.0];
     p=rotatex(p,angx)
     p=rotatey(p,angy)
     p=rotatex(p,glangx)
     p=rotatey(p,glangy)
+    return p
+
+def reproj(angy,angx,glangy,glangx,p=[0,1.0]):
+    p=rotatey(p,-glangy)
+    p=rotatex(p,-glangx)
+    p=rotatey(p,-angy)
+    p=rotatex(p,-angx)
     return p
 
 #@autojit
@@ -370,6 +386,7 @@ def det2_cache(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,
                         scr=project.project(prec[l],project.pattern4_cos(n[0]),project.pattern4_cos(n[1]))
                         auxscr=scr.copy()
                         cache[l,gly,glx]=auxscr
+                        #should be considered for general angles
                         if abs(angy)<45 and abs(angx)<45:
                             #cache[l,4:9,4:9]=auxscr
                             for lly in selangy:
@@ -406,6 +423,129 @@ def det2_cache(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,
     #    gsdgdf
     return res                
 
+import dt
+
+def det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,k,usebiases):
+#def det2_(model,hog,ppglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],selangy=None,selangx=None,bis=BIS,k=1):
+    #if selangy==None:
+    #    selangy=range(len(ppglangy))
+    #if selangx==None:
+    #    selangx=range(len(ppglangx))
+    hsy=hog.shape[0]
+    hsx=hog.shape[1]
+    prec=[]
+    #print "Entering"
+    for w in model["ww"]:
+        prec.append(project.precompute(w.mask,hog))
+    modelsize(model,ppglangy,ppglangx,ppglangz)
+    maxym=numpy.max(model["size"][:,:,:,2])#+1#numpy.max([el.y for el in model["ww"]])+1
+    maxxm=numpy.max(model["size"][:,:,:,3])#+1#numpy.max([el.x for el in model["ww"]])+1
+    minym=numpy.min(model["size"][:,:,:,0])#-1#numpy.max([el.y for el in model["ww"]])+1
+    minxm=numpy.min(model["size"][:,:,:,1])#-1#numpy.max([el.x for el in model["ww"]])+1
+    deltay=maxym-minym
+    deltax=maxxm-minxm
+    maxmy = int(deltay+1)
+    maxmx = int(deltax+1)
+    #maxmy = numpy.round(deltay+1)
+    #maxmx = numpy.round(deltax+1)
+    hsize=model["ww"][0].mask.shape[0]
+    #res=-1000*numpy.ones((len(ppglangy),len(ppglangx),hsy-minym+maxym+hsize+2,hsx-minxm+maxxm+hsize+2),dtype=numpy.float32)      
+    res=numpy.ones((len(ppglangy),len(ppglangx),len(ppglangz),hsy-minym+maxym+hsize+2,hsx-minxm+maxxm+hsize+2),dtype=numpy.float32)*numpy.float32(-1000.0)
+    #resc=res.copy()
+    nposy=c_float(0.0);nposx=c_float(0.0)
+    defy=c_float(0.0);defx=c_float(0.0)
+    cache=numpy.zeros((len(model["ww"]),len(ppglangy),len(ppglangx)),dtype=object)
+    for gly in selangy:
+        for glx in selangx:
+            for glz in selangz:
+                if usebiases:#NOTE: it works properly only if the model did not use gly and glz
+                    if glz>=model["biases"].shape[2] and gly>=model["biases"].shape[0]:
+                        res[gly,glx,glz]=model["biases"][0,glx]*k#0
+                    elif glz>=model["biases"].shape[2]:
+                        res[gly,glx,glz]=model["biases"][gly,glx,0]*k#0
+                    elif gly>=model["biases"].shape[0]:
+                        res[gly,glx,glz]=model["biases"][0,glx,glz]*k#0
+                    else:
+                        res[gly,glx,glz]=model["biases"][gly,glx,glz]*k#0
+                else:
+                    res[gly,glx,glz]=0
+                #resc[gly,glx,glz]=model["biases"][gly,glx]*k#0
+                lminym=[]
+                lminxm=[]
+                minym=model["size"][gly,glx,glz,0];minxm=model["size"][gly,glx,glz,1]
+                for l in range(len(model["ww"])):
+                    mm=model["ww"][l]
+                    angy=(mm.ay+ppglangy[gly])
+                    angx=(mm.ax+ppglangx[glx])
+                    n=normal(mm.ay,mm.ax,ppglangy[gly],ppglangx[glx])
+                    #print "Angles",angy,angx,n,n[2]>0.0001
+                    if n[2]<0.0001:#face not visible
+                        continue
+                    #angy=(mm.ay+ppglangy[gly]+180)%360-180#(w.ay+glangy+180)%360-180
+                    #angx=(mm.ax+ppglangx[glx]+180)%360-180
+                    #angz=(ppglangz[glz]+180)%360-180
+                    #if abs(angx)>90 or abs(angy)>90:
+                    #    continue               
+                    #if bis:
+                    #    scr=project.project_bis(prec[l],project.pattern4_bis(angy),project.pattern4_bis(angx))
+                    #else:
+                    #NOTICE that now bis does not work!!!!
+                    if type(cache[l,gly,glx])==int:
+                        scr=project.project(prec[l],project.pattern4_cos(n[0]),project.pattern4_cos(n[1]))
+                        auxscr=scr.copy()
+                        cache[l,gly,glx]=auxscr
+                        #should be considered for general angles
+                        if abs(angy)<45 and abs(angx)<45:
+                            #cache[l,4:9,4:9]=auxscr
+                            for lly in selangy:
+                                for llx in selangx:
+                                    if abs(mm.ay+ppglangy[lly])<45 and abs(mm.ax+ppglangx[llx])<45:
+                                        cache[l,lly,llx]=auxscr
+                    else:
+                        scr=cache[l,gly,glx]
+                    #if type(scr)!=numpy.ndarray:
+                    #    print type(scr)
+                    #    dsfsd
+                    #print scr.shape
+                    #nposy=-minym+mm.y*cos(ppglangy[gly]/180.0*numpy.pi)-hsize/2.0*(cos(angy/180.0*numpy.pi))-mm.z*sin(angy/180.0*numpy.pi)
+                    #nposx=-minxm+mm.x*cos(ppglangx[glx]/180.0*numpy.pi)-hsize/2.0*(cos(angx/180.0*numpy.pi))-mm.z*sin(angx/180.0*numpy.pi)
+                    pr.getproj(minxm,minym,ppglangx[glx],ppglangy[gly],ppglangz[glz],mm.ax,mm.ay,mm.x,mm.y,mm.z,mm.lz,hsize,byref(nposx),byref(nposy))
+                    #print nposy,nposx
+                    #nposy=-miny+project.getproj(mm.y,mm.z,glangy,angy)
+                    #nposx=-minx+project.getproj(mm.x,mm.z,glangx,angx)
+                    pposy=nposy.value
+                    pposx=nposx.value
+                    #print "Dense input",minxm,minym,ppglangx[glx],ppglangy[gly],ppglangz[glz],mm.ax,mm.ay,mm.x,mm.y,mm.z,mm.lz,hsize
+                    #print "Dense",pposy,pposx
+                    posy=int(floor(pposy))
+                    posx=int(floor(pposx))
+                    disty=pposy-posy
+                    distx=pposx-posx
+                    #print maxmy-posy,maxmx-posx,nposy,nposx,glangx,angx
+                    auxscr=numpy.zeros(numpy.array(scr.shape)+1)
+                    auxscr[:-1,:-1]+=(1-disty)*(1-distx)*scr
+                    auxscr[1:,:-1]+= (disty)*(1-distx)*scr
+                    auxscr[-1:,1:]+= (1-disty)*(distx)*scr
+                    auxscr[1:,1:]+= (disty)*(distx)*scr 
+                    #transform parameters
+                    #for the moment is wrong because it should generate an elipsis with any possible rotation and not only aligned to the axis
+                    #ay=mm.dfay;ax=mm.dfax,by=mm.dfby,bx=mm.dfbx
+                    pr.getproj(minxm,minym,ppglangx[glx],ppglangy[gly],ppglangz[glz],mm.ax,mm.ay,mm.dfax,mm.dfay,mm.dfaz,mm.lz,hsize,byref(defx),byref(defy))
+                    
+                    #modified dt
+                    auxscr,ddy,ddx=dt.mydt(auxscr,ay,ax,by,bx)
+                    res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]=auxscr
+                    #res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+=(1-disty)*(distx)*scr
+                    #res[gly,glx,glz,maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]+=(disty)*(1-distx)*scr
+                    #res[gly,glx,glz,maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+=(disty)*(distx)*scr
+                    #res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-posx:maxmx-posx+hsx+hsize]+=(1-disty)*(1-distx)*scr
+                    #res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+=(1-disty)*(distx)*scr
+                    #res[gly,glx,glz,maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]+=(disty)*(1-distx)*scr
+                    #res[gly,glx,glz,maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+=(disty)*(distx)*scr
+                    #pr.interpolate(res.shape[0],res.shape[1],res.shape[2],res.shape[3],res.shape[4],res,glx,gly,glz,maxmx,maxmy,posx,posy,hsx,hsy,hsize,distx,disty,scr)
+    #if numpy.sum(numpy.abs(res-resc))>0.0001:
+    #    gsdgdf
+    return res                
 
 #@autojit
 def drawdet(ldet):

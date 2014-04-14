@@ -673,6 +673,99 @@ class VOC07Data(VOC06Data):
                 auxb.append(b)
         return auxb
 
+    def getPose(self,i):
+        return [[6]]
+
+class VOC3D(VOC06Data):
+    """
+    VOC07 instance (you can choose positive or negative images with the option select)
+    """
+    def __init__(self,select="all",cl="aeroplane_train.txt",
+                basepath="media/DADES-2/",
+                trainfile="PASCAL3D+_release1.0/Main/",
+                imagepath="PASCAL3D+_release1.0/JPEGImages/",
+                annpath="PASCAL3D+_release1.0/Annotations/",
+                local="VOC2007/VOCdevkit/local/VOC2007/",
+                usetr=False,usedf=False,mina=0,ext=".mat"):
+        self.cl=cl
+        self.usetr=usetr
+        self.usedf=usedf
+        self.local=basepath+local
+        self.trainfile=basepath+trainfile+cl#+"_pascal"
+        self.imagepath=basepath+imagepath
+        self.annpath=basepath+annpath+cl.split("_")[0]+"_pascal/"
+        #self.selines=glob.glob(self.imagepath+"/*"+ext)
+        #self.total=len(self.selines)
+        fd=open(self.trainfile,"r")
+        self.trlines=fd.readlines()
+        fd.close()
+        if select=="all":#All images
+            self.str=""
+        if select=="pos":#Positives images
+            self.str="1\n"
+        if select=="neg":#Negatives images
+            self.str="-1\n"
+        self.selines=self.__selected()
+        self.mina=mina
+        
+    def __selected(self):
+        lst=[]
+        for id,it in enumerate(self.trlines):
+            if self.str=="" or it.split(" ")[-1]==self.str:
+                lst.append(it)
+        return lst        
+        
+    def getDBname(self):
+        return "VOC3D"
+    
+    def getStorageDir(self):
+        return self.local#"/media/DADES-2/VOC2007/VOCdevkit/local/VOC2007/"
+        
+    def getImage(self,i):
+        item=self.selines[i]
+        return myimread((self.imagepath+item.split(" ")[0])+".jpg")
+    
+    def getImageRaw(self,i):
+        item=self.selines[i]
+        return im.open((self.imagepath+item.split(" ")[0])+".jpg")#pil.imread((self.imagepath+item.split(" ")[0])+".jpg")    
+    
+    def getImageByName(self,name):
+        return myimread(name)
+    
+    def getImageByName2(self,name):
+        return myimread(self.imagepath+name+".jpg")
+
+    def getImageName(self,i):
+        item=self.selines[i]
+        return (self.imagepath+item.split(" ")[0]+".jpg")
+    
+    def getTotal(self):
+        return len(self.selines)
+    
+    def getBBox(self,i,cl=None,usetr=None,usedf=None):
+        if self.selines[i].split(" ")[1]=="-1\n":
+            return []
+        data=util.loadmat(self.annpath+self.selines[i].split(" ")[0]+".mat")
+        bbox=[]
+        for idl,l in enumerate(data["record"]["objects"][0][0]["bbox"][0]):             
+            if data["record"]["objects"][0][0]["class"][0][idl][0]==self.cl.split("_")[0]:
+                #print l
+                #raw_input()
+                bbox.append([l[0][1],l[0][0],l[0][3],l[0][2],0,0])
+                #print bbox[-1]
+                #raw_input()
+        return bbox
+
+    def getPose(self,i):
+        if self.selines[i].split(" ")[1]=="-1\n":
+            return []
+        data=util.loadmat(self.annpath+self.selines[i].split(" ")[0]+".mat")
+        pose=[]
+        for idl,l in enumerate(data["record"]["objects"][0][0]["viewpoint"][0]):
+            if data["record"]["objects"][0][0]["class"][0][idl][0]==self.cl.split("_")[0]:
+                pose.append(l[0][0]["azimuth"])
+        return pose
+
 class LFW(VOC06Data):
     """
     LFW
@@ -862,8 +955,12 @@ class AFW(VOC06Data):
     def getPose(self,i):
         #i=i+int(self.total/self.totalfold)*self.fold
         #item=self.selines[i]
-        #aux=item.split()        
-        return self.ann[i][2][0][0][0]#int(aux[5])
+        #aux=item.split()      
+        #print self.ann[i][1],"*****",self.ann[i][2][0][:][0]
+        #raw_input()
+        laux=[x[0] for x in self.ann[i][2][0]]
+        #print laux
+        return laux#int(aux[5])
 
 
     def getFacial(self,i):
@@ -985,7 +1082,8 @@ class AFLW(VOC06Data):
         poses=[]
         for l in faceid:
             self.cur.execute("SELECT roll,pitch,yaw FROM FacePose WHERE face_id = '%s'"%l)
-            poses+=self.cur.fetchall()
+            poses+=[-self.cur.fetchall()[0][2]/numpy.pi*180]
+        #skipping the other angles for the moment
         return poses
 
 
@@ -1104,7 +1202,7 @@ class epfl(VOC06Data):
         tt=self.times[idd].strip().split(" ")
         speed=360/float(tt[self.nframes_360[idd]])
         ang=speed*self.rotate_direction[idd]*(int(tt[self.frontal_frame[idd]])-int(tt[i]))
-        return ang
+        return [ang]
 
 
 class MultiPIE(VOC06Data):
@@ -1214,12 +1312,12 @@ class MultiPIE(VOC06Data):
         elif self.camera=="19_0":
             pose=45
         elif self.camera=="20_0":
-            pose=-60
+            pose=60
         elif self.camera=="01_0":
             pose=75
         elif self.camera=="24_0":
             pose=90
-        return pose
+        return [pose]
 
 
     def getFacial(self,i):
@@ -1376,7 +1474,7 @@ class MultiPIE2(VOC06Data):
             pose=75
         elif self.camera=="240":
             pose=90
-        return pose
+        return [[pose]]
 
 
     def getFacial(self,i):

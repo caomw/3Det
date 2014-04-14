@@ -23,7 +23,22 @@ def refinePos(el):
     models=el["models"]
     cfg=el["cfg"]
     imageflip=el["flip"]
-    pose=(el["pose"]+180)%360-180
+    #if cfg.db=="epfl":
+    angy=cfg.cangy
+    angx=cfg.cangx
+    angz=cfg.cangz
+    selangy=cfg.angy#[3,4,5,6,7,8,9]
+    selangz=cfg.angz#[0,1,2]
+    print "GT Pose:",el["pose"][0][0],
+    if el["pose"][0][0]!="unknown":
+        pose=(el["pose"][0][0]+180)%360-180
+        print pose
+        mypose=numpy.argmin((numpy.array(angx)-(pose))**2)
+        selangx=[mypose]
+    else:
+        selangx=cfg.angx
+    #elif cfg.db=="AFLW":
+    #    pose=((el["pose"][0][2]/numpy.pi)*180+180)%360-180
     dratios=[]
     fy=[]
     fx=[]
@@ -67,14 +82,7 @@ def refinePos(el):
     #angy=[-180,165,-150,-135,-120,-105,-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90,105,120,135,150,165,180]
     #angx=[-180,165,-150,-135,-120,-105,-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90,105,120,135,150,165,180]#[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
     #angz=[-20,-10,0,10,20]
-    angy=cfg.cangy
-    angx=cfg.cangx
-    angz=cfg.cangz
-    mypose=numpy.argmin((numpy.array(angx)-(pose))**2)
-    selangy=cfg.angy#[3,4,5,6,7,8,9]
-    selangx=[mypose]
-    selangz=cfg.angz#[0,1,2]
-    print "Pose",pose,"Val",selangx[0],"Angle",angx[selangx[0]]
+    #print "Pose",pose,"Val",selangx[0],"Angle",angx[selangx[0]]
     #raw_input()
     msize=test3D2.modelsize(models[0],angy,angx,angz)
     dmaxy=numpy.max(msize[:,:,:,2])+1#numpy.max([el.y for el in model["ww"]])+1
@@ -225,6 +233,7 @@ def hardNeg(el):
     ldet=[]
     lfeat=[]
     ledge=[]
+    dst=numpy.zeros((len(cfg.cangy),len(cfg.cangx),len(cfg.cangz)))
     for idl,l in enumerate(det[:cfg.numneg]):
         #add bias
         #det[idl]["scr"]-=models[det[idl]["id"]]["rho"]/float(cfg.bias)
@@ -235,10 +244,12 @@ def hardNeg(el):
             #feat,edge=getfeature([det[idl]],cfg.N,cfg.E,f,models,cfg.trunc)
             lfeat+=feat
             ledge+=biases
+            dst[det[idl]["ang"][0],det[idl]["ang"][1],det[idl]["ang"][2]]+=1            
     if cfg.show:
         visualize(ldet,cfg.N,f,img)
     print "Detection time:",time.time()-t
     print "Found %d hard negatives"%len(ldet)
+    print "Distribution negatives",dst
     return ldet,lfeat,ledge
 
 def hardNegPos(el):
@@ -654,7 +665,7 @@ def visualize3D(det,N,img,bb=[],text="",color=None,line=False,norec=True,nograph
         #m2=f.hog[r]
         pl.subplot(1,subp,1)
         if det[l].has_key("bbox"):
-            util.box(det[l]["bbox"][0],det[l]["bbox"][1],det[l]["bbox"][2],det[l]["bbox"][3],lw=lw,col="w")#col[cc%10])
+            util.box(det[l]["bbox"][0],det[l]["bbox"][1],det[l]["bbox"][2],det[l]["bbox"][3],lw=lw,col=col[0])#col[cc%10])
         pylab.text(det[l]["bbox"][1],det[l]["bbox"][0],"%.2f %d %d %d"%(det[l]["scr"],det[l]["ang"][0],det[l]["ang"][1],det[l]["ang"][2]),backgroundcolor = 'w', color = 'k')
     pl.axis([0,img.shape[1],img.shape[0],0])
     pl.draw()

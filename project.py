@@ -66,7 +66,131 @@ def pattern4_cos(c):
     #    pattern=numpy.array([[]],dtype=numpy.int32)
     return pattern
 
+def pattern5_cos(c):
+    """
+    score depends on the number of hog cells occupied in the image
+    """
+    c=abs(c)
+    if c<sin(37.5/180.0*numpy.pi):
+        pattern=numpy.array([[0,1,2,3,4]],dtype=numpy.int32)
+    elif c<sin(52.5/180.0*numpy.pi):
+        pattern=numpy.array([[0,1,2,3],[1,2,3,4]],dtype=numpy.int32)
+    elif c<sin(67.5/180.0*numpy.pi):
+        pattern=numpy.array([[0,2,4],[1,2,3]],dtype=numpy.int32)
+    elif c<sin(82.5/180.0*numpy.pi):
+        pattern=numpy.array([[0,4],[1,3]],dtype=numpy.int32)
+        #pattern=numpy.array([[0],[3]],dtype=numpy.int32)
+    else:
+        pattern=numpy.array([[]],dtype=numpy.int32)
+    return pattern
 
+
+#import pyrHOG2
+def pattern4_rot(c):
+    c=c%360
+    pattern0=numpy.mgrid[:4,:4].astype(numpy.int32)+(c/90)*4
+    pattern1=numpy.mgrid[:4,:4].astype(numpy.int32)+(c/90)*4+4
+#    if c>=0 and c<90:
+#        #pattern1=pattern1.T[:,::-1]
+#        #pattern1=pyrHOG2.hogrotate(pattern1,angle=90,obin=9)
+#    if c>=90 and c<180:
+#        pattern0=pattern0.T[:,::-1]
+#        pattern1=pattern1.T[:,::-1]
+#        #pattern0=pyrHOG2.hogrotate(pattern1,angle=90,obin=9)
+#        #pattern1=pattern1[::-1,::-1]
+#        #pattern1=pyrHOG2.hogrotate(pattern1,angle=180,obin=9)
+#    if c>=180 and c<270:
+#        pattern0=pattern0[::-1,::-1]
+#        pattern1=pattern1[::-1,::-1]
+#        #pattern0=pyrHOG2.hogrotate(pattern1,angle=180,obin=9)
+#        #pattern1=pattern1.T[::-1]
+#        #pattern1=pyrHOG2.hogrotate(pattern1,angle=270,obin=9)
+#    if c>=270 and c<360:
+#        pattern0=pattern0.T[::-1]
+#        pattern1=pattern1.T[::-1]
+#        #pattern0=pyrHOG2.hogrotate(pattern1,angle=270,obin=9)
+    dt=c%90
+#   |||||
+#   |||||
+#   |||||
+#   |||||
+    if dt<=(15+30)/2.0:
+        pt=pattern0.reshape((2,4,4,1))
+#    ||
+#    ||||
+#   || ||
+#   ||||
+#     ||
+    if dt>(15+30)/2.0 and dt<=(30+45)/2.0:
+        pt=-numpy.ones((2,5,5,1))
+        pt[:,:2,1:3,0]=pattern0[:,:2,:2]
+        pt[:,1:3,3:5,0]=pattern0[:,:2,2:4]
+        pt[:,2:4,:2,0]=pattern0[:,2:4,:2]
+        pt[:,3:5,2:4,0]=pattern0[:,2:4,2:4]
+#      +
+#     +++
+#    ++ ++
+#     +++
+#      +
+    if dt>(30+45)/2.0 and dt<=(45+60/2.0):
+        pt=-numpy.ones((2,5,5,4))
+        pt[:,0,2,0]=pattern0[:,0,0];pt[:,0,2,1]=pattern1[:,0,3]
+        
+        pt[:,1,1,0]=pattern0[:,1,0];pt[:,1,1,1]=pattern0[:,2,0];pt[:,1,1,2]=pattern1[:,0,1];pt[:,1,1,3]=pattern1[:,0,2]
+        pt[:,1,2,0]=pattern0[:,1,1];pt[:,1,2,1]=pattern1[:,1,2]
+        pt[:,1,3,0]=pattern0[:,0,1];pt[:,1,3,1]=pattern0[:,0,2];pt[:,1,3,2]=pattern1[:,1,3];pt[:,1,3,3]=pattern1[:,2,3]
+
+        pt[:,2,0,0]=pattern0[:,3,0];pt[:,2,0,1]=pattern1[:,0,0]
+        pt[:,2,1,0]=pattern0[:,2,1];pt[:,2,1,1]=pattern1[:,1,1]
+        #pt[1,2,:]=0
+        pt[:,2,3,0]=pattern0[:,1,2];pt[:,2,3,1]=pattern1[:,2,2]
+        pt[:,2,4,0]=pattern0[:,0,3];pt[:,2,4,1]=pattern0[:,3,3]
+
+        pt[:,3,1,0]=pattern0[:,3,1];pt[:,3,1,1]=pattern0[:,3,2];pt[:,3,1,2]=pattern1[:,1,0];pt[:,3,1,3]=pattern1[:,2,0]
+        pt[:,3,2,0]=pattern0[:,2,2];pt[:,3,2,1]=pattern1[:,2,1]
+        pt[:,3,3,0]=pattern0[:,1,3];pt[:,3,3,1]=pattern0[:,2,3];pt[:,3,3,2]=pattern1[:,3,1];pt[:,3,3,3]=pattern1[:,3,2]
+
+        pt[:,4,2,0]=pattern0[:,3,3];pt[:,4,2,1]=pattern1[:,3,0]
+#       --
+#     ----
+#     -- --
+#      ----
+#      --
+    if dt>(45+60)/2.0 and dt<=(60+75)/2.0:
+        pt=-numpy.ones((2,5,5,1))
+        pt[:,1:3,:2,0]=pattern1[:,:2,:2]
+        pt[:,3:5,1:3,0]=pattern1[:,2:4,:2]
+        pt[:,:2,2:4,0]=pattern1[:,:2,2:4]
+        pt[:,2:4,3:5,0]=pattern1[:,2:4,2:4]
+#   ----
+#   ----
+#   ----
+#   ----
+    if dt>(60+75)/2.0:
+        pt=pattern1.reshape((2,4,4,1))
+
+    return pt
+
+def mat_rot(m,angle=90):
+    newm=numpy.zeros(m.shape,dtype=m.dtype)
+    if angle==90:
+        for l in range(m.shape[2]):
+            newm[:,:,l]=m[:,:,l].T[:,::-1]
+    if angle==180:
+        newm=m[::-1,::-1]
+    if angle==270:
+        for l in range(m.shape[2]):
+            newm[:,:,l]=m[:,:,l].T[::-1,:]
+    return newm
+
+def template_rot(t):
+    import pyrHOG2
+    tr=-numpy.ones((4,4,4,31),dtype=t.dtype)#4 rotations, positionsy, positionx, angle
+    tr[0]=t
+    tr[1]=pyrHOG2.hogrotate(mat_rot(t,90),angle=90,obin=9)
+    tr[2]=pyrHOG2.hogrotate(mat_rot(t,180),angle=180,obin=9)
+    tr[3]=pyrHOG2.hogrotate(mat_rot(t,270),angle=270,obin=9)
+    return tr
 #@autojit
 def pattern4_bis(a):
     """
@@ -98,6 +222,19 @@ def prjhog(mask,pty,ptx):
                 for pxm in range(ptx.shape[0]):
                     #if pty[pym,py]!=-1 and ptx[pxm,px]!=-1: 
                     hog[py,px]=hog[py,px]+mask[pty[pym,py],ptx[pxm,px]]/spty/sptx
+    return hog
+
+def prjhogrot(mask,pt):
+    spty=(pt.shape[1])
+    sptx=(pt.shape[2])
+    spm=(pt.shape[3])
+    hog=numpy.zeros((spty,sptx,mask.shape[3]),dtype=mask.dtype)
+    for py in range(spty):
+        for px in range(sptx):
+            tot=float(numpy.sum(pt[0,py,px,:]!=-1))
+            for pm in range(spm):
+                if pt[0,py,px,pm]!=-1 and pt[1,py,px,pm]!=-1: 
+                    hog[py,px]=hog[py,px]+mask[pt[0,py,px,pm]/4%4,pt[0,py,px,pm]%4,pt[1,py,px,pm]%4]/tot
     return hog
 
 from ctypes import c_int,c_float,CDLL,cdll

@@ -3,7 +3,7 @@ import numpy
 #danger: code dupicated in pyrHOG2.py: find a solution
 import test3D2
 
-def initmodel3D(mtype,usebiases,angy,angx,angz):
+def initmodel3D(mtype,usebiases,angy,angx,angz,nparty=4,npartx=5,npartz=9):
 
     lmask=[]
     step=2
@@ -52,7 +52,7 @@ def initmodel3D(mtype,usebiases,angy,angx,angz):
                 #lmask.append(test3D2.part3D(0.00001*numpy.ones((4,4,31),dtype=numpy.float32),(py-4)*4,0,-9-9*numpy.cos(ang[px]/180.0*numpy.pi),0,ang[px]))
                 lmask.append(test3D2.part3D(0.00001*numpy.ones((4,4,31),dtype=numpy.float32),(py-4)*4,0,-9,0,ang[px]))#-9*numpy.cos(ang
     elif mtype==5:#cube
-        hsize=[4,5,9]#y,x,z
+        hsize=[nparty,npartx,npartz]#y,x,z
         lz=0
         for py in range(hsize[0]):
             for px in range(hsize[1]):
@@ -67,6 +67,18 @@ def initmodel3D(mtype,usebiases,angy,angx,angz):
         #    for pz in range(hsize[2]):
         #        lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(hsize[0]/2.0)*4,(px-hsize[1]/2.0)*4+2,(pz-hsize[2]/2.0)*4+2,lz,90,0))#frontal 
         #        lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),-(hsize[0]/2.0)*4,(px-hsize[1]/2.0)*4+2,(pz-hsize[2]/2.0)*4+2,lz,-90,0))#backward        
+    elif mtype==6:#flat
+        hsize=[nparty,npartx,npartz]#y,x,z
+        lz=0
+        for py in range(hsize[0]):
+            for px in range(hsize[1]):
+                lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(py-hsize[0]/2.0)*4+2,(px-hsize[1]/2.0)*4+2,(hsize[2]/2.0)*4,lz,0,180))#frontal 
+                lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(py-hsize[0]/2.0)*4+2,(px-hsize[1]/2.0)*4+2,-(hsize[2]/2.0)*4,lz,0,0))#backward
+        for py in range(hsize[0]):
+            for pz in range(hsize[2]):
+                lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(py-hsize[0]/2.0)*4+2,0.0,(pz-hsize[2]/2.0)*4+2,lz,0,90))
+                lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(py-hsize[0]/2.0)*4+2,-0.0,(pz-hsize[2]/2.0)*4+2,lz,0,-90))#frontal #(hsize[1]/2.0)*4,0(pz-hsiz
+
     if usebiases:
         biases=numpy.zeros((len(angy),len(angx),len(angz)),dtype=numpy.float32)
     else:

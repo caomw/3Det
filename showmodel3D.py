@@ -20,12 +20,18 @@ import util
 #model=util.load("./data/test4/face1_test3Dfull0.model")[0]
 #model=util.load("./data/test4/face1_test3Dperfect5.model")[0]
 #model=util.load("./data/test9/face1_3Dfull0.model")[0]
-model=util.load("./data/test/car1_3DVOC4.model")[0]
+#model=util.load("./data/test/car1_3DVOC4.model")[0]
 #model=util.load("./data/test4/face1_test3Donlyfrontal_final.model")[0]
 #model=util.load("./data/test5/face1_test3Dnobis5.model")[0]
 #model=util.load("./data/test6/face1_3Drot20.model")[0]
 #model=util.load("./data/test7/face1_3Dsferefull_final.model")[0]
 #model=util.load("init.model")[0]
+#model=util.load("./data/faces/face1_3DmutliPIEfull4.model")[0]
+#model=util.load("./data/faces/face1_3Dafwshort3.model")[0]
+#model=util.load("./data/unsupervised/face1_3Ddebug1222.model")[0]
+#model=util.load("./data/unsupervised/bicycle1_3DVOCdebug518.model")[0]
+#model=util.load("./data/VOC3D/bicycle1_VOC3Ddebug1.model")[0]
+model=util.load("./data/VOC3D/bus1_fullVOC3Dmoreneg20.model")[0]
 
 window = pyglet.window.Window()
 glEnable(GL_DEPTH_TEST)

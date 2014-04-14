@@ -46,7 +46,7 @@ if __name__ == '__main__':
         cfg.dbpath="/users/visics/mpederso/databases/"
         cfg.testpath="./data/"#"./data/CRF/12_09_19/"
         cfg.testspec="right"#"full2"
-        cfg.db="AFW"
+        cfg.db="AFLW"
         #cfg.cls="diningtable"
         #cfg.N=
        
@@ -96,6 +96,15 @@ if __name__ == '__main__':
     elif cfg.db=="AFW":
         tsImages=getRecord(AFW(basepath=cfg.dbpath),cfg.maxpos)
         tsImagesFull=tsImages
+    elif cfg.db=="AFLW":
+        trPosImages=getRecord(AFLW(basepath=cfg.dbpath,fold=0),cfg.maxpos,facial=True,pose=True)#cfg.useFacial)
+        trPosImagesNoTrunc=trPosImages[:900]
+        trNegImages=getRecord(InriaNegData(basepath=cfg.dbpath),cfg.maxneg)#check if it works better like this
+        trNegImagesFull=getRecord(InriaNegData(basepath=cfg.dbpath),cfg.maxnegfull)
+        #test
+        tsImages=getRecord(AFLW(basepath=cfg.dbpath,fold=0),cfg.maxtest,facial=True,pose=True)#cfg.useFacial)
+        tsImagesFull=tsImages
+
 
     #build a dictionary with images as key to speed-up image based search
     gt={}
@@ -133,15 +142,25 @@ if __name__ == '__main__':
     #det=util.load("AWFpose.det")["det"]    
     #det=util.load("/users/visics/mpederso/code/git/facial/CRFdet/data/MultiPIE/face2_PIE600_trpos.det")["det"]
     #det=util.load("PIEfull4.det")["det"]    
-    det=util.load("face1_flat.det")["det"]    
+    #det=util.load("face1_flat.det")["det"]    
+    det=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/faces/car1_3Dafwright_final.det")["det"]
     #imgpath=cfg.dbpath+"multiPIE//"
-    imgpath=cfg.dbpath+"afw/testimages/"
+    #imgpath=cfg.dbpath+"afw/testimages/"
+    imgpath=cfg.dbpath+"aflw/data/flickr/"
     #imgpath=cfg.dbpath+"VOC2007/VOCdevkit/VOC2007/JPEGImages/"
     #imgpath=cfg.dbpath+"/buffy/images/"
     line=True
     cfg.N=2
     for idl,l in enumerate(det):
-        img=util.myimread(imgpath+l["idim"])
+        try:
+            img=util.myimread(imgpath+"/0/"+l["idim"])
+        except:
+            try:
+                img=util.myimread(imgpath+"/2/"+l["idim"])
+            except:
+                img=util.myimread(imgpath+"/3/"+l["idim"])
+
+        #img=util.myimread(imgpath+l["idim"])
 #just for buffy
 #        try:
 #           img=util.myimread(imgpath+"buffy_s5e2/"+l["idim"])

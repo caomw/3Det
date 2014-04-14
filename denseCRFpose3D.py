@@ -319,10 +319,10 @@ elif cfg.db=="epfl":
 ########################compute aspect ratio and dector size 
 import stats
 #lfy,lfx=stats.build_components(trPosImages,cfg)
-lfy,lfx=stats.build_components_pose(trPosImages,cfg)#should be better, but not tested yet!
+#lfy,lfx=stats.build_components_pose(trPosImages,cfg)#should be better, but not tested yet!
 
-cfg.fy=lfy#[7,10]#lfy
-cfg.fx=lfx#[11,7]#lfx
+#cfg.fy=lfy#[7,10]#lfy
+#cfg.fx=lfx#[11,7]#lfx
 # the real detector size would be (cfg.fy,cfg.fx)*2 hog cells
 initial=True
 loadedchk=False
@@ -402,7 +402,7 @@ if initial:
     cpit=0
     cnit=0
     
-    models=model.initmodel3D(cfg.model3D,cfg.usebiases,cfg.cangy,cfg.cangx,cfg.cangz)
+    models=model.initmodel3D(cfg.model3D,cfg.usebiases,cfg.cangy,cfg.cangx,cfg.cangz,cfg.npart[0],cfg.npart[1],cfg.npart[2])
 
     #########add thresholds
     for m in models:
@@ -693,7 +693,7 @@ for it in range(cpit,cfg.posit):
         trposcl.append(l["id"]%cfg.numcl)
         dscr=numpy.sum(trpos[-1]*w[cumsize[trposcl[-1]]:cumsize[trposcl[-1]+1]])#-models[0]["rho"]
         #print "Error:",abs(dscr-l["scr"])
-        if (abs(dscr-l["scr"])/dscr>0.0005):
+        if (abs(dscr-l["scr"])>0.0005):
             print "Error in checking the score function"
             print "Feature score",dscr,"CRF score",l["scr"]
             lg.info("Error in checking the score function")
@@ -770,7 +770,7 @@ for it in range(cpit,cfg.posit):
             #dscr=numpy.sum(trneg[-1]*w[cumsize[trnegcl[-1]]:cumsize[trnegcl[-1]+1]])
             #print "Error:",abs(dscr-l["scr"])
             if not(skipos):#do not check if loaded trneg from checkpoint
-                if (abs((dscr-l["scr"])/dscr)>0.0001):
+                if (abs((dscr-l["scr"]))>0.001):
                     print "Error in checking the score function"
                     print "Feature score",dscr,"CRF score",l["scr"]
                     lg.info("Error in checking the score function")

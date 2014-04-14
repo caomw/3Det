@@ -18,7 +18,7 @@ import itertools
 import sys
 import detectCRF
 
-def runtest(models,tsImages,cfg,parallel=True,numcore=4,detfun=detectCRF.test,save=False,show=False,pool=None):
+def runtest(models,tsImages,cfg,parallel=True,numcore=4,detfun=detectCRF.test,save=False,show=False,pool=None,returndet=False):
 
     #parallel=True
     #cfg.show=not(parallel)
@@ -73,7 +73,8 @@ def runtest(models,tsImages,cfg,parallel=True,numcore=4,detfun=detectCRF.test,sa
     #save on a file and evaluate with annotations
     detVOC=[]
     for l in ltdet:
-        detVOC.append([l["idim"].split("/")[-1].split(".")[0],l["scr"],l["bbox"][1],l["bbox"][0],l["bbox"][3],l["bbox"][2]])
+        #detVOC.append([l["idim"].split("/")[-1].split(".")[0],l["scr"],l["bbox"][1],l["bbox"][0],l["bbox"][3],l["bbox"][2],(l["ang"][1]-12)*15])
+        detVOC.append([l["idim"].split("/")[-1].split(".")[0],l["scr"],l["bbox"][1],l["bbox"][0],l["bbox"][3],l["bbox"][2],(l["ang"][1]-len(cfg.cangx)/2)*15])
 
     #plot AP
     tp,fp,scr,tot=VOCpr.VOCprRecord(tsImages,detVOC,show=False,ovr=0.5)
@@ -83,13 +84,30 @@ def runtest(models,tsImages,cfg,parallel=True,numcore=4,detfun=detectCRF.test,sa
     pylab.draw()
     pylab.show()
     print "AP=",ap
+    if type(save)==str:
+        testname=save
+        pylab.savefig(testname+".png")
+    if not(returndet):
+        #ptp,pfp,pscr,ptot=VOCpr.VOCprPose(tsImages,detVOC,show=False,ovr=0.5,posethr=22.5)
+        #ptp,pfp,pscr,ptot=VOCpr.VOCprPose(tsImages,detVOC,show=False,ovr=0.5,posethr=16)
+        ptp,pfp,pscr,ptot=VOCpr.VOCprPose(tsImages,detVOC,show=False,ovr=0.5,posethr=16)
+        pylab.figure(16,figsize=(4,4))
+        pylab.clf()
+        prc,ppr,pap=VOCpr.drawPrfast(ptp,pfp,ptot)
+        pylab.draw()
+        pylab.show()
+        print "PEAP=",pap
+        print "% at 15",sum(ptp)/float(sum(tp))
+        #sdfsd
     #save in different formats
     if type(save)==str:
         testname=save
         util.savedetVOC(detVOC,testname+".txt")
         util.save(testname+".det",{"det":ltdet[:500]})#takes a lot of space use only first 500
         util.savemat(testname+".mat",{"tp":tp,"fp":fp,"scr":scr,"tot":tot,"rc":rc,"pr":pr,"ap":ap})
-        pylab.savefig(testname+".png")
+        pylab.savefig(testname+"_pos.png")
+    if returndet:
+        return ap,ltdet
     return ap
 
 
@@ -137,7 +155,7 @@ if __name__ == '__main__':
     cfg.dbpath="/users/visics/mpederso/databases/"
     cfg.testpath="./data/test3/"#"./data/CRF/12_09_19/"
     cfg.testspec="3Dortogonal6"#"full2"
-    cfg.db="epfl"#"AFW"#"LFW"#"AFLW"#"MultiPIE2"#"VOC"
+    cfg.db="3DVOC"#"AFW"#"MultiPIE2"#"VOC"
     cfg.maxtest=2000
     cfg.maxneg=200
     cfg.use3D=True
@@ -257,7 +275,7 @@ if __name__ == '__main__':
         #tsImages=getRecord(InriaTestFullData(basepath=cfg.dbpath),cfg.maxtest)
         tsImagesFull=tsImages
     elif cfg.db=="AFW":
-        tsImages=getRecord(AFW(basepath=cfg.dbpath),cfg.maxpos,facial=True)
+        tsImages=getRecord(AFW(basepath=cfg.dbpath),cfg.maxpos,facial=True,pose=True)
         tsImagesFull=tsImages
     elif cfg.db=="epfl":
         aux=getRecord(epfl(select="pos",cl="01",basepath=cfg.dbpath),cfg.maxpos,pose=True)
@@ -284,6 +302,31 @@ if __name__ == '__main__':
                             usetr=True,usedf=False,initimg=0,double=0),10000,pose=True)))#[:20]
         tsImages=tsPosImages
         tsImagesFull=tsImages
+
+    elif cfg.db=="3DVOC":
+        trPosImages=getRecord(VOC3D(select="pos",cl="%s_train.txt"%cfg.cls,
+                            basepath=cfg.dbpath,#"/home/databases/",
+                            usetr=True,usedf=False),cfg.maxpos,pose=True)
+        trPosImagesNoTrunc=getRecord(VOC3D(select="pos",cl="%s_train.txt"%cfg.cls,
+                        basepath=cfg.dbpath,#"/home/databases/",
+                        usetr=False,usedf=False),cfg.maxpos,pose=True)
+        trNegImages=getRecord(VOC3D(select="neg",cl="%s_train.txt"%cfg.cls,
+                        basepath=cfg.dbpath,#"/home/databases/",#"/share/ISE/marcopede/database/",
+                        usetr=True,usedf=False),cfg.maxneg,pose=True)
+        trNegImagesFull=getRecord(VOC3D(select="neg",cl="%s_train.txt"%cfg.cls,
+                        basepath=cfg.dbpath,usetr=True,usedf=False),cfg.maxnegfull,pose=True)
+        #test
+        tsPosImages=getRecord(VOC3D(select="pos",cl="%s_val.txt"%cfg.cls,
+                        basepath=cfg.dbpath,#"/home/databases/",#"/share/ISE/marcopede/database/",
+                        usetr=True,usedf=False),cfg.maxtest,pose=True)
+        tsNegImages=getRecord(VOC3D(select="neg",cl="%s_val.txt"%cfg.cls,
+                        basepath=cfg.dbpath,#"/home/databases/",#"/share/ISE/marcopede/database/",
+                        usetr=True,usedf=False),cfg.maxneg,pose=True)
+        tsImages=numpy.concatenate((tsPosImages,tsNegImages),0)
+        tsImagesFull=getRecord(VOC3D(select="all",cl="%s_val.txt"%cfg.cls,
+                        basepath=cfg.dbpath,
+                        usetr=True,usedf=False),cfg.maxtestfull,pose=True)
+
 
     ##############load model
     for l in range(cfg.posit):
@@ -328,9 +371,10 @@ if __name__ == '__main__':
     #cfg.cangy=[-30,-15,0,15,30]#[-30,0,+30]
     #cfg.cangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
     #cfg.cangz=[-20,-10,0,10,20]#[-10,0,10]
-    cfg.cangy=[5]#[-30,-15,0,15,30]#[-30,0,+30]
-    cfg.cangx=[-180,-165,-150,-135,-120,-105,-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90,105,120,135,150,165,180]#[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
-    cfg.cangz=[0]
+    cfg.cangy=[0]#[-15,0,15]#[0,5]#[-30,-15,0,15,30]#[-30,0,+30]
+    cfg.cangx=[-180,-165,-150,-135,-120,-105,-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90,105,120,135,150,165,180]
+    #cfg.cangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
+    cfg.cangz=[-5,0,+5]
     #selected
     cfg.angx=range(len(cfg.cangx))#[1,3,5,6,7,9,11]
     cfg.angy=range(len(cfg.cangy))#[4,6,8]
@@ -351,11 +395,17 @@ if __name__ == '__main__':
     #testname="data/test4/face1_test3Dperfect5"
     #testname="data/test4/face1_test3Donlyfrontal_final"
     #testname="data/test6/face1_3Drot2_final"
-    testname="data/test/car1_3DVOC4"
+    #testname="data/test2/car1_3DVOCk20plus_final"
+    #testname="data/faces/face1_3Dafwfull2"
+    #testname="data/faces/face1_3DmutliPIEfullRot_final"
+    #testname="./data/unsupervised/face1_3Ddebug12_final"
+    testname="./data/VOC3D/bicycle1_fullVOC3D_final"
+    #testname="./data/VOC3D/bicycle1_fullVOC3Dmoreneg2_final"
+    #testname="data/faces/face1_3Dafwshort_final"
     #testname="data/test3/face1_3Dnewfull3"
     #cfg.trunc=1
     cfg.usebiases=True
-    cfg.k=1.0
+    cfg.k=20.0
     models=util.load("%s.model"%(testname))
     #models[0]["biases"]=0#numpy.zeros((1,25))
     #del models[0]
@@ -373,5 +423,5 @@ if __name__ == '__main__':
     ##############test
     #import itertools
     #runtest(models,tsImages,cfg,parallel=False,numcore=4,detfun=lambda x :detectCRF.test(x,numhyp=1,show=False),show=True)#,save="%s%d"%(testname,it))[196] is the many faces
-    runtest(models,tsImages[:200],cfg,parallel=True,numcore=4,show=True,detfun=testINC03,save="./face1_spherefinal")
+    runtest(models,tsImagesFull,cfg,parallel=True,numcore=8,show=True,detfun=testINC03,save="./bicycle_old")
 
