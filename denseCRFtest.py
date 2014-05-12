@@ -96,8 +96,11 @@ def runtest(models,tsImages,cfg,parallel=True,numcore=4,detfun=detectCRF.test,sa
         prc,ppr,pap=VOCpr.drawPrfast(ptp,pfp,ptot)
         pylab.draw()
         pylab.show()
+        print "AP=",ap
+        print "Total",ptot,tot
         print "PEAP=",pap
         print "% at 15",sum(ptp)/float(sum(tp))
+        print "Right % at 15",sum(ptp)/float(ptot)
         #sdfsd
     #save in different formats
     if type(save)==str:
@@ -124,7 +127,7 @@ def testINC03(x):
 ########################## load configuration parametes
 if __name__ == '__main__':
 
-    if 0: #use the configuration file
+    if 1: #use the configuration file
         print "Loading defautl configuration config.py"
         from config import * #default configuration      
 
@@ -134,14 +137,14 @@ if __name__ == '__main__':
             exec "from config_%s import *"%import_name
             
         cfg.cls=sys.argv[1]
-        cfg.useRL=False#for the moment
-        cfg.show=False
-        cfg.auxdir=""
-        cfg.numhyp=5
-        cfg.rescale=True
-        cfg.numneg= 10
-        bias=100
-        cfg.bias=bias
+        #cfg.useRL=False#for the moment
+        #cfg.show=False
+        #cfg.auxdir=""
+        #cfg.numhyp=5
+        #cfg.rescale=True
+        #cfg.numneg= 10
+        #bias=100
+        #cfg.bias=bias
         #just for a fast test
         #cfg.maxpos = 50
         #cfg.maxneg = 20
@@ -155,7 +158,7 @@ if __name__ == '__main__':
     cfg.dbpath="/users/visics/mpederso/databases/"
     cfg.testpath="./data/test3/"#"./data/CRF/12_09_19/"
     cfg.testspec="3Dortogonal6"#"full2"
-    cfg.db="3DVOC"#"AFW"#"MultiPIE2"#"VOC"
+    cfg.db="AFW"#"images"#"AFW"#"MultiPIE2"#"VOC"
     cfg.maxtest=2000
     cfg.maxneg=200
     cfg.use3D=True
@@ -326,6 +329,13 @@ if __name__ == '__main__':
         tsImagesFull=getRecord(VOC3D(select="all",cl="%s_val.txt"%cfg.cls,
                         basepath=cfg.dbpath,
                         usetr=True,usedf=False),cfg.maxtestfull,pose=True)
+    elif cfg.db=="images":
+        #tsImages=getRecord(DirImages(imagepath="/users/visics/mpederso/code/face-release1.0-basic/images/",ext="jpg"))
+        #tsImages=getRecord(DirImages(imagepath="/esat/unuk/mpederso/images/",ext="jpg"))
+        #tsImages=getRecord(DirImages(imagepath="/users/visics/mpederso/no_backup/buffy/images/buffy_s5e2/",ext="jpg"))et
+        tsImages=getRecord(DirImages(imagepath="/users/visics/mpederso/code/git/3Def/3Det",ext="jpg"))
+        #tsImages=getRecord(DirImages(imagepath="/users/visics/mpederso/dwhelper/",ext="jpg"))
+        tsImagesFull=tsImages
 
 
     ##############load model
@@ -371,10 +381,11 @@ if __name__ == '__main__':
     #cfg.cangy=[-30,-15,0,15,30]#[-30,0,+30]
     #cfg.cangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
     #cfg.cangz=[-20,-10,0,10,20]#[-10,0,10]
-    cfg.cangy=[0]#[-15,0,15]#[0,5]#[-30,-15,0,15,30]#[-30,0,+30]
-    cfg.cangx=[-180,-165,-150,-135,-120,-105,-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90,105,120,135,150,165,180]
-    #cfg.cangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
-    cfg.cangz=[-5,0,+5]
+    #cfg.cangy=[-15,0,15]#[-15,0,15]#[0,5]#[-30,-15,0,15,30]#[-30,0,+30]
+    #cfg.cangx=[-180,-165,-150,-135,-120,-105,-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90,105,120,135,150,165,180]
+    #cfg.cangx=[-180,-135,-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90,135]#[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]#for faces
+    #cfg.cangx=[-90,-80,-70,-60,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90]#for faces
+    #cfg.cangz=[-5,0,+5]
     #selected
     cfg.angx=range(len(cfg.cangx))#[1,3,5,6,7,9,11]
     cfg.angy=range(len(cfg.cangy))#[4,6,8]
@@ -396,16 +407,24 @@ if __name__ == '__main__':
     #testname="data/test4/face1_test3Donlyfrontal_final"
     #testname="data/test6/face1_3Drot2_final"
     #testname="data/test2/car1_3DVOCk20plus_final"
+    #testname="data/test/car1_3DVOC_final"
     #testname="data/faces/face1_3Dafwfull2"
     #testname="data/faces/face1_3DmutliPIEfullRot_final"
+    #testname="data/faces/face1_3DmutliPIEfullRotQuarter_final"
+    #testname="data/faces/dataface1_3DmutliPIEhalf_final"
+    #testname="data/faces/data/face1_3DMPfix2Quarter_final"
+    #testname="data/faces/ReducedViews/face1_3DMPfix2RVfull_final"
+    testname="data/unsupervised/face1_3DMPfix2Unsupervised256"
+    cfg.usebiases=True
     #testname="./data/unsupervised/face1_3Ddebug12_final"
-    testname="./data/VOC3D/bicycle1_fullVOC3D_final"
+    #testname="./data/VOC3D/bicycle1_fullVOC3D_final"
     #testname="./data/VOC3D/bicycle1_fullVOC3Dmoreneg2_final"
     #testname="data/faces/face1_3Dafwshort_final"
     #testname="data/test3/face1_3Dnewfull3"
     #cfg.trunc=1
-    cfg.usebiases=True
-    cfg.k=20.0
+#    cfg.flat=False
+#    cfg.usebiases=True
+#    cfg.k=20.0
     models=util.load("%s.model"%(testname))
     #models[0]["biases"]=0#numpy.zeros((1,25))
     #del models[0]
@@ -423,5 +442,5 @@ if __name__ == '__main__':
     ##############test
     #import itertools
     #runtest(models,tsImages,cfg,parallel=False,numcore=4,detfun=lambda x :detectCRF.test(x,numhyp=1,show=False),show=True)#,save="%s%d"%(testname,it))[196] is the many faces
-    runtest(models,tsImagesFull,cfg,parallel=True,numcore=8,show=True,detfun=testINC03,save="./bicycle_old")
+    runtest(models,tsImagesFull,cfg,parallel=True,numcore=8,show=True,detfun=testINC03,save="./faces_unsup256")
 

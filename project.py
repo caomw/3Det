@@ -1,5 +1,5 @@
 #project masks to different rotations
-from numba import autojit
+#from numba import autojit
 import numpy
 from math import sin,cos
 
@@ -255,7 +255,7 @@ def project(res,pty,ptx):
     return res2
 
 
-@autojit
+#@autojit
 def project_(res,pty,ptx):
     """
     compute the correlation with angles ax and ay

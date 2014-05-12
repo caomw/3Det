@@ -29,9 +29,9 @@ def refinePos(el):
     angz=cfg.cangz
     selangy=cfg.angy#[3,4,5,6,7,8,9]
     selangz=cfg.angz#[0,1,2]
-    print "GT Pose:",el["pose"][0][0],
+    print "GT Pose:",el["pose"][0][0][0],
     if el["pose"][0][0]!="unknown":
-        pose=(el["pose"][0][0]+180)%360-180
+        pose=(el["pose"][0][0][0]+180)%360-180
         print pose
         mypose=numpy.argmin((numpy.array(angx)-(pose))**2)
         selangx=[mypose]
@@ -128,10 +128,28 @@ def refinePos(el):
             print "Not Rescaling!!!!"
         #selmodels=[models[x] for x in idm] 
         #t1=time.time()
+        det=[]
         if cfg.use3D:
             import test3D2
-            [f,det]=test3D2.rundet(img,models[0],bbox=extnewbbox,angy=angy,angx=angx,angz=angz,selangy=selangy,selangx=selangx,selangz=selangz,sort=cfg.mysort,k=cfg.k,usebiases=cfg.usebiases)
-            print "Bbox",det[0]["bbox"]
+            selmodels=models
+            if cfg.flat:
+                if cfg.db=="MultiPIE2" or cfg.db=="MultiPIE2half" or cfg.db=="MultiPIE2quarter":
+                    pp=int((el["pose"][0][0][0]/180.0)*(cfg.angbin-1)+(cfg.angbin-1)/2.0)
+                    print "Pose",pp
+                else:
+                    pp=int(el["pose"][0][0][0]/360.0*cfg.angbin)%cfg.angbin
+                    print "Pose",pp
+                selmodels=models[pp:pp+1]
+            for mm in selmodels:
+                [f,pdet]=test3D2.rundet(img,mm,bbox=extnewbbox,angy=angy,angx=angx,angz=angz,selangy=selangy,selangx=selangx,selangz=selangz,sort=cfg.mysort,k=cfg.k,usebiases=cfg.usebiases)
+                if cfg.flat:
+                    for ee in pdet:
+                        ee["id"]=pp
+                        #print "ID",pp
+                        #print "------------------ID:",pp
+                det+=pdet
+            det.sort(key=lambda by: -by["scr"])
+            #print "Bbox",det[0]["bbox"]
         elif cfg.usebbPOS:
             [f,det]=rundetbb(img,cfg.N,cfg.E,selmodels,numdet=cfg.numhypPOS, interv=cfg.intervPOS,aiter=cfg.aiterPOS,restart=cfg.restartPOS,trunc=cfg.trunc,useFastDP=cfg.useFastDP)
         else:         
@@ -212,12 +230,19 @@ def hardNeg(el):
     else:
         img=util.myimread(imname,resize=cfg.resize)
     #imageflip=el["flip"]
+    det=[]
     if cfg.use3D:
         angy=cfg.cangy#[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
         angx=cfg.cangx#[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
         angz=cfg.cangz#[-20,-10,0,10,20]
         import test3D2
-        [f,det]=test3D2.rundet(img,models[0],angy=angy,angx=angx,angz=angz,selangy=cfg.angy,selangx=cfg.angx,selangz=cfg.angz,k=cfg.k,usebiases=cfg.usebiases)
+        for idmm,mm in enumerate(models):
+            [f,pdet]=test3D2.rundet(img,mm,angy=angy,angx=angx,angz=angz,selangy=cfg.angy,selangx=cfg.angx,selangz=cfg.angz,k=cfg.k,usebiases=cfg.usebiases)
+            if cfg.flat:
+                for ee in pdet:
+                    ee["id"]=idmm
+            det+=pdet
+        det.sort(key=lambda by: -by["scr"])
     else:
         if cfg.usebbNEG:
             [f,det]=rundetbb(img,cfg.N,cfg.E,models,minthr=-1.0,numdet=cfg.numhypNEG,interv=cfg.intervNEG,aiter=cfg.aiterNEG,restart=cfg.restartNEG,trunc=cfg.trunc,useFastDP=cfg.useFastDP)
@@ -322,6 +347,7 @@ def test(el,docluster=True,show=False,inclusion=False,onlybest=False,ovr=0.5):
     else:
         img=util.myimread(imname,resize=cfg.resize)
     #imageflip=el["flip"]
+    det=[]
     if cfg.use3D:
         angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
         if cfg.__dict__.has_key("cangy"):
@@ -333,7 +359,15 @@ def test(el,docluster=True,show=False,inclusion=False,onlybest=False,ovr=0.5):
         if cfg.__dict__.has_key("cangz"):
             angz=cfg.cangz   
         import test3D2
-        [f,det]=test3D2.rundet(img,models[0],angy=angy,angx=angx,angz=angz,selangy=cfg.angy,selangx=cfg.angx,selangz=cfg.angz,k=cfg.k,usebiases=cfg.usebiases)#[0,1,2,3,4,5,6,7,8,9,10,11,12],k=cfg.k)
+        for idmm,mm in enumerate(models):
+            [f,pdet]=test3D2.rundet(img,mm,angy=angy,angx=angx,angz=angz,selangy=cfg.angy,selangx=cfg.angx,selangz=cfg.angz,k=cfg.k,usebiases=cfg.usebiases)
+            if cfg.flat:
+                for ee in pdet:
+                    ee["id"]=idmm
+            det+=pdet
+        det.sort(key=lambda by: -by["scr"])
+        det=det[:1000]
+        #[f,det]=test3D2.rundet(img,models[0],angy=angy,angx=angx,angz=angz,selangy=cfg.angy,selangx=cfg.angx,selangz=cfg.angz,k=cfg.k,usebiases=cfg.usebiases)#[0,1,2,3,4,5,6,7,8,9,10,11,12],k=cfg.k)
     else:
         if cfg.usebbTEST:
             if cfg.useswTEST:
@@ -430,7 +464,7 @@ def getfeature3D(det,f,model,angy,angx,angz,k,trunc=0,usebiases=False):
     lbiases=[]
     for ld in det:#lsort[:100]:
         r=ld["hog"]    
-        m1=model[0]#["ww"]
+        m1=model[ld["id"]]#["ww"]
         m2=f.hog[r]
         mangy=ld["ang"][0]
         mangx=ld["ang"][1]
@@ -666,7 +700,7 @@ def visualize3D(det,N,img,bb=[],text="",color=None,line=False,norec=True,nograph
         pl.subplot(1,subp,1)
         if det[l].has_key("bbox"):
             util.box(det[l]["bbox"][0],det[l]["bbox"][1],det[l]["bbox"][2],det[l]["bbox"][3],lw=lw,col=col[0])#col[cc%10])
-        pylab.text(det[l]["bbox"][1],det[l]["bbox"][0],"%.2f %d %d %d"%(det[l]["scr"],det[l]["ang"][0],det[l]["ang"][1],det[l]["ang"][2]),backgroundcolor = 'w', color = 'k')
+        pylab.text(det[l]["bbox"][1],det[l]["bbox"][0],"%.2f %d %d %d %d"%(det[l]["scr"],det[l]["ang"][0],det[l]["ang"][1],det[l]["ang"][2],det[l]["id"]),backgroundcolor = 'w', color = 'k')
     pl.axis([0,img.shape[1],img.shape[0],0])
     pl.draw()
     pl.show()

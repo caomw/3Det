@@ -958,7 +958,7 @@ class AFW(VOC06Data):
         #aux=item.split()      
         #print self.ann[i][1],"*****",self.ann[i][2][0][:][0]
         #raw_input()
-        laux=[x[0] for x in self.ann[i][2][0]]
+        laux=[[x[0]] for x in self.ann[i][2][0]]
         #print laux
         return laux#int(aux[5])
 
@@ -1202,7 +1202,7 @@ class epfl(VOC06Data):
         tt=self.times[idd].strip().split(" ")
         speed=360/float(tt[self.nframes_360[idd]])
         ang=speed*self.rotate_direction[idd]*(int(tt[self.frontal_frame[idd]])-int(tt[i]))
-        return [ang]
+        return [[[ang]]]
 
 
 class MultiPIE(VOC06Data):
@@ -1474,7 +1474,7 @@ class MultiPIE2(VOC06Data):
             pose=75
         elif self.camera=="240":
             pose=90
-        return [[pose]]
+        return [[[pose]]]
 
 
     def getFacial(self,i):

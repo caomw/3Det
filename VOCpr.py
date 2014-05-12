@@ -491,9 +491,9 @@ def VOCprPose(gtImages,detlist,show=False,ovr=0.5,pixels=None,posethr=15):
 
         if maxovr>ovr:
             if dimg[detbb[0]]["bbox"][gt][5] == 0:
-                print "GT",(dimg[detbb[0]]["pose"][gt][0]+180)%360-180,"pose",detbb[6]
+                print "GT",(dimg[detbb[0]]["pose"][gt][0][0]+180)%360-180,"pose",detbb[6]
                 #if not(dimg[detbb[0]]["det"][gt]) and abs((dimg[detbb[0]]["pose"][gt]+180)%360-180-detbb[6])<posethr:                    #check also pose
-                if not(dimg[detbb[0]]["det"][gt]) and abs((dimg[detbb[0]]["pose"][gt][0]+180)%360-180-detbb[6])<posethr:                    #check also pose
+                if not(dimg[detbb[0]]["det"][gt]) and abs((dimg[detbb[0]]["pose"][gt][0][0]+180)%360-180-detbb[6])<posethr:                    #check also pose
                     tp[idx]=1
                     dimg[detbb[0]]["det"][gt]=True
                 else:

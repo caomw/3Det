@@ -20,7 +20,9 @@ import util
 #model=util.load("./data/test4/face1_test3Dfull0.model")[0]
 #model=util.load("./data/test4/face1_test3Dperfect5.model")[0]
 #model=util.load("./data/test9/face1_3Dfull0.model")[0]
-#model=util.load("./data/test/car1_3DVOC4.model")[0]
+#model=util.load("./data/test/car1_3DVOC4.model")[0]#
+model=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/unsupervised/face1_3DMPfix2Initial0.model")[0]
+#model=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/unsupervised/face1_3DMPfix2Unsupervised0.model")[0]
 #model=util.load("./data/test4/face1_test3Donlyfrontal_final.model")[0]
 #model=util.load("./data/test5/face1_test3Dnobis5.model")[0]
 #model=util.load("./data/test6/face1_3Drot20.model")[0]
@@ -31,7 +33,7 @@ import util
 #model=util.load("./data/unsupervised/face1_3Ddebug1222.model")[0]
 #model=util.load("./data/unsupervised/bicycle1_3DVOCdebug518.model")[0]
 #model=util.load("./data/VOC3D/bicycle1_VOC3Ddebug1.model")[0]
-model=util.load("./data/VOC3D/bus1_fullVOC3Dmoreneg20.model")[0]
+#model=util.load("./data/VOC3D/bus1_fullVOC3Dmoreneg20.model")[0]
 
 window = pyglet.window.Window()
 glEnable(GL_DEPTH_TEST)
@@ -69,7 +71,7 @@ window.data={}
 window.data["model"]=model
 window.data["posz"]=-20
 window.data["posx"]=0
-window.data["posy"]=0
+window.data["posy"]=45
 #posy=0
 #posz=-4
 #rx=0
@@ -115,9 +117,9 @@ def on_mouse_motion(x, y, dx, dy):
 def on_draw():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
-    #glFrontFace( GL_CCW )
+    glFrontFace( GL_CCW )
     #glCullFace(GL_FRONT)
-    #glEnable(GL_CULL_FACE)
+    glEnable(GL_CULL_FACE)
     glTranslatef(0, 0, window.data["posz"])
     glRotatef(window.data["posx"],1,0,0)
     glRotatef(window.data["posy"],0,1,0)
@@ -156,7 +158,9 @@ def on_resize(width, height):
     glViewport(0, 0, width, height)
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    gluPerspective(65.0, width/float(height), 0.1, 1000.0)
+    #glOrtho(-width / 60., width / 60., -height / 60., height / 60., 0, 100)
+    gluPerspective(40.0, width/float(height), 1, 100.0)
+    #gluPerspective(65.0, width/float(height), 0.1, 50.0)
     glMatrixMode(GL_MODELVIEW)
 
 window.on_resize = on_resize # we need to replace so can't use @window.event

@@ -22,6 +22,8 @@ def build_components(trPosImages,cfg):
     usekmeans=False
     nh=cfg.N #number of hogs per part (for the moment everything works only with 2)
 
+    if len(r)==0:
+        return [minfy]*numcl,[minfx]*numcl        
     sr=numpy.sort(r)
     spl=[]
     lfy=[];lfx=[]
@@ -79,6 +81,9 @@ def build_components_fix(trPosImages,cfg):
     #maxArea=15#*(4-cfg.lev[0])
     usekmeans=False
     nh=cfg.N #number of hogs per part (for the moment everything works only with 2)
+
+    if len(r)==0:
+        return [minfy]*numcl,[minfx]*numcl        
 
     sr=numpy.sort(r)
     spl=[]

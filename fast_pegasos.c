@@ -11,6 +11,7 @@
 #define ftype float
 //#define ftype double
 
+#define maxcomp 100
 #define beta 1000.0
 static double inv_beta=1.0/beta;
 
@@ -221,7 +222,7 @@ void fast_pegasos_comp(ftype *w,int numcomp,int *compx,int *compy,ftype **ptrsam
 {
     int wx=0,wxtot=0,wcx;
     srand48(3);
-    int c,cp,bcp,d,y,t,pex,pexcomp,totsz,sumszx[10],sumszy[10];//max 10 components
+    int c,cp,bcp,d,y,t,pex,pexcomp,totsz,sumszx[maxcomp],sumszy[maxcomp];//max 10 components
     ftype *x,n,scr,norm,val,ptrc,wscr,bwscr=-1.0;
     totsz=0;
     sumszx[0]=0;
@@ -277,7 +278,7 @@ void fast_pegasos_comp_parall(ftype *w,int numcomp,int *compx,int *compy,ftype *
     #endif
     printf("k=%d\n",k);
     srand48(3+part);
-    int c,cp,bcp,d,y,t,pex,pexcomp,totsz,sumszx[10],sumszy[10];//max 10 components
+    int c,cp,bcp,d,y,t,pex,pexcomp,totsz,sumszx[maxcomp],sumszy[maxcomp];//max 10 components
     ftype *x,n,scr,norm,val,ptrc,wscr,bwscr=-1.0;
     totsz=0;
     sumszx[0]=0;
@@ -377,7 +378,7 @@ double fast_obj(double *w,int numcomp,int *compx,int *compy,ftype **ptrsamplesco
     #ifdef _OPENMP
     omp_set_num_threads(numthr);
     #endif
-    int c,cp,bcp,d,y,t,pex,pexcomp,totsz,sumszx[10],sumszy[10];//max 10 components
+    int c,cp,bcp,d,y,t,pex,pexcomp,totsz,sumszx[maxcomp],sumszy[maxcomp];//max 10 components
     ftype *x;
     double n,scr,norm,val,ptrc,wscr,bwscr=-1.0;
     totsz=0;
@@ -453,7 +454,7 @@ int fast_grad2(ftype *gr,ftype *w,int numcomp,int *compx,int *compy,ftype **ptrs
     #endif
     printf("Gradient Fast\n");
     //srand48(3+part);
-    int c,cp,bcp,d,y,t,pex,pexcomp,totsz,sumszx[10],sumszy[10];//max 10 components
+    int c,cp,bcp,d,y,t,pex,pexcomp,totsz,sumszx[maxcomp],sumszy[maxcomp];//max 10 components
     ftype *x,n,scr,norm,val,ptrc,wscr,bwscr=-1.0;
     totsz=0;
     sumszx[0]=0;
@@ -510,7 +511,7 @@ void fast_grad3(double *gr,double *w,int numcomp,int *compx,int *compy,ftype **p
     #endif
     //printf("Gradient Fast\n");
     //srand48(3+part);
-    int c,cp,bcp,d,y,t,pex,pexcomp,totsz,sumszx[10],sumszy[10];//max 10 components
+    int c,cp,bcp,d,y,t,pex,pexcomp,totsz,sumszx[maxcomp],sumszy[maxcomp];//max 10 components
     ftype *x;
     double n,scr,norm,val,ptrc,wscr,bwscr=-1.0;
     totsz=0;
@@ -545,7 +546,7 @@ void fast_grad3(double *gr,double *w,int numcomp,int *compx,int *compy,ftype **p
     }
     mul_d(gr,C,wxtot);
     bwscr=-1.0;
-    double scrs[10],pc[10],Z=0;
+    double scrs[maxcomp],pc[maxcomp],Z=0;
     for (cp=0;cp<numcomp;cp++)
     {   
         wscr=score2_d(w+sumszx[cp],w+sumszx[cp],valreg,compx[cp]-1,sizereg[cp]);
@@ -577,7 +578,7 @@ void fast_pegasos_comp_parall2(ftype *w,int numcomp,int *compx,int *compy,ftype 
     #endif
     printf("k=%d\n",k);
     srand48(3+part);
-    int c,cp,bcp,d,y,t,pex,pexcomp,totsz,sumszx[10],sumszy[10];//max 10 components
+    int c,cp,bcp,d,y,t,pex,pexcomp,totsz,sumszx[maxcomp],sumszy[maxcomp];//max 10 components
     ftype *x,n,scr,norm,val,ptrc,wscr,bwscr=-1.0;
     totsz=0;
     sumszx[0]=0;
@@ -682,7 +683,7 @@ void fast_pegasos_comp_parall_old(ftype *w,int numcomp,int *compx,int *compy,fty
     #ifdef _OPENMP
     omp_set_num_threads(numthr);
     #endif
-    int c,cp,bcp,d,y,t,pex,pexcomp,totsz,sumszx[10],sumszy[10];//max 10 components
+    int c,cp,bcp,d,y,t,pex,pexcomp,totsz,sumszx[maxcomp],sumszy[maxcomp];//max 10 components
     ftype *x,n,scr,norm,val,ptrc,wscr,bwscr=-1.0;
     totsz=0;
     sumszx[0]=0;
@@ -768,7 +769,7 @@ ftype objective_comp(ftype *w,int numcomp,int *compx,int *compy,ftype **ptrsampl
 {
     int c,y,l,totsz,wxtot,wx;
     ftype val,err=0,*x,totloss;
-    int sumszx[10],sumszy[10];//max 10 components
+    int sumszx[maxcomp],sumszy[maxcomp];//max 10 components
     wxtot=0;
     totsz=0;
     sumszx[0]=0;

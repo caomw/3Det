@@ -86,6 +86,29 @@ def initmodel3D(mtype,usebiases,angy,angx,angz,nparty=4,npartx=5,npartz=9):
     models=[{"ww":lmask,"biases":biases,"rho":0}]
     return models
 
+def initmodel2D(usebiases,angy,angx,angz,nparty,npartx):
+
+    step=2
+    size=4
+    models=[]
+    for l in range(len(nparty)):
+        hsize=[nparty[l],npartx[l],0]#y,x,z
+        lz=0
+        lmask=[]
+        for py in range(hsize[0]):
+            for px in range(hsize[1]):
+                #lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(py-hsize[0]/2.0)*4+2,(px-hsize[1]/2.0)*4+2,(hsize[2]/2.0)*4,lz,0,180))#frontal 
+                lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(py-hsize[0]/2.0)*4+2,(px-hsize[1]/2.0)*4+2,-(hsize[2]/2.0)*4,lz,0,0))#backward
+        if usebiases:
+            biases=numpy.zeros((len(angy),len(angx),len(angz)),dtype=numpy.float32)
+        else:
+            biases=numpy.array([])#numpy.zeros((24,24),dtype=numpy.float32)
+        models.append({"ww":lmask,"biases":biases,"rho":0})
+        #print hsize,len(lmask)
+        #raw_input()
+    return models
+
+
 def initmodel(fy,fx,N,useRL,lenf,CRF=False,small2=False):
     ww=[]
     hww=[]
