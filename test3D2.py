@@ -254,6 +254,15 @@ def det2(model,hog,ppglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglan
         selangz=range(len(ppglangz))
     return det2_cache(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,k,usebiases)
 
+def det2_def(model,hog,ppglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglangz=[-20,-10,0,10,20],selangy=None,selangx=None,selangz=None,bis=BIS,k=1,usebiases=USEBIASES):
+    if selangy==None:
+        selangy=range(len(ppglangy))
+    if selangx==None:
+        selangx=range(len(ppglangx))
+    if selangz==None:
+        selangz=range(len(ppglangz))
+    return det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,k,usebiases)
+
 #@autojit
 def det2_(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,k):
 #def det2_(model,hog,ppglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],selangy=None,selangx=None,bis=BIS,k=1):
@@ -495,11 +504,11 @@ def det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,
                         auxscr=scr.copy()
                         cache[l,gly,glx]=auxscr
                         #should be considered for general angles
-                        if abs(angy)<45 and abs(angx)<45:
+                        if abs(angy)<(30+45)/2.0 and abs(angx)<(30+45)/2.0:
                             #cache[l,4:9,4:9]=auxscr
                             for lly in selangy:
                                 for llx in selangx:
-                                    if abs(mm.ay+ppglangy[lly])<45 and abs(mm.ax+ppglangx[llx])<45:
+                                    if abs(mm.ay+ppglangy[lly])<(30+45)/2.0 and abs(mm.ax+ppglangx[llx])<(30+45)/2.0:
                                         cache[l,lly,llx]=auxscr
                     else:
                         scr=cache[l,gly,glx]
@@ -522,19 +531,23 @@ def det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,
                     disty=pposy-posy
                     distx=pposx-posx
                     #print maxmy-posy,maxmx-posx,nposy,nposx,glangx,angx
-                    auxscr=numpy.zeros(numpy.array(scr.shape)+1)
+                    auxscr=numpy.zeros(numpy.array(scr.shape)+1,dtype=scr.dtype)
                     auxscr[:-1,:-1]+=(1-disty)*(1-distx)*scr
                     auxscr[1:,:-1]+= (disty)*(1-distx)*scr
-                    auxscr[-1:,1:]+= (1-disty)*(distx)*scr
+                    auxscr[:-1,1:]+= (1-disty)*(distx)*scr
                     auxscr[1:,1:]+= (disty)*(distx)*scr 
                     #transform parameters
                     #for the moment is wrong because it should generate an elipsis with any possible rotation and not only aligned to the axis
                     #ay=mm.dfay;ax=mm.dfax,by=mm.dfby,bx=mm.dfbx
-                    pr.getproj(minxm,minym,ppglangx[glx],ppglangy[gly],ppglangz[glz],mm.ax,mm.ay,mm.dfax,mm.dfay,mm.dfaz,mm.lz,hsize,byref(defx),byref(defy))
+                    #pr.getproj(minxm,minym,ppglangx[glx],ppglangy[gly],ppglangz[glz],mm.ax,mm.ay,mm.dfax,mm.dfay,mm.dfaz,mm.lz,hsize,byref(defx),byref(defy))
                     
                     #modified dt
+                    #auxscr,ddy,ddx=dt.mydt(auxscr,ay,ax,by,bx)
+                    ay=0.001;ax=0.001;axy=0;by=0;bx=0
                     auxscr,ddy,ddx=dt.mydt(auxscr,ay,ax,by,bx)
-                    res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]=auxscr
+                    #dfds
+                    #auxscr,ddy,ddx=dt.dt2(auxscr,ay,ax,axy,by,bx)
+                    res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]+=(1-disty)*(1-distx)*auxscr[:-1,:-1]
                     #res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+=(1-disty)*(distx)*scr
                     #res[gly,glx,glz,maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]+=(disty)*(1-distx)*scr
                     #res[gly,glx,glz,maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+=(disty)*(distx)*scr
@@ -557,7 +570,7 @@ def drawdet(ldet):
        #print res[dd],l,dd[0],dd[1]
 
 #@autojit
-def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angz=[-10,0,10],interv=5,sbin=4,maxdet=1000,sort="scr",bbox=None,selangy=None,selangx=None,selangz=None,numhyp=1000,k=1,bis=BIS,usebiases=USEBIASES):
+def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angz=[-10,0,10],interv=5,sbin=4,maxdet=1000,sort="scr",bbox=None,selangy=None,selangx=None,selangz=None,numhyp=1000,k=1,bis=BIS,usebiases=USEBIASES,usedef=True):
     hog=pyrHOG2.pyrHOG(img,interv=interv,cformat=True,sbin=sbin)
     modelsize(model,angy,angx,angz)
     hsize=model["ww"][0].mask.shape[0]
@@ -576,7 +589,10 @@ def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-9
         if show:
             pylab.figure()
             pylab.imshow(img)
-        res=det2(model,hog.hog[idr],ppglangy=angy,ppglangx=angx,ppglangz=angz,selangy=selangy,selangx=selangx,selangz=selangz,k=k,bis=bis,usebiases=usebiases)
+        if usedef:
+            res=det2_def(model,hog.hog[idr],ppglangy=angy,ppglangx=angx,ppglangz=angz,selangy=selangy,selangx=selangx,selangz=selangz,k=k,bis=bis,usebiases=usebiases)
+        else:
+            res=det2(model,hog.hog[idr],ppglangy=angy,ppglangx=angx,ppglangz=angz,selangy=selangy,selangx=selangx,selangz=selangz,k=k,bis=bis,usebiases=usebiases)
         #dsfsd
         order=(-res).argsort(None)
         for l in range(min(numhyp,len(order))):

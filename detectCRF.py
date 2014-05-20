@@ -141,7 +141,7 @@ def refinePos(el):
                     print "Pose",pp
                 selmodels=models[pp:pp+1]
             for mm in selmodels:
-                [f,pdet]=test3D2.rundet(img,mm,bbox=extnewbbox,angy=angy,angx=angx,angz=angz,selangy=selangy,selangx=selangx,selangz=selangz,sort=cfg.mysort,k=cfg.k,usebiases=cfg.usebiases)
+                [f,pdet]=test3D2.rundet(img,mm,bbox=extnewbbox,angy=angy,angx=angx,angz=angz,selangy=selangy,selangx=selangx,selangz=selangz,sort=cfg.mysort,k=cfg.k,usebiases=cfg.usebiases,usedef=cfg.usedef)
                 if cfg.flat:
                     for ee in pdet:
                         ee["id"]=pp
@@ -237,7 +237,7 @@ def hardNeg(el):
         angz=cfg.cangz#[-20,-10,0,10,20]
         import test3D2
         for idmm,mm in enumerate(models):
-            [f,pdet]=test3D2.rundet(img,mm,angy=angy,angx=angx,angz=angz,selangy=cfg.angy,selangx=cfg.angx,selangz=cfg.angz,k=cfg.k,usebiases=cfg.usebiases)
+            [f,pdet]=test3D2.rundet(img,mm,angy=angy,angx=angx,angz=angz,selangy=cfg.angy,selangx=cfg.angx,selangz=cfg.angz,k=cfg.k,usebiases=cfg.usebiases,usedef=cfg.usedef)
             if cfg.flat:
                 for ee in pdet:
                     ee["id"]=idmm
@@ -360,7 +360,7 @@ def test(el,docluster=True,show=False,inclusion=False,onlybest=False,ovr=0.5):
             angz=cfg.cangz   
         import test3D2
         for idmm,mm in enumerate(models):
-            [f,pdet]=test3D2.rundet(img,mm,angy=angy,angx=angx,angz=angz,selangy=cfg.angy,selangx=cfg.angx,selangz=cfg.angz,k=cfg.k,usebiases=cfg.usebiases)
+            [f,pdet]=test3D2.rundet(img,mm,angy=angy,angx=angx,angz=angz,selangy=cfg.angy,selangx=cfg.angx,selangz=cfg.angz,k=cfg.k,usebiases=cfg.usebiases,usedef=cfg.usedef)
             if cfg.flat:
                 for ee in pdet:
                     ee["id"]=idmm
