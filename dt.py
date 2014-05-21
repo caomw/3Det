@@ -73,8 +73,9 @@ def dt2rot(img,ay,ax,axy,by,bx):
     val,vec=eig([[ax,axy],[axy,ay]])
     rad=atan2(vec[0,1],vec[0,0])
     ang=rad/numpy.pi*180
+    val=val/numpy.sqrt(numpy.sum(val**2))
     img2=rotate(img,ang,mode='nearest')
-    dtim,Iy,Ix=mydt(img2,ay/cos(rad),ax/cos(rad),by,bx)
+    dtim,Iy,Ix=mydt(img2,ay/val[0],ax/val[1],by,bx)
     res=rotate(dtim,-ang,reshape=False,mode='nearest')
     dy=rotate(Iy,-ang,reshape=False,mode='nearest')
     dx=rotate(Ix,-ang,reshape=False,mode='nearest')
@@ -102,8 +103,8 @@ if __name__ == "__main__":
     a=0.01
     b=0#10
     #dtim,Iy,Ix=mydt(im,a,a,b,b)
-    dtim,Iy,Ix=dt2(im,a,4*a,-0.00,b,b)
-    dtimr,Iyr,Ixr=dt2rot(im,a,4*a,-0.00,b,b)
+    dtim,Iy,Ix=dt2(im,a,a,-0.005,b,b)
+    dtimr,Iyr,Ixr=dt2rot(im,a,a,-0.005,b,b)
     import pylab
     pylab.figure(1)
     pylab.clf()
