@@ -22,8 +22,8 @@ lib.dtpy.argtypes=[
 lib.dt2D.argtypes=[
     numpy.ctypeslib.ndpointer(dtype=c_float,ndim=2,flags="C_CONTIGUOUS"),#image scores
     numpy.ctypeslib.ndpointer(dtype=c_float,ndim=2,flags="C_CONTIGUOUS"),#image dest
-    numpy.ctypeslib.ndpointer(dtype=c_float,ndim=2,flags="C_CONTIGUOUS"),#image defy
-    numpy.ctypeslib.ndpointer(dtype=c_float,ndim=2,flags="C_CONTIGUOUS"),#image defx
+    numpy.ctypeslib.ndpointer(dtype=c_int,ndim=2,flags="C_CONTIGUOUS"),#image defy
+    numpy.ctypeslib.ndpointer(dtype=c_int,ndim=2,flags="C_CONTIGUOUS"),#image defx
     c_int #dimy
     ,c_int #dimx
     ,c_float #ayy
@@ -43,8 +43,8 @@ def dt(img,ay,ax,by,bx):
 
 def dt2(img,ay,ax,axy,by,bx):
     res=-1000*numpy.ones(img.shape,dtype=numpy.float32)
-    dy=numpy.zeros(img.shape,dtype=numpy.float32)
-    dx=numpy.zeros(img.shape,dtype=numpy.float32)
+    dy=numpy.zeros(img.shape,dtype=numpy.int32)
+    dx=numpy.zeros(img.shape,dtype=numpy.int32)
     lib.dt2D(img,res,dy,dx,img.shape[0],img.shape[1],ay,ax,axy,by,bx)
     return res,dy,dx
 
@@ -62,61 +62,84 @@ def mydt(img,myay,myax,myby,mybx):
     res=res-cy-cx
     return res,dy,dx
 
-from scipy.ndimage.interpolation import rotate
+from scipy.ndimage.interpolation import rotate,map_coordinates
 from numpy.linalg import eig
-from math import atan2,cos,sin
+from math import atan2,atan,cos,sin
 
 def dt2rot(img,ay,ax,axy,by,bx):
     szy=img.shape[0]
     szx=img.shape[1]
     axy=-axy
     val,vec=eig([[ax,axy],[axy,ay]])
-    rad=atan2(vec[0,1],vec[0,0])
+    rad=atan(vec[0,1]/vec[0,0])
+    #rad=atan2(vec[0,1],vec[0,0])
     ang=rad/numpy.pi*180
-    val=val/numpy.sqrt(numpy.sum(val**2))
-    img2=rotate(img,ang,mode='nearest')
-    dtim,Iy,Ix=mydt(img2,ay/val[0],ax/val[1],by,bx)
-    res=rotate(dtim,-ang,reshape=False,mode='nearest')
-    dy=rotate(Iy,-ang,reshape=False,mode='nearest')
-    dx=rotate(Ix,-ang,reshape=False,mode='nearest')
+    print "Angle",ang
+    #val=val/numpy.sqrt(numpy.sum(val**2))
+    #dfsd
+    #mm=img.min()
+    #img=img+mm
+    print sin(rad)*szx
+    img2=rotate(img,ang,mode='nearest',order=0)
+    dtim,Iy,Ix=mydt(img2,val[1],val[0],0,0)
+    #dtim[0,-int(sin(rad)*szx)]=100
+    #res=rotate(dtim,-ang,reshape=False,mode='nearest',order=0)#-mm
+    res=rotate(dtim,-ang,mode='nearest',order=1)#-mm
+    #idx=numpy.mgrid[:res.shape[0],:res.shape[1]]
+    #res=map_coordinates(res,idx,order=1)
+    #dy=rotate(Iy,-ang,reshape=False,mode='nearest',order=0)
+    #dx=rotate(Ix,-ang,reshape=False,mode='nearest',order=0)
+    dy=rotate(Iy,-ang,mode='nearest',order=1)
+    dx=rotate(Ix,-ang,mode='nearest',order=1)
+    print sin(-rad)*cos(-rad)*szy,sin(-rad)*sin(-rad)*szx
+    adx=numpy.round(dx*cos(-rad)+dy*sin(-rad)-szx*cos(-rad)*sin(-rad))
+    ady=numpy.round(-dx*sin(-rad)+dy*cos(-rad)+szy*sin(-rad)*sin(-rad))
     cty=(res.shape[0]-szy)/2
     ctx=(res.shape[1]-szx)/2
-    dy=dy[cty:cty+szy,ctx:ctx+szx]#.astype(numpy.int)
-    dx=dx[cty:cty+szy,ctx:ctx+szx]#.astype(numpy.int)
-    dx=numpy.round(dx*cos(-rad)+dy*sin(-rad)).astype(numpy.int)
-    dy=numpy.round(dx*sin(-rad)-dy*cos(-rad)).astype(numpy.int)
-    return res[cty:cty+szy,ctx:ctx+szx],dy,dx
+    if bx>ctx or by>cty:
+        print "ERROR!!!!!!!!!"
+        dsfsf
+    dy=ady[cty-by:cty+szy-by,ctx-bx:ctx+szx-bx].astype(numpy.int)
+    dx=adx[cty-by:cty+szy-by,ctx-bx:ctx+szx-bx].astype(numpy.int)
+    return res[cty-by:cty+szy-by,ctx-bx:ctx+szx-bx],dy,dx
 
 
 if __name__ == "__main__":
     dimy=100
     dimx=100
     #a=numpy.random.random((dimy,dimx)).astype(numpy.float32)
-    #im=numpy.zeros((dimy,dimx),numpy.float32)
-    im=-numpy.ones((dimy,dimx),numpy.float32)
+    im=numpy.zeros((dimy,dimx),numpy.float32)
+    #im=-numpy.ones((dimy,dimx),numpy.float32)
+    #im=numpy.random.random((dimy,dimx)).astype(numpy.float32)
     im[50,50]=5
+    im[25,25]=5
     #im[40,50]=1
     #dta=numpy.zeros((dimy,dimx),dtype=numpy.float32)
     #dy=numpy.zeros((dimy,dimx),dtype=numpy.float32)
     #dx=numpy.zeros((dimy,dimx),dtype=numpy.float32)
     #lib.dtpy(a,dta,dy,dx,dimy,dimy,1,1,0,0)
     a=0.01
-    b=0#10
+    by=10;bx=5
     #dtim,Iy,Ix=mydt(im,a,a,b,b)
-    dtim,Iy,Ix=dt2(im,a,a,-0.005,b,b)
-    dtimr,Iyr,Ixr=dt2rot(im,a,a,-0.005,b,b)
+    dtim,Iy,Ix=dt2(im,a,2*a,-0.005,by,bx)
+    #dtim,Iy,Ix=dt2rot(im,a,2*a,-0.005,b,b)
+    dtimr,Iyr,Ixr=dt2rot(im,a,2*a,-0.005,by,bx)
     import pylab
     pylab.figure(1)
     pylab.clf()
     pylab.imshow(im)#(numpy.concatenate((im,im,im,im,im,im,im,im,im),0))
     pylab.figure(2)
     pylab.clf()
-    pylab.imshow(dtim)#(numpy.concatenate((dtim,dtim,dtim,dtim,dtim,dtim,dtim,dtim,dtim),0))
+    pylab.imshow(dtimr-dtim)#(numpy.concatenate((dtim,dtim,dtim,dtim,dtim,dtim,dtim,dtim,dtim),0))
     pylab.figure(3)
     pylab.clf()
-    pylab.imshow(Iy)#(numpy.concatenate((Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy),0))
+    pylab.imshow(Iy-Iyr)#(numpy.concatenate((Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy),0))
     pylab.figure(4)
     pylab.clf()
-    pylab.imshow(Ix)#(numpy.concatenate((Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix),0))
+    pylab.imshow(Ix-Ixr)#(numpy.concatenate((Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix),0))
     pylab.draw()
     pylab.show()
+    print "Max Error",(dtimr-dtim).max(),(Iyr-Iy).max(),(Ixr-Ix).max()
+    print "Mean Error",(dtimr-dtim).mean(),(Iyr-Iy).mean(),(Ixr-Ix).mean()
+
+

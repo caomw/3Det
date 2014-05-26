@@ -56,10 +56,10 @@ void dt2D_helper(ftype *src, ftype *dst, int *ptrx,int *ptry,int dimx, int dimy,
        //if (dst[dy*dimx+dx]<0) printf("Neg:(%d,%d)=%f\n",sx,sy,dst[dy*dimx+dx]<0);
        ptrx[dy*dimx+dx] = sx;
        ptry[dy*dimx+dx] = sy;}
-       dt2D_helper(src, dst, ptrx,ptry, dimx,dimy, sx1, sy1, sx, sy2, dx1,dy1, dx-1,dy2, axx,axy,ayy, by,bx);
-       dt2D_helper(src, dst, ptrx,ptry, dimx,dimy, sx ,sy1, sx2, sy2, dx+1,dy1, dx2,dy2, axx,axy,ayy, by,bx);
-       dt2D_helper(src, dst, ptrx,ptry, dimx,dimy, sx1, sy1, sx2, sy, dx1,dy1, dx2,dy-1, axx,axy,ayy, by,bx);
-       dt2D_helper(src, dst, ptrx,ptry, dimx,dimy, sx1 ,sy, sx2, sy2, dx1,dy+1, dx2,dy2, axx,axy,ayy, by,bx);
+       dt2D_helper(src, dst, ptrx,ptry, dimx,dimy, sx1, sy1, sx, sy2, dx1,dy1, dx-1,dy2, axx,axy,ayy, bx,by);
+       dt2D_helper(src, dst, ptrx,ptry, dimx,dimy, sx ,sy1, sx2, sy2, dx+1,dy1, dx2,dy2, axx,axy,ayy, bx,by);
+       dt2D_helper(src, dst, ptrx,ptry, dimx,dimy, sx1, sy1, sx2, sy, dx1,dy1, dx2,dy-1, axx,axy,ayy, bx,by);
+       dt2D_helper(src, dst, ptrx,ptry, dimx,dimy, sx1 ,sy, sx2, sy2, dx1,dy+1, dx2,dy2, axx,axy,ayy, bx,by);
        //dt2D_helper(src, dst, ptrx,ptry, dimx,dimy, sx1, sy1, sx, sy, dx1,dy1, dx-1,dy-1, axx,axy,ayy, by,bx);
        //dt2D_helper(src, dst, ptrx,ptry, dimx,dimy, sx ,sy, sx2, sy2, dx+1,dy+1, dx2,dy2, axx,axy,ayy, by,bx);
        //dt2D_helper(src, dst, ptrx,ptry, dimx,dimy, sx1, sy, sx, sy2, dx1,dy+1, dx-1,dy2, axx,axy,ayy, by,bx);

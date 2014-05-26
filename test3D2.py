@@ -543,10 +543,11 @@ def det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,
                     
                     #modified dt
                     #auxscr,ddy,ddx=dt.mydt(auxscr,ay,ax,by,bx)
-                    ay=0.001;ax=0.001;axy=0;by=0;bx=0
-                    auxscr,ddy,ddx=dt.mydt(auxscr,ay,ax,by,bx)
+                    ay=0.01;ax=0.01;axy=0.005;by=0;bx=0
+                    #auxscr,ddy,ddx=dt.mydt(auxscr,ay,ax,by,bx)
                     #dfds
                     #auxscr,ddy,ddx=dt.dt2(auxscr,ay,ax,axy,by,bx)
+                    auxscr,ddy,ddx=dt.dt2rot(auxscr,ay,ax,axy,by,bx)
                     res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]+=(1-disty)*(1-distx)*auxscr[:-1,:-1]
                     #res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+=(1-disty)*(distx)*scr
                     #res[gly,glx,glz,maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]+=(disty)*(1-distx)*scr
