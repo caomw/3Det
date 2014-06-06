@@ -67,6 +67,7 @@ from numpy.linalg import eig
 from math import atan2,atan,cos,sin
 
 def dt2rot(img,ay,ax,axy,by,bx):
+    intrp=1
     szy=img.shape[0]
     szx=img.shape[1]
     axy=-axy
@@ -74,31 +75,43 @@ def dt2rot(img,ay,ax,axy,by,bx):
     rad=atan(vec[0,1]/vec[0,0])
     #rad=atan2(vec[0,1],vec[0,0])
     ang=rad/numpy.pi*180
-    print "Angle",ang
+    #print "Angle",ang
     #val=val/numpy.sqrt(numpy.sum(val**2))
     #dfsd
     #mm=img.min()
     #img=img+mm
-    print sin(rad)*szx
+    #print sin(rad)*szx
     img2=rotate(img,ang,mode='nearest',order=0)
     dtim,Iy,Ix=mydt(img2,val[1],val[0],0,0)
     #dtim[0,-int(sin(rad)*szx)]=100
     #res=rotate(dtim,-ang,reshape=False,mode='nearest',order=0)#-mm
-    res=rotate(dtim,-ang,mode='nearest',order=1)#-mm
+    res=rotate(dtim,-ang,mode='nearest',order=intrp)#-mm
     #idx=numpy.mgrid[:res.shape[0],:res.shape[1]]
     #res=map_coordinates(res,idx,order=1)
     #dy=rotate(Iy,-ang,reshape=False,mode='nearest',order=0)
     #dx=rotate(Ix,-ang,reshape=False,mode='nearest',order=0)
-    dy=rotate(Iy,-ang,mode='nearest',order=1)
-    dx=rotate(Ix,-ang,mode='nearest',order=1)
-    print sin(-rad)*cos(-rad)*szy,sin(-rad)*sin(-rad)*szx
+    dy=rotate(Iy,-ang,mode='nearest',order=intrp)
+    dx=rotate(Ix,-ang,mode='nearest',order=intrp)
+    #print sin(-rad)*cos(-rad)*szy,sin(-rad)*sin(-rad)*szx
     adx=numpy.round(dx*cos(-rad)+dy*sin(-rad)-szx*cos(-rad)*sin(-rad))
     ady=numpy.round(-dx*sin(-rad)+dy*cos(-rad)+szy*sin(-rad)*sin(-rad))
     cty=(res.shape[0]-szy)/2
     ctx=(res.shape[1]-szx)/2
-    if bx>ctx or by>cty:
+    if abs(bx)>ctx or abs(by)>cty:
         print "ERROR!!!!!!!!!"
-        dsfsf
+        dsfsf       
+        aby=abs(by);abx=abs(bx)
+        res2=-10000*numpy.ones(res.shape+2*numpy.array([aby,abx]),dtype=res.dtype)
+        res2[aby:-aby,abx:-abx]=res
+        res=res2
+        dy2=numpy.zeros(ady.shape+2*numpy.array([aby,abx]),dtype=dy.dtype)
+        dy2[aby:-aby,abx:-abx]=ady
+        ady=dy2
+        dx2=numpy.zeros(adx.shape+2*numpy.array([aby,abx]),dtype=dx.dtype)
+        dx2[aby:-aby,abx:-abx]=adx
+        adx=dx2
+        cty=cty+aby
+        ctx=ctx+abx
     dy=ady[cty-by:cty+szy-by,ctx-bx:ctx+szx-bx].astype(numpy.int)
     dx=adx[cty-by:cty+szy-by,ctx-bx:ctx+szx-bx].astype(numpy.int)
     return res[cty-by:cty+szy-by,ctx-bx:ctx+szx-bx],dy,dx
@@ -119,26 +132,27 @@ if __name__ == "__main__":
     #dx=numpy.zeros((dimy,dimx),dtype=numpy.float32)
     #lib.dtpy(a,dta,dy,dx,dimy,dimy,1,1,0,0)
     a=0.01
-    by=10;bx=5
+    by=-50;bx=5
     #dtim,Iy,Ix=mydt(im,a,a,b,b)
-    dtim,Iy,Ix=dt2(im,a,2*a,-0.005,by,bx)
+    dtim,Iy,Ix=dt2(im,a,2*a,-0.00,by,bx)
     #dtim,Iy,Ix=dt2rot(im,a,2*a,-0.005,b,b)
-    dtimr,Iyr,Ixr=dt2rot(im,a,2*a,-0.005,by,bx)
-    import pylab
-    pylab.figure(1)
-    pylab.clf()
-    pylab.imshow(im)#(numpy.concatenate((im,im,im,im,im,im,im,im,im),0))
-    pylab.figure(2)
-    pylab.clf()
-    pylab.imshow(dtimr-dtim)#(numpy.concatenate((dtim,dtim,dtim,dtim,dtim,dtim,dtim,dtim,dtim),0))
-    pylab.figure(3)
-    pylab.clf()
-    pylab.imshow(Iy-Iyr)#(numpy.concatenate((Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy),0))
-    pylab.figure(4)
-    pylab.clf()
-    pylab.imshow(Ix-Ixr)#(numpy.concatenate((Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix),0))
-    pylab.draw()
-    pylab.show()
+    #dtimr,Iyr,Ixr=dt2rot(im,a,2*a,0.00,by,bx)
+    if 0:
+        import pylab
+        pylab.figure(1)
+        pylab.clf()
+        pylab.imshow(im)#(numpy.concatenate((im,im,im,im,im,im,im,im,im),0))
+        pylab.figure(2)
+        pylab.clf()
+        pylab.imshow(dtimr-dtim)#(numpy.concatenate((dtim,dtim,dtim,dtim,dtim,dtim,dtim,dtim,dtim),0))
+        pylab.figure(3)
+        pylab.clf()
+        pylab.imshow(Iy-Iyr)#(numpy.concatenate((Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy),0))
+        pylab.figure(4)
+        pylab.clf()
+        pylab.imshow(Ix-Ixr)#(numpy.concatenate((Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix),0))
+        pylab.draw()
+        pylab.show()
     print "Max Error",(dtimr-dtim).max(),(Iyr-Iy).max(),(Ixr-Ix).max()
     print "Mean Error",(dtimr-dtim).mean(),(Iyr-Iy).mean(),(Ixr-Ix).mean()
 

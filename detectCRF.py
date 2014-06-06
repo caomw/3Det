@@ -190,7 +190,7 @@ aiterPOS,restart=cfg.restartPOS,trunc=cfg.trunc,bbox=extnewbbox,useFastDP=cfg.us
         if cfg.show:
             visualize([det[best]],cfg.N,f,img)
         #feat,edge=getfeature([det[best]],cfg.N,cfg.E,f,models,cfg.trunc)
-        feat,biases=getfeature3D([det[best]],f,models,angy,angx,angz,cfg.k,cfg.trunc,usebiases=cfg.usebiases)
+        feat,biases=getfeature3D([det[best]],f,models,angy,angx,angz,cfg.k,cfg.trunc,usebiases=cfg.usebiases,usedef=cfg.usedef)
         #add image name and bbx so that each annotation is unique
         if imageflip:
             det[best]["idim"]=el["file"].split("/")[-1]+".flip"
@@ -258,6 +258,7 @@ def hardNeg(el):
     ldet=[]
     lfeat=[]
     ledge=[]
+    t1=time.time()
     dst=numpy.zeros((len(cfg.cangy),len(cfg.cangx),len(cfg.cangz)))
     for idl,l in enumerate(det[:cfg.numneg]):
         #add bias
@@ -265,7 +266,7 @@ def hardNeg(el):
         if det[idl]["scr"]>-1:
             det[idl]["idim"]=el["file"].split("/")[-1]
             ldet.append(det[idl])
-            feat,biases=getfeature3D([det[idl]],f,models,angy,angx,angz,cfg.k,cfg.trunc,cfg.usebiases)
+            feat,biases=getfeature3D([det[idl]],f,models,angy,angx,angz,cfg.k,cfg.trunc,cfg.usebiases,usedef=cfg.usedef)
             #feat,edge=getfeature([det[idl]],cfg.N,cfg.E,f,models,cfg.trunc)
             lfeat+=feat
             ledge+=biases
@@ -273,6 +274,7 @@ def hardNeg(el):
     if cfg.show:
         visualize(ldet,cfg.N,f,img)
     print "Detection time:",time.time()-t
+    print "Get Feature time:",time.time()-t1
     print "Found %d hard negatives"%len(ldet)
     print "Distribution negatives",dst
     return ldet,lfeat,ledge
@@ -457,7 +459,7 @@ def getfeature(det,N,E,f,models,trunc=0):
             #raw_input()
     return lfeat,ledge
 
-def getfeature3D(det,f,model,angy,angx,angz,k,trunc=0,usebiases=False):
+def getfeature3D(det,f,model,angy,angx,angz,k,trunc=0,usebiases=False,usedef=False):
     """ check if score of detections and score from features are correct"""
     import test3D2
     lfeat=[]
@@ -474,11 +476,16 @@ def getfeature3D(det,f,model,angy,angx,angz,k,trunc=0,usebiases=False):
         m2pad=numpy.zeros((m2.shape[0]+2*deltay,m2.shape[1]+2*deltax,m2.shape[2]),dtype=m2.dtype)
         m2pad[deltay:deltay+m2.shape[0],deltax:deltax+m2.shape[1]]=m2
         for ld in det:
-            feat,biases,scr=test3D2.getfeat(m1,m2pad,angy,angx,angz,ld["ang"],numpy.array(ld["fpos"])+[deltay,deltax],k,usebiases=usebiases)
+            if usedef:
+                feat,biases,scr=test3D2.getfeatDef(m1,m2pad,angy,angx,angz,ld["ang"],numpy.array(ld["fpos"])+[deltay,deltax],ld["ddef"],k,usebiases=usebiases)
+            else:
+                feat,biases,scr=test3D2.getfeat(m1,m2pad,angy,angx,angz,ld["ang"],numpy.array(ld["fpos"])+[deltay,deltax],k,usebiases=usebiases)
             #if abs((scr-ld["scr"]-m1["rho"])/scr)>0.0001:
                 #print "Error",scr-ld["scr"]-m1["rho"],(scr-ld["scr"]-m1["rho"])/scr
                 #raw_input()
-            assert(abs((scr-ld["scr"]-m1["rho"])/scr)<0.0001)
+            if (abs(scr-ld["scr"]-m1["rho"])/scr)>0.0001:
+                print "Error",abs((scr-ld["scr"]-m1["rho"])/scr)                
+                raw_input()
         lfeat.append(feat)
         lbiases.append(biases)
     return lfeat,lbiases

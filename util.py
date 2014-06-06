@@ -17,6 +17,36 @@ part=numpy.dtype([("itr", i32),("oct",i32),("y",i32),("x",i32),("sy",i32),("sx",
 #                    [0,0,0.5],[0,0.5,0],[0,0.5,0.5],[0.5,0,0],[0.5,0,0.5],[0.5,0.5,0],[0.3,0.5,0.7],[0.7,0.5,0.3]])
 colors=["r","g","c",'m','w']                    
      
+class limits(numpy.ndarray):
+
+    def __new__(cls, input_array, info=None):
+        obj = numpy.asarray(input_array).view(cls)
+        obj.info = info
+        return obj
+
+    def __array_finalize__(self, obj):
+        print 'In __array_finalize__:'
+        print '   self is %s' % repr(self)
+        print '   obj is %s' % repr(obj)
+        if obj is None: return
+        self.info = getattr(obj, 'info', None)
+
+    def __array_wrap__(self, out_arr, context=None):
+        print 'In __array_wrap__:'
+        print '   self is %s' % repr(self)
+        print '   arr is %s' % repr(out_arr)
+        # then just call the parent
+        return numpy.ndarray.__array_wrap__(self, out_arr, context)
+
+    def setitem(self, k,v):
+        print k
+        if k<0:
+            k=0
+        if k>=self.shape[0]:    
+            k=self.shape[0]-1
+        self[k]=v
+
+
 
 def myimshow(X):
     import matplotlib.pyplot as plt
