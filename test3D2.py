@@ -511,8 +511,12 @@ def det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,
     #res=-1000*numpy.ones((len(ppglangy),len(ppglangx),hsy-minym+maxym+hsize+2,hsx-minxm+maxxm+hsize+2),dtype=numpy.float32)      
     res=numpy.ones((len(ppglangy),len(ppglangx),len(ppglangz),hsy-minym+maxym+hsize+2,hsx-minxm+maxxm+hsize+2),dtype=numpy.float32)*numpy.float32(-1000.0)
     #resp=numpy.zeros((len(model["ww"]),len(ppglangy),len(ppglangx),len(ppglangz),hsy-minym+maxym+hsize+2,hsx-minxm+maxxm+hsize+2),dtype=numpy.float32)*numpy.float32(-1000.0)
-    ldy=numpy.zeros((len(model["ww"]),len(ppglangy),len(ppglangx),len(ppglangz),hsy-minym+maxym+hsize+2,hsx-minxm+maxxm+hsize+2),dtype=numpy.float32)*numpy.int32(-1)
-    ldx=numpy.zeros((len(model["ww"]),len(ppglangy),len(ppglangx),len(ppglangz),hsy-minym+maxym+hsize+2,hsx-minxm+maxxm+hsize+2),dtype=numpy.float32)*numpy.int32(-1)
+    #ldy=numpy.zeros((len(model["ww"]),len(ppglangy),len(ppglangx),len(ppglangz),hsy-minym+maxym+hsize+2,hsx-minxm+maxxm+hsize+2),dtype=numpy.float32)*numpy.int32(-1)
+    #ldx=numpy.zeros((len(model["ww"]),len(ppglangy),len(ppglangx),len(ppglangz),hsy-minym+maxym+hsize+2,hsx-minxm+maxxm+hsize+2),dtype=numpy.float32)*numpy.int32(-1)
+    ldy=numpy.ones((len(model["ww"]),len(ppglangy),len(ppglangx),len(ppglangz),hsy-minym+maxym+hsize+2,hsx-minxm+maxxm+hsize+2),dtype=numpy.float32)#*numpy.int32(-1)
+    ldy=ldy[:,:,:,:].cumsum(4)-1
+    ldx=numpy.ones((len(model["ww"]),len(ppglangy),len(ppglangx),len(ppglangz),hsy-minym+maxym+hsize+2,hsx-minxm+maxxm+hsize+2),dtype=numpy.float32)#*numpy.int32(-1)
+    ldx=ldx[:,:,:,:].cumsum(5)-1
     #resc=res.copy()
     nposy=c_float(0.0);nposx=c_float(0.0)
     defy=c_float(0.0);defx=c_float(0.0)
@@ -714,12 +718,12 @@ def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-9
                     #langy=(p.ay+glangy)
                     #langx=(p.ax+glangx)
 
-                    #n=normal(p.ay,p.ax,glangy,glangx)
-                    #if n[2]<0.0001:#face not visible
-                    #    pdfy.append(-1);pddy.append(0)
-                    #    pdfx.append(-1);pddx.append(0)
-                    #    scrp.append(0)
-                    #    continue
+                    n=normal(p.ay,p.ax,glangy,glangx)#this is the bottle-nek, find a way to compute it faster...
+                    if n[2]<0.0001:#face not visible
+                        pdfy.append(-1);pddy.append(0)
+                        pdfx.append(-1);pddx.append(0)
+                        scrp.append(0)
+                        continue
 
                     #pr.getproj(minxm,minym,glangx,glangy,glangz,p.ax,p.ay,p.x,p.y,p.z,p.lz,hsize,byref(cposx),byref(cposy))
                     #nposy=cposy.value#+deltay
@@ -858,7 +862,10 @@ def getfeatDef(model,hog,angy,angx,angz,ang,pos,parts,k,bis=BIS,usebiases=USEBIA
     m2pad[deltay:deltay+m2.shape[0],deltax:deltax+m2.shape[1]]=m2
     #hog=m2pad
     scr=0
+    df2D=0
+    df3D=0
     cposx=c_float(0.0);cposy=c_float(0.0)
+    df=[]
     for idp,p in enumerate(model["ww"]):
         minym=model["size"][ang[0],ang[1],ang[2],0];minxm=model["size"][ang[0],ang[1],ang[2],1]
         #lhog.append(hog[pos[0]:pos[0]+hsize,pos[1]:pos[1]+hsize])
@@ -872,6 +879,7 @@ def getfeatDef(model,hog,angy,angx,angz,ang,pos,parts,k,bis=BIS,usebiases=USEBIA
         #print "Angles Feat",langy,langx,n,n[2]>0.0001
         if n[2]<0.0001:#face not visible
             lhog.append(numpy.zeros(model["ww"][idp].mask.shape,dtype=model["ww"][idp].mask.dtype))
+            df.append([0,0,0,0])
             continue
         pr.getproj(minxm,minym,glangx,glangy,glangz,p.ax,p.ay,p.x,p.y,p.z,p.lz,hsize,byref(cposx),byref(cposy))
         nposy=cposy.value#+deltay
@@ -919,18 +927,35 @@ def getfeatDef(model,hog,angy,angx,angz,ang,pos,parts,k,bis=BIS,usebiases=USEBIA
         #deff=parts[0][idp]
         lhog.append(auxhog)
         scr+=numpy.sum(model["ww"][idp].mask*lhog[idp])
-        xx=numpy.round([parts[0][idp],parts[1][idp]]).reshape(2,1)
+        xx=numpy.round([parts[1][idp],parts[0][idp]]).reshape(2,1)
         Qrr=Qr[:3,:3];Qrr[2,:2]=0;Qrr[:2,2]=0#not sure if it is correct to remove b
-        scr-=numpy.dot(numpy.dot(xx.T,Qr[:2,:2]),xx)
+        df2D+=numpy.dot(numpy.dot(xx.T,Qr[:2,:2]),xx)[0,0]
         #if round(parts[0][idp])!=0 or round(parts[1][idp]!=0):
         #    print "problems"
         #    raw_input()
+        qxy=Q[1,0];qxz=Q[2,0];qxt=Q[3,0]
+        qyx=Q[0,1];qyz=Q[2,1];qyt=Q[3,1]
+        qzx=Q[0,2];qzy=Q[1,2];qzt=Q[3,2]    
+        qtx=Q[0,3];qty=Q[1,3];qtz=Q[2,3]    
+        z=-(Q[2,0]*xx[0]+Q[2,1]*xx[1]+Q[2,3])/Q[2,2]
+        x3d=[xx[0],xx[1],z,1.0]
+        #back to initial coordinates
+        Rx=Mrotx(-glangy)
+        Ry=Mroty(-glangx)
+        x3d=numpy.dot(Ry,numpy.dot(Rx,x3d))
+        Ry=Mroty(-mm.ax)
+        Rx=Mrotx(-mm.ay)
+        x3d=numpy.dot(Ry,numpy.dot(Rx,x3d))
+        x3d[-1]=0
+        df3D+=numpy.dot(x3d**2,[p.dfax,p.dfay,p.dfaz,0])
+        df.append(x3d)    
+        #print "2D:",xx,"3D:",x3d
     if usebiases:
         biases=numpy.zeros((model["biases"].shape[0],model["biases"].shape[1],model["biases"].shape[2]),dtype=numpy.float32)
         biases[ang[0],ang[1],ang[2]]=1.0*k#model["biases"][ang[0],ang[1]]    
         scr+=model["biases"][ang[0],ang[1],ang[2]]*k
-        return lhog,biases,scr
-    return lhog,numpy.array([]),scr
+        return lhog,biases,df,scr,df2D,df3D
+    return lhog,numpy.array([]),df,scr,df2D,df3D
 
 
 

@@ -277,6 +277,12 @@ def model2w3D(model):
         #print "here"#,item
         w=numpy.concatenate((w,model["ww"][l].mask.flatten()))
     w=numpy.concatenate((w,model["biases"].flatten()))
+    #for l in range(len(model["ww"])):#position z
+    #    w=numpy.concatenate((w,(0)))
+    w=numpy.concatenate((w,numpy.zeros(len(model["ww"]),dtype=numpy.float32)))
+    for l in range(len(model["ww"])):#deformation x,y,z
+        #print "here"#,item
+        w=numpy.concatenate((w,(model["ww"][l].dfax,model["ww"][l].dfay,model["ww"][l].dfaz)))
     return w
 
 def w2model(descr,N,E,rho,lev,fsz,fy=[],fx=[],bin=5,siftsize=2,deform=False,usemrf=False,usefather=False,k=1,norm=1,mindef=0.001,useoccl=False,usebow=False,useCRF=False,small2=False):
@@ -318,14 +324,27 @@ def w2model(descr,N,E,rho,lev,fsz,fy=[],fx=[],bin=5,siftsize=2,deform=False,usem
         return m
 
 
-def w2model3D(oldmodel,descr,rho,usebiases):
+def w2model3D(oldmodel,descr,rho,usebiases,usedef):
     hsize=oldmodel["ww"][0].mask.size
     hshape=oldmodel["ww"][0].mask.shape
     for idl,l in enumerate(oldmodel["ww"]):
         oldmodel["ww"][idl].mask=descr[idl*hsize:(idl+1)*hsize].reshape(hshape)
+        #if usedef:
+        #    oldmodel["ww"][idl].dfay=descr[](descr[(idl+1)*hsize:(idl+1)*hsize+oldmodel["biases"].size]).reshape(oldmodel["biases"].shape)#.reshape((13,13))
     if usebiases:
         oldmodel["biases"]=(descr[(idl+1)*hsize:(idl+1)*hsize+oldmodel["biases"].size]).reshape(oldmodel["biases"].shape)#.reshape((13,13))
+    cnt=(idl+1)*hsize+oldmodel["biases"].size
+    if usedef:
+        for idl,l in enumerate(oldmodel["ww"]):
+            #missing adjustment position
+            cnt+=1
+        for idl,l in enumerate(oldmodel["ww"]):
+            oldmodel["ww"][idl].dfax=descr[cnt]
+            oldmodel["ww"][idl].dfay=descr[cnt+1]
+            oldmodel["ww"][idl].dfaz=descr[cnt+2]
+            cnt+=3
     oldmodel["rho"]=rho
+
     return oldmodel
 
 

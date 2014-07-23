@@ -46,7 +46,7 @@ if __name__ == '__main__':
         cfg.dbpath="/users/visics/mpederso/databases/"
         cfg.testpath="./data/"#"./data/CRF/12_09_19/"
         cfg.testspec="right"#"full2"
-        cfg.db="AFLW"
+        cfg.db="AFW"#"AFLW"
         #cfg.cls="diningtable"
         #cfg.N=
        
@@ -143,24 +143,25 @@ if __name__ == '__main__':
     #det=util.load("/users/visics/mpederso/code/git/facial/CRFdet/data/MultiPIE/face2_PIE600_trpos.det")["det"]
     #det=util.load("PIEfull4.det")["det"]    
     #det=util.load("face1_flat.det")["det"]    
-    det=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/faces/car1_3Dafwright_final.det")["det"]
+    #det=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/faces/car1_3Dafwright_final.det")["det"]
+    det=util.load("/users/visics/mpederso/code/git/3Def/3Det/faces_Def14.det")["det"]
     #imgpath=cfg.dbpath+"multiPIE//"
-    #imgpath=cfg.dbpath+"afw/testimages/"
-    imgpath=cfg.dbpath+"aflw/data/flickr/"
+    imgpath=cfg.dbpath+"afw/testimages/"
+    #imgpath=cfg.dbpath+"aflw/data/flickr/"
     #imgpath=cfg.dbpath+"VOC2007/VOCdevkit/VOC2007/JPEGImages/"
     #imgpath=cfg.dbpath+"/buffy/images/"
     line=True
-    cfg.N=2
+    cfg.N=1
     for idl,l in enumerate(det):
-        try:
-            img=util.myimread(imgpath+"/0/"+l["idim"])
-        except:
-            try:
-                img=util.myimread(imgpath+"/2/"+l["idim"])
-            except:
-                img=util.myimread(imgpath+"/3/"+l["idim"])
+        #try:
+        #    img=util.myimread(imgpath+"/0/"+l["idim"])
+        #except:
+        #    try:
+        #        img=util.myimread(imgpath+"/2/"+l["idim"])
+        #    except:
+        #        img=util.myimread(imgpath+"/3/"+l["idim"])
 
-        #img=util.myimread(imgpath+l["idim"])
+        img=util.myimread(imgpath+l["idim"])
 #just for buffy
 #        try:
 #           img=util.myimread(imgpath+"buffy_s5e2/"+l["idim"])
