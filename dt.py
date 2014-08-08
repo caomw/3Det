@@ -33,6 +33,57 @@ lib.dt2D.argtypes=[
     ,c_float #bx
     ]
 
+#void rotate(ftype imgin,int x,int y,int ang,ftype imgout)
+lib.rotatec.argtypes=[
+    numpy.ctypeslib.ndpointer(dtype=c_float,flags="C_CONTIGUOUS"),#image source
+    c_int, #dimx
+    c_int, #dimy
+    c_int, #nch
+    c_float, #ang
+    numpy.ctypeslib.ndpointer(dtype=c_float,flags="C_CONTIGUOUS"),#image dest
+    c_int, #ndimx
+    c_int, #ndimy
+    ]
+
+lib.rotatec_bi.argtypes=[
+    numpy.ctypeslib.ndpointer(dtype=c_float,flags="C_CONTIGUOUS"),#image source
+    c_int, #dimx
+    c_int, #dimy
+    c_int, #nch
+    c_float, #ang
+    numpy.ctypeslib.ndpointer(dtype=c_float,flags="C_CONTIGUOUS"),#image dest
+    c_int, #ndimx
+    c_int, #ndimy
+    ]
+
+
+def rotate_fast(imgin,ang):
+    dimy=imgin.shape[0]
+    dimx=imgin.shape[1]
+    if len(imgin.shape)>2:
+        nch=imgin.shape[2]
+    else:
+        nch=1
+    rad=ang/180.0*numpy.pi
+    newx=int(round(abs(dimx*cos(rad))+abs(dimy*sin(rad))))
+    newy=int(round(abs(dimx*sin(rad))+abs(dimy*cos(rad))))
+    imgout=numpy.zeros((newy,newx,nch),dtype=numpy.float32)
+    lib.rotatec_bi(imgin,dimx,dimy,nch,rad,imgout,newx,newy)
+    if len(imgin.shape)<3:
+        imgout=imgout.reshape((imgout.shape[0],imgout.shape[1]))
+    return imgout
+
+def rotate_dt(imgin,rad,order=1):
+    dimy=imgin.shape[0]
+    dimx=imgin.shape[1]
+    newx=int(round(abs(dimx*cos(rad))+abs(dimy*sin(rad))))
+    newy=int(round(abs(dimx*sin(rad))+abs(dimy*cos(rad))))
+    imgout=numpy.zeros((newy,newx),dtype=numpy.float32)
+    if order==0:
+        lib.rotatec(imgin,dimx,dimy,1,rad,imgout,newx,newy)
+    else:
+        lib.rotatec_bi(imgin,dimx,dimy,1,rad,imgout,newx,newy)
+    return imgout
 
 def dt(img,ay,ax,by,bx):
     res=numpy.zeros(img.shape,dtype=numpy.float32)
@@ -66,7 +117,7 @@ from scipy.ndimage.interpolation import rotate,map_coordinates
 from numpy.linalg import eig
 from math import atan2,atan,cos,sin
 
-def dt2rot(img,ay,ax,axy,by,bx):
+def dt2rot(img,ay,ax,axy,by,bx,fast=False):
     intrp=1
     szy=img.shape[0]
     szx=img.shape[1]
@@ -81,17 +132,28 @@ def dt2rot(img,ay,ax,axy,by,bx):
     #mm=img.min()
     #img=img+mm
     #print sin(rad)*szx
-    img2=rotate(img,ang,mode='nearest',order=0)
+    if fast:
+        img2=rotate_dt(img,rad,order=0)
+    else:
+        img2=rotate(img,ang,mode='nearest',order=0)    
     dtim,Iy,Ix=mydt(img2,val[1],val[0],0,0)
     #dtim[0,-int(sin(rad)*szx)]=100
     #res=rotate(dtim,-ang,reshape=False,mode='nearest',order=0)#-mm
-    res=rotate(dtim,-ang,mode='nearest',order=intrp)#-mm
+#    res=rotate(dtim,-ang,mode='nearest',order=intrp)#-mm
+    if fast:
+        res=rotate_dt(dtim,-rad,order=intrp)#-mm
+    else:
+        res=rotate(dtim,-ang,mode='nearest',order=intrp)#-mm
     #idx=numpy.mgrid[:res.shape[0],:res.shape[1]]
     #res=map_coordinates(res,idx,order=1)
     #dy=rotate(Iy,-ang,reshape=False,mode='nearest',order=0)
     #dx=rotate(Ix,-ang,reshape=False,mode='nearest',order=0)
-    dy=rotate(Iy,-ang,mode='nearest',order=intrp)
-    dx=rotate(Ix,-ang,mode='nearest',order=intrp)
+    if fast:
+       dy=rotate_dt(Iy,-rad,order=intrp)
+       dx=rotate_dt(Ix,-rad,order=intrp)
+    else:
+        dy=rotate(Iy,-ang,mode='nearest',order=intrp)
+        dx=rotate(Ix,-ang,mode='nearest',order=intrp)
     #print sin(-rad)*cos(-rad)*szy,sin(-rad)*sin(-rad)*szx
     adx=numpy.round(dx*cos(-rad)+dy*sin(-rad)-szx*cos(-rad)*sin(-rad))
     ady=numpy.round(-dx*sin(-rad)+dy*cos(-rad)+szy*sin(-rad)*sin(-rad))
@@ -118,8 +180,8 @@ def dt2rot(img,ay,ax,axy,by,bx):
 
 
 if __name__ == "__main__":
-    dimy=100
-    dimx=100
+    dimy=1000
+    dimx=1000
     #a=numpy.random.random((dimy,dimx)).astype(numpy.float32)
     im=numpy.zeros((dimy,dimx),numpy.float32)
     #im=-numpy.ones((dimy,dimx),numpy.float32)
@@ -132,12 +194,12 @@ if __name__ == "__main__":
     #dx=numpy.zeros((dimy,dimx),dtype=numpy.float32)
     #lib.dtpy(a,dta,dy,dx,dimy,dimy,1,1,0,0)
     a=0.01
-    by=-50;bx=5
+    by=0;bx=0
     #dtim,Iy,Ix=mydt(im,a,a,b,b)
-    dtim,Iy,Ix=dt2(im,a,2*a,-0.00,by,bx)
-    #dtim,Iy,Ix=dt2rot(im,a,2*a,-0.005,b,b)
-    #dtimr,Iyr,Ixr=dt2rot(im,a,2*a,0.00,by,bx)
-    if 0:
+    #dtim,Iy,Ix=dt2(im,a,2*a,-0.00,by,bx)
+    dtim,Iy,Ix=dt2rot(im,a,2*a,-0.005,by,bx)
+    dtimr,Iyr,Ixr=dt2rot(im,a,2*a,-0.005,by,bx,fast=True)
+    if 1:
         import pylab
         pylab.figure(1)
         pylab.clf()

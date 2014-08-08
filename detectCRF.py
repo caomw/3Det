@@ -679,8 +679,25 @@ def visualize2(det,N,img,bb=[],text="",color=None,line=False,norec=True,nograph=
     pl.draw()
     pl.show()
 
+from test3D2 import rotatey
+def cube(shape,center,rot,scl):
+    y,x,z=shape
+    pts=numpy.array([[-x,-y,-z],
+        [-x,-y,z],
+        [-x,y,-z],
+        [-x,y,z],
+        [x,-y,-z],
+        [x,-y,z],
+        [x,y,-z],
+        [x,y,z]])
+    pts=pts*8*4*scl+numpy.array([center[0],center[1],0])
+    for l in range(pts.shape[0]):
+        pts[l]=rotatey(pts[l],rot)
+    return pts
 
-def visualize3D(det,N,img,bb=[],text="",color=None,line=False,norec=True,nograph=False,lw=2,thr=-numpy.inf,alpha=0.5):
+    
+
+def visualize3D(det,N,img,bb=[],text="",color=None,line=False,norec=True,nograph=False,lw=2,thr=-numpy.inf,alpha=0.5,npart=(5,5,5),cangy=[0],cangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],cangz=[0]):
     """visualize a detection and the corresponding featues"""
     pl=pylab
     if color!=None:
@@ -721,6 +738,11 @@ def visualize3D(det,N,img,bb=[],text="",color=None,line=False,norec=True,nograph
         if det[l].has_key("bbox"):
             util.box(det[l]["bbox"][0],det[l]["bbox"][1],det[l]["bbox"][2],det[l]["bbox"][3],lw=lw,col=col[0])#col[cc%10])
         pylab.text(det[l]["bbox"][1],det[l]["bbox"][0],"%.2f %d %d %d %d"%(det[l]["scr"],det[l]["ang"][0],det[l]["ang"][1],det[l]["ang"][2],det[l]["id"]),backgroundcolor = 'w', color = 'k')
+        if 1:#3d visualization
+            pts=cube(npart,((det[l]["bbox"][0]+det[l]["bbox"][2])/2.0,(det[l]["bbox"][1]+det[l]["bbox"][3])/2.0),cangx[det[l]["ang"][1]],det[l]["scl"])
+            for l in range(pts.shape[0]-1):
+                #print l
+                pylab.plot([pts[l,0],pts[l+1,0]],[pts[l,1],pts[l+1,1]],"ro-",lw=3.0)
     pl.axis([0,img.shape[1],img.shape[0],0])
     pl.draw()
     pl.show()

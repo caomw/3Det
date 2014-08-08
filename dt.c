@@ -20,6 +20,80 @@ inline ftype quadric(ftype x, ftype y,ftype axx, ftype axy, ftype ayy, ftype bx,
     return axx*(x-bx)*(x-bx)+2*axy*(x-bx)*(y-by)+ayy*(y-by)*(y-by);
 }
 
+void rotatec(ftype *imgin,int x,int y,int nch,ftype rads,ftype *imgout,int nx,int ny)
+{
+    int rows=x,r,l,r0,c0,r1,c1,ch,m;
+    int cols=y;
+    r0=rows/2;
+	c0=cols/2;
+    for (r=0;r<nx;r++)
+	{
+		for(l=0;l<ny;l++)
+		{
+            r1=(int)(r0+((r-nx/2)*cos(rads))-((l-ny/2)*sin(rads)));
+     	    c1=(int)(c0+((r-nx/2)*sin(rads))+((l-ny/2)*cos(rads)));           
+                //m=sqrt((r-nx)*(r-nx)+(l-ny)*(l-ny));
+    	    if ((c1>=y) || (r1>=x) || (c1<0) || (r1<0))
+            {
+                c1 = (c1 >= y ? y-1 : c1);
+                r1 = (r1 >= x ? x-1 : r1);
+                c1 = (c1 < 0 ? 0 : c1);
+                r1 = (r1 < 0 ? 0 : r1);
+                for(ch=0;ch<nch;ch++)
+                    imgout[l*nx*nch+r*nch+ch]=imgin[c1*x*nch+r1*nch+ch];
+                //for(ch=0;ch<nch;ch++)
+               	//    imgout[l*x*nch+r*nch+ch]=0;
+                        //printf("in:(%d,%d)out(%d,%d)\n",l,r,c1,r1);
+            }
+            else
+            {
+                for(ch=0;ch<nch;ch++)
+                    imgout[l*nx*nch+r*nch+ch]=imgin[c1*x*nch+r1*nch+ch];
+            }
+		}
+	}   
+}
+
+void rotatec_bi(ftype *imgin,int x,int y,int nch,ftype rads,ftype *imgout,int nx,int ny)
+{
+    int rows=x,r,l,r0,c0,r1,c1,ch,m;
+    ftype rr,cc,dr,dc;
+    int cols=y;
+    r0=rows/2;
+	c0=cols/2;
+    for (r=0;r<nx;r++)
+	{
+		for(l=0;l<ny;l++)
+		{
+            rr=(r0+((r-nx/2)*cos(rads))-((l-ny/2)*sin(rads)));
+            r1=floor(rr);
+            dr=rr-r1;
+     	    cc=(c0+((r-nx/2)*sin(rads))+((l-ny/2)*cos(rads)));           
+            c1=floor(cc);
+            dc=cc-c1;
+                //m=sqrt((r-nx)*(r-nx)+(l-ny)*(l-ny));
+    	    if ((c1>=y-1) || (r1>=x-1) || (c1<0) || (r1<0))
+            {
+                c1 = (c1 >= y-1 ? y-2 : c1);
+                r1 = (r1 >= x-1 ? x-2 : r1);
+                c1 = (c1 < 0 ? 0 : c1);
+                r1 = (r1 < 0 ? 0 : r1);
+                for(ch=0;ch<nch;ch++)
+                    imgout[l*nx*nch+r*nch+ch]=imgin[c1*x*nch+r1*nch+ch]*(1-dr)*(1-dc)+imgin[(c1+1)*x*nch+r1*nch+ch]*(1-dr)*dc+imgin[c1*x*nch+(r1+1)*nch+ch]*dr*(1-dc)+imgin[(c1+1)*x*nch+(r1+1)*nch+ch]*dr*dc;
+                //for(ch=0;ch<nch;ch++)
+               	//    imgout[l*x*nch+r*nch+ch]=0;
+                        //printf("in:(%d,%d)out(%d,%d)\n",l,r,c1,r1);
+            }
+            else
+            {
+                for(ch=0;ch<nch;ch++)
+                    imgout[l*nx*nch+r*nch+ch]=imgin[c1*x*nch+r1*nch+ch]*(1-dr)*(1-dc)+imgin[(c1+1)*x*nch+r1*nch+ch]*(1-dr)*dc+imgin[c1*x*nch+(r1+1)*nch+ch]*dr*(1-dc)+imgin[(c1+1)*x*nch+(r1+1)*nch+ch]*dr*dc;
+            }
+		}
+	}   
+}
+
+
 //2D distnace transform
 void dt2D_helper(ftype *src, ftype *dst, int *ptrx,int *ptry,int dimx, int dimy,int sx1,int sy1,int sx2,int sy2,int dx1,int dy1,int dx2,int dy2, ftype axx, ftype axy, ftype ayy, ftype bx,ftype by) 
 {
