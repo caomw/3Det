@@ -442,5 +442,5 @@ if __name__ == '__main__':
     ##############test
     #import itertools
     #runtest(models,tsImages,cfg,parallel=False,numcore=4,detfun=lambda x :detectCRF.test(x,numhyp=1,show=False),show=True)#,save="%s%d"%(testname,it))[196] is the many faces
-    runtest(models,tsImagesFull,cfg,parallel=True,numcore=8,show=True,detfun=testINC03,save="./faces_unsup256")
+    runtest(models,tsImagesFull[:1],cfg,parallel=True,numcore=8,show=True,detfun=testINC03)#,save="./faces_unsup256")
 

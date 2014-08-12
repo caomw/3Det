@@ -21,7 +21,8 @@ import util
 #model=util.load("./data/test4/face1_test3Dperfect5.model")[0]
 #model=util.load("./data/test9/face1_3Dfull0.model")[0]
 #model=util.load("./data/test/car1_3DVOC4.model")[0]#
-model=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/unsupervised/face1_3DMPfix2Initial0.model")[0]
+#model=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/unsupervised/face1_3DMPfix2Initial0.model")[0]
+model=util.load("/users/visics/mpederso/code/git/3Def/3Det/data//3Deform/face1_Full14.model")[0]
 #model=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/unsupervised/face1_3DMPfix2Unsupervised0.model")[0]
 #model=util.load("./data/test4/face1_test3Donlyfrontal_final.model")[0]
 #model=util.load("./data/test5/face1_test3Dnobis5.model")[0]

@@ -25,6 +25,8 @@ def project(res,numpy.ndarray[long,ndim=2] pty,numpy.ndarray[long,ndim=2] ptx):
                         #        res2[szy-py:szy-py+hy,szx-px:szx-px+hx]=res2[szy-py:szy-py+hy,szx-px:szx-px+hx]+res[pty[pym,py],ptx[pxm,px],c,d]/spty/sptx
     return res2
 */
+//#include <xmmintrin.h>
+//#_mm_setcsr( _mm_getcsr() | (1<<15) | (1<<6) );
 
 void cproject(int res0,int res1,int res2,int res3,float *res,int pty0,int pty1, int *pty,int ptx0,int ptx1,int *ptx, float *ret)
 {

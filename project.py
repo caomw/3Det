@@ -242,6 +242,8 @@ cdll.LoadLibrary("./cproject.so")
 pr=CDLL("cproject.so")
 pr.cproject.argtypes=[c_int,c_int,c_int,c_int,numpy.ctypeslib.ndpointer(dtype=c_float,ndim=4,flags="C_CONTIGUOUS"),c_int,c_int,numpy.ctypeslib.ndpointer(dtype=c_int,ndim=2,flags="C_CONTIGUOUS"),c_int,c_int,numpy.ctypeslib.ndpointer(dtype=c_int,ndim=2,flags="C_CONTIGUOUS"),numpy.ctypeslib.ndpointer(dtype=c_float,ndim=2,flags="C_CONTIGUOUS")]
 
+#from prof import *
+#@do_profile()
 def project(res,pty,ptx):
     szy=res.shape[0]
     szx=res.shape[1]

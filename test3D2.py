@@ -354,6 +354,8 @@ def det2_(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,k):
     #    gsdgdf
     return res                
 
+#from prof import *
+#@do_profile()
 def det2_cache(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,k,usebiases):
 #def det2_(model,hog,ppglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],selangy=None,selangx=None,bis=BIS,k=1):
     #if selangy==None:
@@ -482,14 +484,18 @@ def reduceQ(Q):
     return Qr
 
 
-import dt
+import dt#,time
+#tt=0;ta=0
 
+#from prof import *
+#@do_profile()
 def det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,k,usebiases):
 #def det2_(model,hog,ppglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],selangy=None,selangx=None,bis=BIS,k=1):
     #if selangy==None:
     #    selangy=range(len(ppglangy))
     #if selangx==None:
     #    selangx=range(len(ppglangx))
+    global tt,ta
     hsy=hog.shape[0]
     hsx=hog.shape[1]
     prec=[]
@@ -617,11 +623,16 @@ def det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,
                     #dfds
                     #auxscr,ddy,ddx=dt.dt2(auxscr,ay,ax,axy,by,bx)
                     #ay=0.001;ax=0.001;axy=0.0;by=0;bx=0#by=2*Qr[2,1];bx=2*Qr[2,0]
+                    #mt=time.time()
                     auxscr,ddy,ddx=dt.dt2rot(scr,ay,ax,axy,by,bx)
+                    #tt+= time.time()-mt
+                    #mt=time.time()    
                     ldy[l,gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=ddy+maxmy-posy
                     ldx[l,gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=ddx+maxmx-posx
                     #resp[l,gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=auxscr
                     res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]+auxscr
+                    #ta+= time.time()-mt
+                    #print tt,ta," ",
                     #asddsf
                     #print "Part in:",l,Qr
                     if l==0: #plot gaussian for each part
