@@ -131,6 +131,7 @@ def refinePos(el):
         det=[]
         if cfg.use3D:
             import test3D2
+            #print "Angles",selangy
             selmodels=models
             if cfg.flat:
                 if cfg.db=="MultiPIE2" or cfg.db=="MultiPIE2half" or cfg.db=="MultiPIE2quarter":
@@ -492,7 +493,7 @@ def getfeature3D(det,f,model,angy,angx,angz,k,trunc=0,usebiases=False,usedef=Fal
         #print "Scr:",scr-m1["rho"],"PrevScr:",ld["scr"]
         if abs((scr-ld["scr"]-m1["rho"])/scr)>0.0001:
             print "Error",abs((scr-ld["scr"]-m1["rho"])/scr)                
-            raw_input()
+            #raw_input()
         if usedef: #compute 3D score
             det[idl]["scr2D"]=ld["scr"]
             det[idl]["scr"]=uscr-df3D-m1["rho"]
@@ -689,11 +690,13 @@ def cube(shape,center,rot,scl):
         [x,-y,-z],
         [x,-y,z],
         [x,y,-z],
-        [x,y,z]])
-    pts=pts*8*4*scl+numpy.array([center[0],center[1],0])
+        [x,y,z],[0,0,0]])
+    pts=pts*8/scl
     for l in range(pts.shape[0]):
         pts[l]=rotatey(pts[l],rot)
-    return pts
+    pts=pts+numpy.array([center[1],center[0],0])
+    cidx=[[0,1],[2,3],[4,5],[6,7],[4,6],[4,0],[6,2],[0,2]]
+    return pts,cidx
 
     
 
@@ -739,10 +742,12 @@ def visualize3D(det,N,img,bb=[],text="",color=None,line=False,norec=True,nograph
             util.box(det[l]["bbox"][0],det[l]["bbox"][1],det[l]["bbox"][2],det[l]["bbox"][3],lw=lw,col=col[0])#col[cc%10])
         pylab.text(det[l]["bbox"][1],det[l]["bbox"][0],"%.2f %d %d %d %d"%(det[l]["scr"],det[l]["ang"][0],det[l]["ang"][1],det[l]["ang"][2],det[l]["id"]),backgroundcolor = 'w', color = 'k')
         if 1:#3d visualization
-            pts=cube(npart,((det[l]["bbox"][0]+det[l]["bbox"][2])/2.0,(det[l]["bbox"][1]+det[l]["bbox"][3])/2.0),cangx[det[l]["ang"][1]],det[l]["scl"])
-            for l in range(pts.shape[0]-1):
+            pts,idx=cube(npart,((det[l]["bbox"][0]+det[l]["bbox"][2])/2.0,(det[l]["bbox"][1]+det[l]["bbox"][3])/2.0),cangx[det[l]["ang"][1]],det[l]["scl"])
+            pylab.plot([pts[-1,0],pts[-1,0]],[pts[-1,1],pts[-1,1]],"rx-",lw=3.0)
+            for l in range(len(idx)):#range(pts.shape[0]-1):
                 #print l
-                pylab.plot([pts[l,0],pts[l+1,0]],[pts[l,1],pts[l+1,1]],"ro-",lw=3.0)
+                idl=idx[l]
+                pylab.plot([pts[idl[0],0],pts[idl[1],0]],[pts[idl[0],1],pts[idl[1],1]],"ro-",lw=3.0)
     pl.axis([0,img.shape[1],img.shape[0],0])
     pl.draw()
     pl.show()

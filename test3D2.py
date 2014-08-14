@@ -487,6 +487,7 @@ def reduceQ(Q):
 import dt#,time
 #tt=0;ta=0
 
+#from scipy.ndimage.interpolation import map_coordinates
 #from prof import *
 #@do_profile()
 def det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,k,usebiases):
@@ -495,7 +496,6 @@ def det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,
     #    selangy=range(len(ppglangy))
     #if selangx==None:
     #    selangx=range(len(ppglangx))
-    global tt,ta
     hsy=hog.shape[0]
     hsx=hog.shape[1]
     prec=[]
@@ -625,6 +625,11 @@ def det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,
                     #ay=0.001;ax=0.001;axy=0.0;by=0;bx=0#by=2*Qr[2,1];bx=2*Qr[2,0]
                     #mt=time.time()
                     auxscr,ddy,ddx=dt.dt2rot(scr,ay,ax,axy,by,bx)
+                    #auxscr,ddy,ddx=dt.dt2rot(scr[::2,::2],ay,ax,axy,by,bx)
+                    #idx=numpy.mgrid[:scr.shape[0],:scr.shape[1]]/2.0
+                    #auxscr=map_coordinates(auxscr,idx,order=1)
+                    #ddy=map_coordinates(ddy,idx,order=1)
+                    #ddx=map_coordinates(ddx,idx,order=1)
                     #tt+= time.time()-mt
                     #mt=time.time()    
                     ldy[l,gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=ddy+maxmy-posy
@@ -635,7 +640,7 @@ def det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,
                     #print tt,ta," ",
                     #asddsf
                     #print "Part in:",l,Qr
-                    if l==0: #plot gaussian for each part
+                    if 0: #l==0: #plot gaussian for each part
                         print "def",mm.dfax,mm.dfay,mm.dfaz
                         print "Q=",Q
                         print "Qr=",Qr
@@ -678,7 +683,7 @@ def drawdet(ldet):
        #print res[dd],l,dd[0],dd[1]
 
 #@autojit
-def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angz=[-10,0,10],interv=5,sbin=4,maxdet=1000,sort="scr",bbox=None,selangy=None,selangx=None,selangz=None,numhyp=1000,k=1,bis=BIS,usebiases=USEBIASES,usedef=True):
+def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angz=[-10,0,10],interv=5,sbin=4,maxdet=1000,sort="scr",bbox=None,selangy=None,selangx=None,selangz=None,numhyp=1000,k=1,bis=BIS,usebiases=USEBIASES,usedef=True,skip=15):
     hog=pyrHOG2.pyrHOG(img,interv=interv,cformat=True,sbin=sbin)
     modelsize(model,angy,angx,angz)
     hsize=model["ww"][0].mask.shape[0]
@@ -694,7 +699,7 @@ def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-9
     ldet=[]
     modelsize(model,angy,angx,angz)#,force=True)
     cposx=c_float(0.0);cposy=c_float(0.0)
-    for idr,r in enumerate(hog.hog):
+    for idr,r in enumerate(hog.hog[:-skip]):
         #print idr,"/",len(hog.hog)
         if show:
             pylab.figure()

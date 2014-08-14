@@ -203,7 +203,7 @@ void dt1d(ftype *src, ftype *dst, int *ptr, int step, int n,
 }
 
 
-void dtpy(ftype *src, ftype *M,int *Iy,int *Ix, int dimy ,int dimx, 
+void dtpy(ftype *src, ftype *M,ftype *Iy,ftype *Ix, int dimy ,int dimx, 
 	  ftype ay, ftype ax, ftype by, ftype bx)
 {
   int y,x;
@@ -242,11 +242,11 @@ void fdt1D(float *f,float *d,int *p, int n,float a,float b)
   v[0] = 0;
   z[0] = -INF;
   z[1] = +INF;
-  for (q = 1; q <= n-1; q++) {
-    s  = ((-f[q]+a*square(q)-b*q)-(-f[v[k]]+a*square(v[k])-b*v[k]))/(2*a*q-2*a*v[k]);
+  for (q = 1; q < n; q++) {
+    s  = ((-f[q]+a*square(q)-b*q)-(-f[v[k]]+a*square(v[k])-b*v[k]))/(2.0*a*q-2.0*a*v[k]);
     while (s <= z[k]) {
       k--;
-      s  = ((-f[q]+a*square(q)-b*q)-(-f[v[k]]+a*square(v[k])-b*v[k]))/(2*a*q-2*a*v[k]);
+      s  = ((-f[q]+a*square(q)-b*q)-(-f[v[k]]+a*square(v[k])-b*v[k]))/(2.0*a*q-2.0*a*v[k]);
     }
     k++;
     v[k] = q;
@@ -255,7 +255,7 @@ void fdt1D(float *f,float *d,int *p, int n,float a,float b)
   }
 
   k = 0;
-  for (q = 0; q <= n-1; q++) {
+  for (q = 0; q < n; q++) {
     while (z[k+1] < q)
       k++;
     d[q] = - (a*square(q-v[k]) - b*(q-v[k]) - f[v[k]]);
@@ -268,24 +268,24 @@ void fdt1D(float *f,float *d,int *p, int n,float a,float b)
 }
 
 /* dt of 2d function using squared distance */
-void fdtpy(ftype *im,ftype *dst,int *fy,int *fx,int dimy,int dimx,ftype ay,ftype ax,ftype by,ftype bx) 
+void fdtpy(ftype *im,ftype *dst,ftype *fy,ftype *fx,int dimy,int dimx,ftype ay,ftype ax,ftype by,ftype bx) 
 {
-  int x,y;
+  int x,y,pt;
   float *f = (ftype *)malloc(dimx*dimy* sizeof(ftype));
   int *ffx = (int *)malloc(dimx* sizeof(int));
   int *ffy = (int *)malloc(dimy* sizeof(int));
+  ftype *yy = (ftype *)malloc(dimx*dimy* sizeof(ftype));
+  float *d = (ftype *)malloc(dimy* sizeof(ftype));
   // transform along columns
   for ( x = 0; x < dimx; x++) {
     for ( y = 0; y < dimy; y++) {
       f[y] = im[y*dimx+x];
     }
-    float *d = (ftype *)malloc(dimy* sizeof(ftype));
     fdt1D(f,d,ffy, dimy,ay,by);
     for (y = 0; y < dimy; y++) {
       dst[y*dimx+x] = d[y];
-      fy[y*dimx+x] = ffy[y];
+      yy[y*dimx+x] = (float)ffy[y];
     }
-    free(d);
   }
 
   // transform along rows
@@ -293,23 +293,88 @@ void fdtpy(ftype *im,ftype *dst,int *fy,int *fx,int dimy,int dimx,ftype ay,ftype
     for (x = 0; x < dimx; x++) {
       f[x] = dst[y*dimx+x];
     }
-    float *d = (ftype *)malloc(dimx* sizeof(ftype));
     fdt1D(f,d,ffx, dimx,ax,bx);
     for (x = 0; x < dimx; x++) {
       dst[y*dimx+x] = d[x];
-      fx[y*dimx+x] = ffx[x];
+      fx[y*dimx+x] = (float)ffx[x];
     }
-    free(d);
   }
-    for (y = 0; y < dimy; y++) {
+   for (y = 0; y < dimy; y++) {
         for (x = 0; x < dimx; x++) {
-          int p = y*dimx+x;
-          fy[p] = fy[y*dimx+fx[p]];
+          pt = y*dimx+x;
+          fy[pt] = yy[(int)yy[pt]*dimx+(int)(fx[pt])];
           //Ix[p] = tmpIy[tmpIx[p]*dimx+x];
     }
   }
-
+  free(ffx);
+  free(ffy);
   free(f);
+  free(d);
+  free(yy);
+}
+
+#define IMSZ 5000 //maximum image size
+static int v[IMSZ];
+static float z[IMSZ];//
+
+/* dt of 1d function using squared distance */
+void fdt1Ds(float *f,float *d,float *p,int step, int n,float a,float b) 
+{
+  //int *v = (int *)malloc(n* sizeof(int)),q;
+  //float *z = (ftype *)malloc((n+1)* sizeof(ftype)),s;
+  float s;
+  int q,k = 0;
+  //for (q = 0; q <= n-1; q++) printf("f%f ",f[q]);
+  //for (k=0;k<n;k++) v[k]=0;
+  //k=0;
+  v[0] = 0;
+  z[0] = -INF;
+  z[1] = +INF;
+  for (q = 1; q < n; q++) {
+    s  = ((-f[q*step]+a*square(q)-b*q)-(-f[v[k]*step]+a*square(v[k])-b*v[k]))/(2.0*a*q-2.0*a*v[k]);
+    while (s <= z[k]) {
+      k--;
+      s  = ((-f[q*step]+a*square(q)-b*q)-(-f[v[k]*step]+a*square(v[k])-b*v[k]))/(2.0*a*q-2.0*a*v[k]);
+    }
+    k++;
+    v[k] = q;
+    z[k] = s;
+    z[k+1] = +INF;
+  }
+
+  k = 0;
+  for (q = 0; q < n; q++) {
+    while (z[k+1] < q)
+      k++;
+    d[q*step] = - (a*square(q-v[k]) - b*(q-v[k]) - f[v[k]*step]);
+    //printf("(v%d,f%f,d%d) ",v[k],f[v[k]],square(q-v[k]));
+    p[q*step] = v[k];
+  }
+
+  //free(v);
+  //free(z);
+}
+
+/* dt of 2d function using squared distance */
+void ffdtpy(ftype *im,ftype *dst,ftype *fy,ftype *fx,int dimy,int dimx,ftype ay,ftype ax,ftype by,ftype bx) 
+{
+  int x,y,pt;
+  float *f = (ftype *)malloc(dimx*dimy* sizeof(ftype));
+  ftype *yy = (ftype *)malloc(dimx*dimy* sizeof(ftype));
+  // transform along columns
+  for ( x = 0; x < dimx; x++) 
+    fdt1Ds(im+x,f+x,yy+x,dimx,dimy,ay,by);
+  // transform along rows
+  for (y = 0; y < dimy; y++) {
+    fdt1Ds(f+y*dimx,dst+y*dimx,fx+y*dimx,1,dimx,ax,bx);
+  }
+   for (y = 0; y < dimy; y++) {
+        for (x = 0; x < dimx; x++) {
+          pt = y*dimx+x;
+          fy[pt] = yy[(int)yy[pt]*dimx+(int)(fx[pt])];
+    }
+  }
+  free(yy);
 }
 
 

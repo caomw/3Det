@@ -2,7 +2,7 @@ CC = gcc
 CP = g++
 #CC = icc
 
-CFLAGS = -O3 -g -march=nocona -fomit-frame-pointer -fopenmp -mfpmath=sse -msse -ffast-math
+CFLAGS = -O3 -g -march=nocona -fomit-frame-pointer -fopenmp -mfpmath=sse -msse #-ffast-math
 #CFLAGS = -O3 -march=nocona -ffast-math -fomit-frame-pointer -fopenmp
 #CFLAGS = -lm -msse2 -O2 -march=nocona -ffast-math -fomit-frame-pointer -fopenmp 
 
