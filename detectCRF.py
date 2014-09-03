@@ -193,7 +193,7 @@ aiterPOS,restart=cfg.restartPOS,trunc=cfg.trunc,bbox=extnewbbox,useFastDP=cfg.us
         #feat,edge=getfeature([det[best]],cfg.N,cfg.E,f,models,cfg.trunc)
         feat,biases,df=getfeature3D([det[best]],f,models,angy,angx,angz,cfg.k,cfg.trunc,usebiases=cfg.usebiases,usedef=cfg.usedef)
         #add image name and bbx so that each annotation is unique
-        #det[best]["def"]=df
+        det[best]["def3D"]=df
         if imageflip:
             det[best]["idim"]=el["file"].split("/")[-1]+".flip"
         else:
@@ -268,8 +268,9 @@ def hardNeg(el):
         #det[idl]["scr"]-=models[det[idl]["id"]]["rho"]/float(cfg.bias)
         if det[idl]["scr"]>-1:
             det[idl]["idim"]=el["file"].split("/")[-1]
-            ldet.append(det[idl])
             feat,biases,df=getfeature3D([det[idl]],f,models,angy,angx,angz,cfg.k,cfg.trunc,cfg.usebiases,usedef=cfg.usedef)
+            det[idl]["def3D"]=df
+            ldet.append(det[idl])
             #feat,edge=getfeature([det[idl]],cfg.N,cfg.E,f,models,cfg.trunc)
             lfeat+=feat
             ledge+=biases
@@ -336,7 +337,7 @@ def hardNegPos(el):
     return ldet,lfeat,ledge
 
 
-def test(el,docluster=True,show=False,inclusion=False,onlybest=False,ovr=0.5):
+def test(el,docluster=True,show=False,inclusion=False,onlybest=False,ovr=0.5,showparts=True):
     t=time.time()
     minthr=-2
     models=el["models"]
@@ -394,8 +395,12 @@ def test(el,docluster=True,show=False,inclusion=False,onlybest=False,ovr=0.5):
         det=cluster(det,maxcl=100,inclusion=inclusion,onlybest=onlybest,ovr=ovr)
     for idl,l in enumerate(det):
         det[idl]["idim"]=el["file"].split("/")[-1]
+        if showparts:
+            feat,biases,df=getfeature3D([l],f,models,angy,angx,angz,cfg.k,cfg.trunc,usebiases=cfg.usebiases,usedef=cfg.usedef)
+            det[idl]["def3D"]=df
     if show:
         visualize(det[:5],cfg.N,f,img)
+        #add image name and bbx so that each annotation is unique
     print "Detection time:",time.time()-t
     return det
 
@@ -681,7 +686,7 @@ def visualize2(det,N,img,bb=[],text="",color=None,line=False,norec=True,nograph=
     pl.show()
 
 from test3D2 import rotatey
-def cube(shape,center,rot,scl):
+def cube(shape,center,rot,scl,def3D):
     y,x,z=shape
     pts=numpy.array([[-x,-y,-z],
         [-x,-y,z],
@@ -691,12 +696,31 @@ def cube(shape,center,rot,scl):
         [x,-y,z],
         [x,y,-z],
         [x,y,z],[0,0,0]])
+#to finish
+    parts=[]
+    c=0
+    for py in range(-y,y-1,2):
+        for px in range(-x,x-1,2):
+            parts.append(numpy.array([px,py,-z])-[def3D[c][0]/2.0,def3D[c][1]/2.0,0])
+            #parts.append(numpy.array([px,py,-z]))
+            c+=1
+        #    parts.append([px,py,-z])
+        #for py in range(y-1):
+        #    for pz in range(z-1):
+        #        parts.append([x,py,pz])
+        #        parts.append([-x,py,pz])
+    parts=numpy.array(parts)
+    parts=parts*8/scl    
+    for l in range(parts.shape[0]):
+        parts[l]=rotatey(parts[l],rot)
+
     pts=pts*8/scl
     for l in range(pts.shape[0]):
         pts[l]=rotatey(pts[l],rot)
     pts=pts+numpy.array([center[1],center[0],0])
+    parts=parts+numpy.array([center[1],center[0],0])
     cidx=[[0,1],[2,3],[4,5],[6,7],[4,6],[4,0],[6,2],[0,2]]
-    return pts,cidx
+    return pts,cidx,parts
 
     
 
@@ -735,22 +759,28 @@ def visualize3D(det,N,img,bb=[],text="",color=None,line=False,norec=True,nograph
         #numx=det[l]["def"].shape[2]#cfg.fx[idm]
         if scr<thr:
             break
-        sf=float(8*N/scl)
+        sf=float(4*4/scl)
         #m2=f.hog[r]
         pl.subplot(1,subp,1)
         if det[l].has_key("bbox"):
             util.box(det[l]["bbox"][0],det[l]["bbox"][1],det[l]["bbox"][2],det[l]["bbox"][3],lw=lw,col=col[0])#col[cc%10])
         pylab.text(det[l]["bbox"][1],det[l]["bbox"][0],"%.2f %d %d %d %d"%(det[l]["scr"],det[l]["ang"][0],det[l]["ang"][1],det[l]["ang"][2],det[l]["id"]),backgroundcolor = 'w', color = 'k')
         if 1:#3d visualization
-            pts,idx=cube(npart,((det[l]["bbox"][0]+det[l]["bbox"][2])/2.0,(det[l]["bbox"][1]+det[l]["bbox"][3])/2.0),cangx[det[l]["ang"][1]],det[l]["scl"])
+            #dsf
+            pts,idx,parts=cube(npart,((det[l]["bbox"][0]+det[l]["bbox"][2])/2.0,(det[l]["bbox"][1]+det[l]["bbox"][3])/2.0),cangx[det[l]["ang"][1]],det[l]["scl"],det[l]["def3D"][0])
             pylab.plot([pts[-1,0],pts[-1,0]],[pts[-1,1],pts[-1,1]],"rx-",lw=3.0)
             for l in range(len(idx)):#range(pts.shape[0]-1):
                 #print l
                 idl=idx[l]
                 pylab.plot([pts[idl[0],0],pts[idl[1],0]],[pts[idl[0],1],pts[idl[1],1]],"ro-",lw=3.0)
+            #parts
+            for l in parts:
+                pylab.plot([l[0],l[0],l[0]+sf,l[0]+sf,l[0]],[l[1],l[1]+sf,l[1]+sf,l[1],l[1]],"go-",lw=3.0)
     pl.axis([0,img.shape[1],img.shape[0],0])
     pl.draw()
     pl.show()
+    #raw_input()
+    #dsfsd
 
 def visualizeDet(det,N,img,bb=[],text="",color=None,line=False):
     """visualize a detection and the corresponding featues"""

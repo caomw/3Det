@@ -189,7 +189,7 @@ from math import atan2,atan,cos,sin
 #from prof import do_profile
 #@do_profile()
 def dt2rot(img,ay,ax,axy,by,bx,fast=True):
-    intrp=0
+    intrp=1
     szy=img.shape[0]
     szx=img.shape[1]
     axy=-axy
@@ -207,7 +207,7 @@ def dt2rot(img,ay,ax,axy,by,bx,fast=True):
         img2=rotate_dt(img,rad,order=0)
     else:
         img2=rotate(img,ang,mode='nearest',order=0)    
-    dtim,Iy,Ix=mydt(img2,val[1],val[0],0,0,fast=True)
+    dtim,Iy,Ix=mydt(img2,val[1],val[0],0,0,fast)
     #dtim=numpy.zeros(img.shape,dtype=numpy.float32)
     #Iy=numpy.zeros(img.shape,dtype=numpy.float32)
     #Ix=numpy.zeros(img.shape,dtype=numpy.float32)

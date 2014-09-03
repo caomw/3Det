@@ -1057,6 +1057,7 @@ class AFLW(VOC06Data):
 #        return getbboxVOC07(filename,cl,usetr,usedf)
 
     def getBBox(self,i,cl=None,usetr=None,usedf=None):
+        from math import copysign
         #SELECT x,y,w,h,annot_type_id FROM FaceRect WHERE face_id = 
         self.cur.execute("SELECT face_id FROM Faces WHERE file_id = '%s'"%self.items[i][0])
         faceid=self.cur.fetchall()
@@ -1068,12 +1069,22 @@ class AFLW(VOC06Data):
         #print bb
         #raw_input()
         auxb=[]
-        for b in bb:
+        correct=True
+        if correct:
+            pose=self.getPose(i)
+        for idbb,b in enumerate(bb):
             a=abs(float(b[0])-float(b[2]))*abs(float(b[1])-float(b[3]))
             #print a
             if a>self.mina:
                 #print "OK!"
                 auxb.append([b[1],b[0],b[1]+b[3],b[0]+b[2],0,0])
+                w=abs(float(auxb[-1][3])-float(auxb[-1][1]))
+            if correct:
+                #if abs(pose[idbb][0][0])>60:
+                auxb[-1]=numpy.array(auxb[-1])#+(pose[idbb][0][0]/90.0)*0.5*w
+                auxb[-1][1]=numpy.array(auxb[-1][1])-(pose[idbb][0][0]/90.0)*0.4*w                
+                auxb[-1][3]=numpy.array(auxb[-1][3])-(pose[idbb][0][0]/90.0)*0.4*w                
+            
         return auxb
 
     def getPose(self,i):
@@ -1084,7 +1095,8 @@ class AFLW(VOC06Data):
             self.cur.execute("SELECT roll,pitch,yaw FROM FacePose WHERE face_id = '%s'"%l)
             poses+=[-self.cur.fetchall()[0][2]/numpy.pi*180]
         #skipping the other angles for the moment
-        return poses
+        np=[[[x]] for x in poses]
+        return np
 
 
     def getFacial(self,i):

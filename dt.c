@@ -375,6 +375,7 @@ void ffdtpy(ftype *im,ftype *dst,ftype *fy,ftype *fx,int dimy,int dimx,ftype ay,
     }
   }
   free(yy);
+  free(f);
 }
 
 
