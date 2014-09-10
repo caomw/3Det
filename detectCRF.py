@@ -367,13 +367,14 @@ def test(el,docluster=True,show=False,inclusion=False,onlybest=False,ovr=0.5,sho
             angz=cfg.cangz   
         import test3D2
         for idmm,mm in enumerate(models):
-            [f,pdet]=test3D2.rundet(img,mm,angy=angy,angx=angx,angz=angz,selangy=cfg.angy,selangx=cfg.angx,selangz=cfg.angz,k=cfg.k,usebiases=cfg.usebiases,usedef=cfg.usedef)
+            [f,pdet]=test3D2.rundet(img,mm,angy=angy,maxdet=5000,angx=angx,angz=angz,selangy=cfg.angy,selangx=cfg.angx,selangz=cfg.angz,k=cfg.k,usebiases=cfg.usebiases,usedef=cfg.usedef)
             if cfg.flat:
                 for ee in pdet:
                     ee["id"]=idmm
             det+=pdet
         det.sort(key=lambda by: -by["scr"])
-        det=det[:1000]
+        print "Number det:",len(det)
+        #det=det[:1000]
         #[f,det]=test3D2.rundet(img,models[0],angy=angy,angx=angx,angz=angz,selangy=cfg.angy,selangx=cfg.angx,selangz=cfg.angz,k=cfg.k,usebiases=cfg.usebiases)#[0,1,2,3,4,5,6,7,8,9,10,11,12],k=cfg.k)
     else:
         if cfg.usebbTEST:
@@ -724,7 +725,7 @@ def cube(shape,center,rot,scl,def3D):
 
     
 
-def visualize3D(det,N,img,bb=[],text="",color=None,line=False,norec=True,nograph=False,lw=2,thr=-numpy.inf,alpha=0.5,npart=(5,5,5),cangy=[0],cangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],cangz=[0]):
+def visualize3D(det,N,img,bb=[],text="",color=None,line=False,norec=True,nograph=False,lw=2,thr=-numpy.inf,alpha=0.5,npart=(5,5,5),cangy=[0],cangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],cangz=[0],vis3D=False):
     """visualize a detection and the corresponding featues"""
     pl=pylab
     if color!=None:
@@ -765,7 +766,7 @@ def visualize3D(det,N,img,bb=[],text="",color=None,line=False,norec=True,nograph
         if det[l].has_key("bbox"):
             util.box(det[l]["bbox"][0],det[l]["bbox"][1],det[l]["bbox"][2],det[l]["bbox"][3],lw=lw,col=col[0])#col[cc%10])
         pylab.text(det[l]["bbox"][1],det[l]["bbox"][0],"%.2f %d %d %d %d"%(det[l]["scr"],det[l]["ang"][0],det[l]["ang"][1],det[l]["ang"][2],det[l]["id"]),backgroundcolor = 'w', color = 'k')
-        if 1:#3d visualization
+        if 1:#vis3D:#3d visualization
             #dsf
             pts,idx,parts=cube(npart,((det[l]["bbox"][0]+det[l]["bbox"][2])/2.0,(det[l]["bbox"][1]+det[l]["bbox"][3])/2.0),cangx[det[l]["ang"][1]],det[l]["scl"],det[l]["def3D"][0])
             pylab.plot([pts[-1,0],pts[-1,0]],[pts[-1,1],pts[-1,1]],"rx-",lw=3.0)

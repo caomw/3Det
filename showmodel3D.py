@@ -127,11 +127,11 @@ def on_draw():
     glTranslatef(0, 0, window.data["posz"])
     glRotatef(window.data["posx"],1,0,0)
     glRotatef(window.data["posy"],0,1,0)
+    m=window.data["model"]["ww"]
     for idt,t in enumerate(txt):#window.data["model"]["ww"][:1]:
         #glTranslatef(w.x, w.y, window.data["posz"])
         #glBindTexture(w.txt.target, w.txt.id)
         #glBindTexture(texture.target, texture.id)
-        m=window.data["model"]["ww"]
         p0=(-rect_w, -rect_h, -m[idt].lz/2)
         p1=( rect_w, -rect_h, -m[idt].lz/2)
         p2=( rect_w,  rect_h, -m[idt].lz/2)
