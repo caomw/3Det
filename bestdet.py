@@ -145,7 +145,7 @@ if __name__ == '__main__':
     #det=util.load("face1_flat.det")["det"]    
     #det=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/faces/car1_3Dafwright_final.det")["det"]
     #det=util.load("/users/visics/mpederso/code/git/3Def/3Det/faces_Def14.det")["det"]
-    det=util.load("/users/visics/mpederso/code/git/3Def/3Det/faces_Shitf.det")["det"]
+    det=util.load("/users/visics/mpederso/code/git/3Def/3Det/faces_DeepFace3.det")["det"]
     #imgpath=cfg.dbpath+"multiPIE//"
     imgpath=cfg.dbpath+"afw/testimages/"
     #imgpath=cfg.dbpath+"aflw/data/flickr/"

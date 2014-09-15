@@ -25,7 +25,9 @@ import util
 #model=util.load("/users/visics/mpederso/code/git/3Def/3Det/data//3Deform/face1_Full14.model")[0]
 #model=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/3Deform/face1_FastFull_final.model")[0]
 #model=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/AFW/face1_AFLWFull1.model")[0]
-model=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/AFW/face1_dbg3faces0.model")[0]
+#model=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/3Deform/face1_DeepFace4.model")[0]
+#model=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/VOC3Def/bicycle1_Deep20.model")[0]
+model=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/AFW/face1_AFLW20008.model")[0]
 #model=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/unsupervised/face1_3DMPfix2Unsupervised0.model")[0]
 #model=util.load("./data/test4/face1_test3Donlyfrontal_final.model")[0]
 #model=util.load("./data/test5/face1_test3Dnobis5.model")[0]
@@ -51,6 +53,8 @@ import test3D2
 import drawHOG
 import numpy
 txt=[]
+glClearColor(1, 1, 1, 1)
+glColor4f(0.8, 0.8, 0.8, 1.0 )
 for w in model["ww"]:
     aux=drawHOG.drawHOG(w.mask,border=2,val=1)[::-1,:]
     #aux=numpy.random.random(aux.shape)#numpy.ones(aux.shape)

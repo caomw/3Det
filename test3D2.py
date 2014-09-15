@@ -126,7 +126,7 @@ def showModel(model,glangy,glangx,glangz,hsize=4,pixh=15,border=2,nhog=30,bis=BI
             part=drawHOG.drawHOG(project.prjhog_bis(w.mask,project.pattern4_bis(angy),project.pattern4_bis(angx)),hogpix=pixh,border=border,val=val)
         else:
             part=drawHOG.drawHOG(project.prjhog(w.mask,project.pattern4_cos(n[0]),project.pattern4_cos(n[1])),hogpix=pixh,border=border,val=val)
-        #print "Outside",w.x,w.y,w.z
+        #print "Outside",w.x,w.y,w.z,w.lz
         pr.getproj(size[1],size[0],glangx,glangy,glangz,w.ax,w.ay,w.x,w.y,w.z,w.lz,hsize,byref(cposx),byref(cposy))
         nposy=cposy.value;nposx=cposx.value
         #print "Pose",nposy,nposx
@@ -913,7 +913,7 @@ def getfeatDef(model,hog,angy,angx,angz,ang,pos,parts,k,bis=BIS,usebiases=USEBIA
                        [0,mm.dfay,0,0],
                        [0,0,mm.dfaz,0],#[0,0,mm.dfaz,mm.lz/2],
                        [0,0,0,1]])#[0,0,mm.lz/2,1]])                    
-        #transform local--> can be dene only once
+        #transform local--> can be done only once
         Ry=Mroty(mm.ax)
         Rx=Mrotx(mm.ay)
         Q=numpy.dot(numpy.dot(Ry,Q),Ry.T)
@@ -962,7 +962,14 @@ def getfeatDef(model,hog,angy,angx,angz,ang,pos,parts,k,bis=BIS,usebiases=USEBIA
         Ry=Mroty(-mm.ax)
         Rx=Mrotx(-mm.ay)
         x3d=numpy.dot(Ry,numpy.dot(Rx,x3d))
-        x3d[-1]=0
+        #usez=True
+        #if usez:
+        #    x3d[-1]=x3d[-2]
+        #    df3D+=x3d[0]**2*p.dfax+x3d[1]**2*p.dfay+x3d[2]**2*p.dfaz+x3d[3]*p.dfbz
+        #else:
+        #    x3d[-1]=0
+        #    df3D+=numpy.dot(x3d**2,[p.dfax,p.dfay,p.dfaz,0])
+        x3d[-1]=x3d[-2]*5
         df3D+=numpy.dot(x3d**2,[p.dfax,p.dfay,p.dfaz,0])
         df.append(x3d)    
         #print "2D:",xx,"3D:",x3d

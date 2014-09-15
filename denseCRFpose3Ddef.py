@@ -218,8 +218,14 @@ elif cfg.db=="LFW":
 elif cfg.db=="AFLW":
     trPosImages=getRecord(AFLW(basepath=cfg.dbpath,fold=0),cfg.maxpos,facial=True,pose=True)#cfg.useFacial)
     trPosImagesNoTrunc=trPosImages[:900]
-    trNegImages=getRecord(InriaNegData(basepath=cfg.dbpath),cfg.maxneg)#check if it works better like this
-    trNegImagesFull=getRecord(InriaNegData(basepath=cfg.dbpath),cfg.maxnegfull)
+    #trNegImages=getRecord(InriaNegData(basepath=cfg.dbpath),cfg.maxneg)#check if it works better like this
+    trNegImages=getRecord(VOC07Data(select="neg",cl="person_trainval.txt"%cfg.cls,
+                        basepath=cfg.dbpath,#"/home/databases/",#"/share/ISE/marcopede/database/",
+                        usetr=True,usedf=False),cfg.maxneg)
+    #trNegImagesFull=getRecord(InriaNegData(basepath=cfg.dbpath),cfg.maxnegfull)
+    trNegImages=getRecord(VOC07Data(select="neg",cl="person_trainval.txt"%cfg.cls,
+                        basepath=cfg.dbpath,#"/home/databases/",#"/share/ISE/marcopede/database/",
+                        usetr=True,usedf=False),cfg.maxnegfull)
     #test
     tsImages=getRecord(AFLW(basepath=cfg.dbpath,fold=0),cfg.maxtest,facial=True,pose=True)#cfg.useFacial)
     tsImagesFull=tsImages
@@ -1046,7 +1052,8 @@ for it in range(cpit,cfg.posit):
                 waux.append(model.model2w(models[idm],False,False,False,useCRF=True,k=cfg.k))
             #rr.append(models[idm]["rho"])
             w1=numpy.concatenate((w1,waux[-1],-numpy.array([models[idm]["rho"]])/bias))
-        assert(numpy.sum(numpy.abs(w1-w))<0.0002)
+        #skip the assert because for lz w1 is not anymore the same as w!
+        #assert(numpy.sum(numpy.abs(w1-w))<0.0002)
         w2=w
         w=w1
 

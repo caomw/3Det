@@ -295,6 +295,13 @@ def model2w3D(model):
     w=numpy.concatenate((w,model["biases"].flatten()))
     #for l in range(len(model["ww"])):#position z
     #    w=numpy.concatenate((w,(0)))
+    #lz
+    #w=numpy.concatenate((w,numpy.zeros(len(model["ww"]),dtype=numpy.float32)))
+#    usez=True
+#    if usez:
+#        for l in range(len(model["ww"])):# dfbz
+#            w=numpy.concatenate((w,(model["ww"][l].dfbz)))
+#    else:
     w=numpy.concatenate((w,numpy.zeros(len(model["ww"]),dtype=numpy.float32)))
     for l in range(len(model["ww"])):#deformation x,y,z
         #print "here"#,item
@@ -352,7 +359,12 @@ def w2model3D(oldmodel,descr,rho,usebiases,usedef):
     cnt=(idl+1)*hsize+oldmodel["biases"].size
     if usedef:
         for idl,l in enumerate(oldmodel["ww"]):
-            #missing adjustment position
+            #adjustment position
+            usez=True
+            if usez:
+                #oldmodel["ww"][idl].dfbz=0
+                oldmodel["ww"][idl].lz+=descr[cnt]*5 #there are two places with this coeff
+                # the other is in test3D2
             cnt+=1
         for idl,l in enumerate(oldmodel["ww"]):
             oldmodel["ww"][idl].dfax=descr[cnt]

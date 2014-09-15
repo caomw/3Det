@@ -188,7 +188,7 @@ from math import atan2,atan,cos,sin
 
 #from prof import do_profile
 #@do_profile()
-def dt2rot(img,ay,ax,axy,by,bx,fast=False):
+def dt2rot(img,ay,ax,axy,by,bx,fast=True):
     intrp=1
     szy=img.shape[0]
     szx=img.shape[1]

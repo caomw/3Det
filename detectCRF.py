@@ -142,7 +142,7 @@ def refinePos(el):
                     print "Pose",pp
                 selmodels=models[pp:pp+1]
             for mm in selmodels:
-                [f,pdet]=test3D2.rundet(img,mm,bbox=extnewbbox,angy=angy,angx=angx,angz=angz,selangy=selangy,selangx=selangx,selangz=selangz,sort=cfg.mysort,k=cfg.k,usebiases=cfg.usebiases,usedef=cfg.usedef)
+                [f,pdet]=test3D2.rundet(img,mm,bbox=extnewbbox,angy=angy,angx=angx,angz=angz,selangy=selangy,selangx=selangx,selangz=selangz,sort=cfg.mysort,k=cfg.k,usebiases=cfg.usebiases,usedef=cfg.usedef,skip=cfg.skip)
                 if cfg.flat:
                     for ee in pdet:
                         ee["id"]=pp
@@ -239,7 +239,7 @@ def hardNeg(el):
         angz=cfg.cangz#[-20,-10,0,10,20]
         import test3D2
         for idmm,mm in enumerate(models):
-            [f,pdet]=test3D2.rundet(img,mm,angy=angy,angx=angx,angz=angz,selangy=cfg.angy,selangx=cfg.angx,selangz=cfg.angz,k=cfg.k,usebiases=cfg.usebiases,usedef=cfg.usedef)
+            [f,pdet]=test3D2.rundet(img,mm,angy=angy,angx=angx,angz=angz,selangy=cfg.angy,selangx=cfg.angx,selangz=cfg.angz,k=cfg.k,usebiases=cfg.usebiases,usedef=cfg.usedef,skip=cfg.skip)
             if cfg.flat:
                 for ee in pdet:
                     ee["id"]=idmm
@@ -367,7 +367,7 @@ def test(el,docluster=True,show=False,inclusion=False,onlybest=False,ovr=0.5,sho
             angz=cfg.cangz   
         import test3D2
         for idmm,mm in enumerate(models):
-            [f,pdet]=test3D2.rundet(img,mm,angy=angy,maxdet=5000,angx=angx,angz=angz,selangy=cfg.angy,selangx=cfg.angx,selangz=cfg.angz,k=cfg.k,usebiases=cfg.usebiases,usedef=cfg.usedef)
+            [f,pdet]=test3D2.rundet(img,mm,angy=angy,maxdet=5000,angx=angx,angz=angz,selangy=cfg.angy,selangx=cfg.angx,selangz=cfg.angz,k=cfg.k,usebiases=cfg.usebiases,usedef=cfg.usedef,skip=cfg.skip)
             if cfg.flat:
                 for ee in pdet:
                     ee["id"]=idmm
@@ -766,9 +766,10 @@ def visualize3D(det,N,img,bb=[],text="",color=None,line=False,norec=True,nograph
         if det[l].has_key("bbox"):
             util.box(det[l]["bbox"][0],det[l]["bbox"][1],det[l]["bbox"][2],det[l]["bbox"][3],lw=lw,col=col[0])#col[cc%10])
         pylab.text(det[l]["bbox"][1],det[l]["bbox"][0],"%.2f %d %d %d %d"%(det[l]["scr"],det[l]["ang"][0],det[l]["ang"][1],det[l]["ang"][2],det[l]["id"]),backgroundcolor = 'w', color = 'k')
-        if 1:#vis3D:#3d visualization
+        if 0:#vis3D:#3d visualization
             #dsf
             pts,idx,parts=cube(npart,((det[l]["bbox"][0]+det[l]["bbox"][2])/2.0,(det[l]["bbox"][1]+det[l]["bbox"][3])/2.0),cangx[det[l]["ang"][1]],det[l]["scl"],det[l]["def3D"][0])
+            #print "Num parts",len(parts)
             pylab.plot([pts[-1,0],pts[-1,0]],[pts[-1,1],pts[-1,1]],"rx-",lw=3.0)
             for l in range(len(idx)):#range(pts.shape[0]-1):
                 #print l
