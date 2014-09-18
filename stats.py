@@ -106,8 +106,20 @@ def build_components_fix(trPosImages,cfg):
         #minA=numpy.mean(sa[int(len(sa)*perc)])/4.0/(4**(cfg.lev[l]-1))#4.0
         minA=numpy.mean(sa[int(len(sa)*perc)])/16.0/float(nh*nh)#(4**(cfg.lev[l]-1))#4.0
         print "Min Area:",minA
-        aspt=numpy.exp(numpy.mean(numpy.log(r[cl==l])))
+        g=util.gaussian(5.0,(1,13))[0,:]
+#       hh,bb=numpy.histogram(numpy.log(r[cl==l]),30)
+        hh,bb=numpy.histogram(r[cl==l],30)
+        hh1=numpy.convolve(hh,g,"same")
+        pbest=numpy.argmax(hh1)
+#       aspt=numpy.exp((bb[pbest]))
+        aspt=bb[pbest]
+        #aspt=numpy.exp((bb[pbest]+bb[min(30,pbest+1)])/2)
+        #aspt=numpy.exp(numpy.mean(numpy.log(r[cl==l])))
         print "Aspect:",aspt
+        if 0:
+            import pylab
+            pylab.figure();pylab.plot(hh1);pylab.show()
+            fasdf
         if minA>maxArea:
             minA=maxArea
         #minA=10#for bottle

@@ -46,7 +46,7 @@ if __name__ == '__main__':
         cfg.dbpath="/users/visics/mpederso/databases/"
         cfg.testpath="./data/"#"./data/CRF/12_09_19/"
         cfg.testspec="right"#"full2"
-        cfg.db="AFW"#"AFLW"
+        cfg.db="3DVOC"#"AFLW"
         #cfg.cls="diningtable"
         #cfg.N=
        
@@ -104,6 +104,29 @@ if __name__ == '__main__':
         #test
         tsImages=getRecord(AFLW(basepath=cfg.dbpath,fold=0),cfg.maxtest,facial=True,pose=True)#cfg.useFacial)
         tsImagesFull=tsImages
+    elif cfg.db=="3DVOC":
+        trPosImages=getRecord(VOC3D(select="pos",cl="%s_train.txt"%cfg.cls,
+                            basepath=cfg.dbpath,#"/home/databases/",
+                            usetr=True,usedf=False),cfg.maxpos,pose=True)
+        trPosImagesNoTrunc=getRecord(VOC3D(select="pos",cl="%s_train.txt"%cfg.cls,
+                        basepath=cfg.dbpath,#"/home/databases/",
+                        usetr=False,usedf=False),cfg.maxpos,pose=True)
+        trNegImages=getRecord(VOC3D(select="neg",cl="%s_train.txt"%cfg.cls,
+                        basepath=cfg.dbpath,#"/home/databases/",#"/share/ISE/marcopede/database/",
+                        usetr=True,usedf=False),cfg.maxneg,pose=True)
+        trNegImagesFull=getRecord(VOC3D(select="neg",cl="%s_train.txt"%cfg.cls,
+                        basepath=cfg.dbpath,usetr=True,usedf=False),cfg.maxnegfull,pose=True)
+        #test
+        tsPosImages=getRecord(VOC3D(select="pos",cl="%s_val.txt"%cfg.cls,
+                        basepath=cfg.dbpath,#"/home/databases/",#"/share/ISE/marcopede/database/",
+                        usetr=True,usedf=False),cfg.maxtest,pose=True)
+        tsNegImages=getRecord(VOC3D(select="neg",cl="%s_val.txt"%cfg.cls,
+                        basepath=cfg.dbpath,#"/home/databases/",#"/share/ISE/marcopede/database/",
+                        usetr=True,usedf=False),cfg.maxneg,pose=True)
+        tsImages=numpy.concatenate((tsPosImages,tsNegImages),0)
+        tsImagesFull=getRecord(VOC3D(select="all",cl="%s_val.txt"%cfg.cls,
+                        basepath=cfg.dbpath,
+                        usetr=True,usedf=False),10000,pose=True)
 
 
     #build a dictionary with images as key to speed-up image based search
@@ -145,9 +168,11 @@ if __name__ == '__main__':
     #det=util.load("face1_flat.det")["det"]    
     #det=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/faces/car1_3Dafwright_final.det")["det"]
     #det=util.load("/users/visics/mpederso/code/git/3Def/3Det/faces_Def14.det")["det"]
-    det=util.load("/users/visics/mpederso/code/git/3Def/3Det/faces_DeepFace3.det")["det"]
+    #det=util.load("/users/visics/mpederso/code/git/3Def/3Det/faces_DeepFace3.det")["det"]
+    det=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/VOC3Def/bicycle1_Deep25Fixed5.det")["det"]
     #imgpath=cfg.dbpath+"multiPIE//"
-    imgpath=cfg.dbpath+"afw/testimages/"
+    imgpath=cfg.dbpath+"PASCAL3D+_release1.0/JPEGImages/"
+    #imgpath=cfg.dbpath+"afw/testimages/"
     #imgpath=cfg.dbpath+"aflw/data/flickr/"
     #imgpath=cfg.dbpath+"VOC2007/VOCdevkit/VOC2007/JPEGImages/"
     #imgpath=cfg.dbpath+"/buffy/images/"
@@ -182,7 +207,7 @@ if __name__ == '__main__':
 #                    pass
 
         #gooddet=-1
-        ovr=[]
+        ovr=[0]
         for idb,b in enumerate(gt[l["idim"]]):#for each bb gt
             ovr.append(util.overlap(b,l["bbox"]))
         if len(ovr)>0:

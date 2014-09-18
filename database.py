@@ -749,9 +749,15 @@ class VOC3D(VOC06Data):
         bbox=[]
         for idl,l in enumerate(data["record"]["objects"][0][0]["bbox"][0]):             
             if data["record"]["objects"][0][0]["class"][0][idl][0]==self.cl.split("_")[0]:
+                if self.usetr==False:
+                    if data["record"]["objects"][0][0]["truncated"][0][idl][0][0]:
+                        continue
+                if self.usedf==False:
+                    if data["record"]["objects"][0][0]["difficult"][0][idl][0][0]:
+                        continue
                 #print l
                 #raw_input()
-                bbox.append([l[0][1],l[0][0],l[0][3],l[0][2],0,0])
+                bbox.append([l[0][1],l[0][0],l[0][3],l[0][2],data["record"]["objects"][0][0]["truncated"][0][idl][0][0],data["record"]["objects"][0][0]["difficult"][0][idl][0][0]])
                 #print bbox[-1]
                 #raw_input()
         return bbox
@@ -762,6 +768,12 @@ class VOC3D(VOC06Data):
         data=util.loadmat(self.annpath+self.selines[i].split(" ")[0]+".mat")
         pose=[]
         for idl,l in enumerate(data["record"]["objects"][0][0]["viewpoint"][0]):
+            if self.usetr==False:
+                if data["record"]["objects"][0][0]["truncated"][0][idl][0][0]:
+                    continue
+                if self.usedf==False:
+                    if data["record"]["objects"][0][0]["difficult"][0][idl][0][0]:
+                        continue
             if data["record"]["objects"][0][0]["class"][0][idl][0]==self.cl.split("_")[0]:
                 pose.append(l[0][0]["azimuth"])
         return pose

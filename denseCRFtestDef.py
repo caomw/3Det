@@ -160,7 +160,7 @@ if __name__ == '__main__':
     cfg.dbpath="/users/visics/mpederso/databases/"
     cfg.testpath="./data/test3/"#"./data/CRF/12_09_19/"
     cfg.testspec="3Dortogonal6"#"full2"
-    cfg.db="AFW"#"MultiPIE2"#"images"#"AFW"#"MultiPIE2"#"VOC"
+    cfg.db="3DVOC"#"AFW"#"MultiPIE2"#"images"#"AFW"#"MultiPIE2"#"VOC"
     cfg.maxtest=2000
     cfg.maxneg=200
     cfg.use3D=True
@@ -330,7 +330,7 @@ if __name__ == '__main__':
         tsImages=numpy.concatenate((tsPosImages,tsNegImages),0)
         tsImagesFull=getRecord(VOC3D(select="all",cl="%s_val.txt"%cfg.cls,
                         basepath=cfg.dbpath,
-                        usetr=True,usedf=False),cfg.maxtestfull,pose=True)
+                        usetr=True,usedf=False),10000,pose=True)
     elif cfg.db=="images":
         #tsImages=getRecord(DirImages(imagepath="/users/visics/mpederso/code/face-release1.0-basic/images/",ext="jpg"))
         #tsImages=getRecord(DirImages(imagepath="/esat/unuk/mpederso/images/",ext="jpg"))
@@ -419,7 +419,9 @@ if __name__ == '__main__':
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/3Deform/face1_FastFull_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/AFW/face1_AFLWCorr3sides_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/AFW/face1_AFLW_slow14"
-    testname="/users/visics/mpederso/code/git/3Def/3Det/data/3Deform/face1_AFLW20007"
+    #testname="/users/visics/mpederso/code/git/3Def/3Det/data/AFW/face1_AFLW20007"
+    #testname="/users/visics/mpederso/code/git/3Def/3Det/data/VOC3Def/bicycle1_Deep2_final"
+    testname="/users/visics/mpederso/code/git/3Def/3Det/data/VOC3Def/bicycle1_Flat_Full_Fixed_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/flat/face1_Full13view_2Def_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/3Deform/face1_HigherRes_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/flat/face1_Full2Def11"
@@ -458,5 +460,5 @@ if __name__ == '__main__':
     ##############test
     #import itertools
     #runtest(models,tsImages,cfg,parallel=False,numcore=4,detfun=lambda x :detectCRF.test(x,numhyp=1,show=False),show=True)#,save="%s%d"%(testname,it))[196] is the many faces
-    runtest(models,tsImagesFull,cfg,parallel=True,numcore=24,show=False,detfun=testINC03,save="./faces_AFLW20007")
+    runtest(models,tsImagesFull,cfg,parallel=True,numcore=24,show=True,detfun=testINC03,save="./bicycle_Flat8")
 

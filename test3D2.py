@@ -859,7 +859,7 @@ def getfeat(model,hog,angy,angx,angz,ang,pos,k,bis=BIS,usebiases=USEBIASES):
         return lhog,biases,scr
     return lhog,numpy.array([]),scr
 
-def getfeatDef(model,hog,angy,angx,angz,ang,pos,parts,k,bis=BIS,usebiases=USEBIASES):
+def getfeatDef(model,hog,angy,angx,angz,ang,pos,parts,k,mlz,bis=BIS,usebiases=USEBIASES):
     import project
     lhog=[]
     hsize=model["ww"][0].mask.shape[0]
@@ -969,7 +969,7 @@ def getfeatDef(model,hog,angy,angx,angz,ang,pos,parts,k,bis=BIS,usebiases=USEBIA
         #else:
         #    x3d[-1]=0
         #    df3D+=numpy.dot(x3d**2,[p.dfax,p.dfay,p.dfaz,0])
-        x3d[-1]=x3d[-2]*5
+        x3d[-1]=x3d[-2]*mlz
         df3D+=numpy.dot(x3d**2,[p.dfax,p.dfay,p.dfaz,0])
         df.append(x3d)    
         #print "2D:",xx,"3D:",x3d

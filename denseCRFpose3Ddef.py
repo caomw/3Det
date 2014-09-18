@@ -433,23 +433,31 @@ if cfg.flat:
     trAngle=[]
     for aa in range(cfg.angbin):
         trAngle.append(numpy.array([],dtype=trPosImages.dtype))
-    for idl,l in enumerate(trPosImages):
-        #print "****",l["pose"][0][0][0],cfg.angbin/2*(l["pose"][0][0][0]/90.0)+cfg.angbin/2
-        if cfg.db=="MultiPIE2" or cfg.db=="MultiPIE2half" or cfg.db=="MultiPIE2quarter":
-            tm=int(cfg.angbin/2*(l["pose"][0][0][0]/90.0)+(cfg.angbin-1)/2)
-        elif cfg.db=="3DVOC":
-            tm=int(cfg.angbin*l["pose"][0][0][0]/360.0)
-        elif cfg.db=="epfl":
-            tm=int(cfg.angbin*l["pose"][0][0][0]/360.0)%cfg.angbin
-        print "POSE:",l["pose"][0][0][0],tm
-        trAngle[tm]=numpy.concatenate((trAngle[tm],trPosImages[idl:idl+1]),0)
-        if 0:
-            im=util.myimread(l["name"])
-            pylab.imshow(im)
-            pylab.show()
-            pylab.draw()
-            print l["pose"][0][0][0],cfg.angbin*l["pose"][0][0][0]/360.0
-            raw_input()
+    for idl,l in enumerate(trPosImagesNoTrunc):
+        if l["pose"]!=[]:
+            for idpp,pp in enumerate(l["pose"][0][0]):
+                #print "****",l["pose"][0][0][0],cfg.angbin/2*(l["pose"][0][0][0]/90.0)+cfg.angbin/2
+                if cfg.db=="MultiPIE2" or cfg.db=="MultiPIE2half" or cfg.db=="MultiPIE2quarter":
+                    tm=int(cfg.angbin/2*(l["pose"][0][0][0]/90.0)+(cfg.angbin-1)/2)
+                elif cfg.db=="3DVOC":
+                    tm=int(round((cfg.angbin*l["pose"][0][0][0]+360.0/(2*cfg.angbin))/360.0))%cfg.angbin
+                    #tm=int(cfg.angbin*l["pose"][0][0][0])%cfg.angbin
+                elif cfg.db=="epfl":
+                    tm=int(cfg.angbin*l["pose"][0][0][0]/360.0)%cfg.angbin
+                print "POSE:",l["pose"][0][0][0],tm
+                aux=numpy.zeros(1,dtype=[("id",numpy.int32),("name",object),("bbox",list),("facial",object),("pose",object)])
+                aux["id"]=trPosImagesNoTrunc[idl]["id"];
+                aux["name"]=trPosImagesNoTrunc[idl]["name"];
+                aux["bbox"]=[[(trPosImagesNoTrunc[idl]["bbox"][idpp])]];
+                aux["pose"]=[[(trPosImagesNoTrunc[idl]["pose"][idpp])]];
+                trAngle[tm]=numpy.concatenate((trAngle[tm],aux),0)
+                if 0:
+                    im=util.myimread(l["name"])
+                    pylab.imshow(im)
+                    pylab.show()
+                    pylab.draw()
+                    print aux["pose"][0][0][0],tm,aux["bbox"]
+                    raw_input()
 
     cfg.numcl=1
     #cfg.N=4
@@ -458,7 +466,7 @@ if cfg.flat:
     for aa in range(cfg.angbin):
         #a,b=stats.build_components_fix(trAngle[aa],cfg)
         print aa,len(trAngle[aa])
-        a,b=stats.build_components(trAngle[aa],cfg)
+        a,b=stats.build_components_fix(trAngle[aa],cfg)
         lfy[aa]=int(a[0]);lfx[aa]=int(b[0])
         #raw_input()
     cfg.numcl=cfg.angbin
@@ -547,7 +555,7 @@ if initial:
         cfg.model3D=5
         cfg.npart=(4,8,8)#y,x,z # parts of the cuboid
     if cfg.cls=="bicycle":
-        cfg.model3D=6
+        cfg.model3D=8
         cfg.npart=(4,2,6)#y,x,z # parts of the cuboid
     if cfg.cls=="bottle":
         cfg.npart=(7,3,3)#y,x,z # parts of the cuboid
@@ -629,6 +637,12 @@ clsize=numpy.array(clsize)
 
 util.save("%s%d.model"%(testname,0),models)
 lg.info("Built first model")    
+
+if 0 and cfg.flat:
+    import test3D2
+    for m in models:
+        pylab.figure();test3D2.showModel(m,0,0,0)  
+    raw_input()      
 
 if 0:
     util.save("init.model",models)
@@ -1042,7 +1056,7 @@ for it in range(cpit,cfg.posit):
         for idm,m in enumerate(models[:cfg.numcl]):
             #models[idm]=model.w2model(w[cumsize[idm]:cumsize[idm+1]-1],cfg.N,cfg.E,-w[cumsize[idm+1]-1]*bias,len(m["ww"]),lenf,m["ww"][0].shape[0],m["ww"][0].shape[1],useCRF=True,k=cfg.k)
 ##            #models[idm]=model.w2model3D(models[idm],w[:-1],-w[-1]*bias,cfg.usebiases,cfg.usedef)
-            models[idm]=model.w2model3D(models[idm],w[cumsize[idm]:cumsize[idm+1]-1],-w[cumsize[idm+1]-1]*bias,cfg.usebiases,cfg.usedef)          
+            models[idm]=model.w2model3D(models[idm],w[cumsize[idm]:cumsize[idm+1]-1],-w[cumsize[idm+1]-1]*bias,cfg.usebiases,cfg.usedef,cfg.mlz)          
             models[idm]["id"]=idm
             #models[idm]["ra"]=w[cumsize[idm+1]-1]
             #from model to w #changing the clip...

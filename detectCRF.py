@@ -116,8 +116,8 @@ def refinePos(el):
         if cfg.rescale:# and len(idm)>0:
             #tiley=((bbox[2]-bbox[0]))/float(numpy.max(fy[idm]))
             #tilex=((bbox[3]-bbox[1]))/float(numpy.max(fx[idm]))
-            tiley=((extbbox[2]-extbbox[0]))/float(numpy.max(fy[0]))
-            tilex=((extbbox[3]-extbbox[1]))/float(numpy.max(fx[0]))
+            tiley=((float(extbbox[2])-float(extbbox[0])))/float(numpy.max(fy[0]))
+            tilex=((float(extbbox[3])-float(extbbox[1])))/float(numpy.max(fx[0]))
             #print "Tile y",tiley,(bbox[2]-bbox[0])/8,"Tile x",tilex,(bbox[3]-bbox[1])/8
             if tiley>8*cfg.N and tilex>8*cfg.N:
                 rescale=(8*cfg.N)/float(min(tiley,tilex))
@@ -137,6 +137,9 @@ def refinePos(el):
                 if cfg.db=="MultiPIE2" or cfg.db=="MultiPIE2half" or cfg.db=="MultiPIE2quarter":
                     pp=int((el["pose"][0][0][0]/180.0)*(cfg.angbin-1)+(cfg.angbin-1)/2.0)
                     print "Pose",pp
+                elif cfg.db=="3DVOC":
+                    pp=int(round((cfg.angbin*el["pose"][0][0][0]+360.0/(2*cfg.angbin))/360.0))%cfg.angbin
+                    #pp=int(el["pose"][0][0][0]/360.0*cfg.angbin)%cfg.angbin
                 else:
                     pp=int(el["pose"][0][0][0]/360.0*cfg.angbin)%cfg.angbin
                     print "Pose",pp
@@ -191,7 +194,7 @@ aiterPOS,restart=cfg.restartPOS,trunc=cfg.trunc,bbox=extnewbbox,useFastDP=cfg.us
         if cfg.show:
             visualize([det[best]],cfg.N,f,img)
         #feat,edge=getfeature([det[best]],cfg.N,cfg.E,f,models,cfg.trunc)
-        feat,biases,df=getfeature3D([det[best]],f,models,angy,angx,angz,cfg.k,cfg.trunc,usebiases=cfg.usebiases,usedef=cfg.usedef)
+        feat,biases,df=getfeature3D([det[best]],f,models,angy,angx,angz,cfg.k,cfg.mlz,cfg.trunc,usebiases=cfg.usebiases,usedef=cfg.usedef)
         #add image name and bbx so that each annotation is unique
         det[best]["def3D"]=df
         if imageflip:
@@ -268,7 +271,7 @@ def hardNeg(el):
         #det[idl]["scr"]-=models[det[idl]["id"]]["rho"]/float(cfg.bias)
         if det[idl]["scr"]>-1:
             det[idl]["idim"]=el["file"].split("/")[-1]
-            feat,biases,df=getfeature3D([det[idl]],f,models,angy,angx,angz,cfg.k,cfg.trunc,cfg.usebiases,usedef=cfg.usedef)
+            feat,biases,df=getfeature3D([det[idl]],f,models,angy,angx,angz,cfg.k,cfg.mlz,cfg.trunc,cfg.usebiases,usedef=cfg.usedef)
             det[idl]["def3D"]=df
             ldet.append(det[idl])
             #feat,edge=getfeature([det[idl]],cfg.N,cfg.E,f,models,cfg.trunc)
@@ -397,7 +400,7 @@ def test(el,docluster=True,show=False,inclusion=False,onlybest=False,ovr=0.5,sho
     for idl,l in enumerate(det):
         det[idl]["idim"]=el["file"].split("/")[-1]
         if showparts:
-            feat,biases,df=getfeature3D([l],f,models,angy,angx,angz,cfg.k,cfg.trunc,usebiases=cfg.usebiases,usedef=cfg.usedef)
+            feat,biases,df=getfeature3D([l],f,models,angy,angx,angz,cfg.k,cfg.mlz,cfg.trunc,usebiases=cfg.usebiases,usedef=cfg.usedef)
             det[idl]["def3D"]=df
     if show:
         visualize(det[:5],cfg.N,f,img)
@@ -469,7 +472,7 @@ def getfeature(det,N,E,f,models,trunc=0):
             #raw_input()
     return lfeat,ledge
 
-def getfeature3D(det,f,model,angy,angx,angz,k,trunc=0,usebiases=False,usedef=False):
+def getfeature3D(det,f,model,angy,angx,angz,k,mlz,trunc=0,usebiases=False,usedef=False):
     """ check if score of detections and score from features are correct"""
     import test3D2
     lfeat=[]
@@ -488,7 +491,7 @@ def getfeature3D(det,f,model,angy,angx,angz,k,trunc=0,usebiases=False,usedef=Fal
         m2pad[deltay:deltay+m2.shape[0],deltax:deltax+m2.shape[1]]=m2
         #for ld in det:
         if usedef:
-            feat,biases,df,uscr,df2D,df3D=test3D2.getfeatDef(m1,m2pad,angy,angx,angz,ld["ang"],numpy.array(ld["fpos"])+[deltay,deltax],ld["ddef"],k,usebiases=usebiases)
+            feat,biases,df,uscr,df2D,df3D=test3D2.getfeatDef(m1,m2pad,angy,angx,angz,ld["ang"],numpy.array(ld["fpos"])+[deltay,deltax],ld["ddef"],k,mlz,usebiases=usebiases)
             scr=uscr-df2D
         else:
             df=[]
