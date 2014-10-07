@@ -188,7 +188,10 @@ from math import atan2,atan,cos,sin
 
 #from prof import do_profile
 #@do_profile()
-def dt2rot(img,ay,ax,axy,by,bx,fast=True):
+def dt2rot(img,ay,ax,axy,by,bx,fast=False):
+    if abs(axy)<min(ax,ay)*0.01:
+        #print "Fast DT",ax,ay,axy
+        return mydt(img,ay,ax,0,0,fast)    
     intrp=1
     szy=img.shape[0]
     szx=img.shape[1]
@@ -230,8 +233,10 @@ def dt2rot(img,ay,ax,axy,by,bx,fast=True):
         dy=rotate(Iy,-ang,mode='nearest',order=intrp)
         dx=rotate(Ix,-ang,mode='nearest',order=intrp)
     #print sin(-rad)*cos(-rad)*szy,sin(-rad)*sin(-rad)*szx
-    adx=numpy.round(dx*cos(-rad)+dy*sin(-rad)-szx*cos(-rad)*sin(-rad))
-    ady=numpy.round(-dx*sin(-rad)+dy*cos(-rad)+szy*sin(-rad)*sin(-rad))
+    #adx=numpy.round(dx*cos(-rad)+dy*sin(-rad)-szx*cos(-rad)*sin(-rad))
+    adx=(dx*cos(-rad)+dy*sin(-rad)-szx*cos(-rad)*sin(-rad))
+    #ady=numpy.round(-dx*sin(-rad)+dy*cos(-rad)+szy*sin(-rad)*sin(-rad))
+    ady=(-dx*sin(-rad)+dy*cos(-rad)+szy*sin(-rad)*sin(-rad))
     cty=(res.shape[0]-szy)/2
     ctx=(res.shape[1]-szx)/2
     if abs(bx)>ctx or abs(by)>cty:
@@ -249,9 +254,13 @@ def dt2rot(img,ay,ax,axy,by,bx,fast=True):
         adx=dx2
         cty=cty+aby
         ctx=ctx+abx
-    dy=ady[cty-by:cty+szy-by,ctx-bx:ctx+szx-bx].astype(numpy.int)
-    dx=adx[cty-by:cty+szy-by,ctx-bx:ctx+szx-bx].astype(numpy.int)
-    return res[cty-by:cty+szy-by,ctx-bx:ctx+szx-bx],dy,dx
+    fdy=(ady[cty-by:cty+szy-by,ctx-bx:ctx+szx-bx])
+    fdx=(adx[cty-by:cty+szy-by,ctx-bx:ctx+szx-bx])#.astype(numpy.int)
+    #there should be a simpler and faster solution to align down
+    mesh=numpy.mgrid[:szy,:szx]
+    fdy=(fdy-(fdy-mesh[0]).mean()).round().astype(numpy.int)
+    fdx=(fdx-(fdx-mesh[1]).mean()).round().astype(numpy.int)
+    return res[cty-by:cty+szy-by,ctx-bx:ctx+szx-bx],fdy,fdx
 
 
 if __name__ == "__main__":
@@ -261,22 +270,27 @@ if __name__ == "__main__":
     im=numpy.zeros((dimy,dimx),numpy.float32)
     #im=-numpy.ones((dimy,dimx),numpy.float32)
     #im=numpy.random.random((dimy,dimx)).astype(numpy.float32)
-    im[40,50]=1450
-    im[25,65]=1450
+    im[40,50]=150
+    im[25,65]=150
     #im[40,50]=1
     #dta=numpy.zeros((dimy,dimx),dtype=numpy.float32)
     #dy=numpy.zeros((dimy,dimx),dtype=numpy.float32)
     #dx=numpy.zeros((dimy,dimx),dtype=numpy.float32)
     #lib.dtpy(a,dta,dy,dx,dimy,dimy,1,1,0,0)
-    ax=1;ay=1
+    ax=0.5;ay=0.1
     by=0;bx=0
     #dtim,Iy,Ix=mydt(im,a,a,b,b)
     #dtim,Iy,Ix=dt2(im,a,2*a,-0.00,by,bx)
-    dtim,Iy,Ix=dt(im,ay,ax,by,bx)
-    dtimr,Iyr,Ixr=ffdt(im,ay,ax,bx,by)
-    #dtim,Iy,Ix=dt2rot(im,ay,ax,-0.005,by,bx)
+    #dtim,Iy,Ix=dt(im,ay,ax,by,bx)
+    #dtimr,Iyr,Ixr=ffdt(im,ay,ax,bx,by)
+    dtim,Iy,Ix=dt2rot(im,ay,ax,0.1,by,bx)
+    px=10;py=10
+    dy=py-Iy[py,px];dx=px-Ix[py,px]
+    df=-(dy**2+dx**2)
+    app=im[Iy[py,px],Ix[py,px]]
+    assert(abs(dtim[py,px]-(app-df))<0.00001)
     #dtimr,Iyr,Ixr=dt2rot(im,a,2*a,-0.005,by,bx,fast=True)
-    if 1:
+    if 0:
         import pylab
         pylab.figure(1)
         pylab.clf()
@@ -292,7 +306,7 @@ if __name__ == "__main__":
         pylab.imshow(Ix-Ixr)#(numpy.concatenate((Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix),0))
         pylab.draw()
         pylab.show()
-    print "Max Error",numpy.abs(dtimr-dtim).max(),numpy.abs(Iyr-Iy).max(),numpy.abs(Ixr-Ix).max()
-    print "Mean Error",numpy.abs(dtimr-dtim).mean(),numpy.abs(Iyr-Iy).mean(),numpy.abs(Ixr-Ix).mean()
+    #print "Max Error",numpy.abs(dtimr-dtim).max(),numpy.abs(Iyr-Iy).max(),numpy.abs(Ixr-Ix).max()
+    #print "Mean Error",numpy.abs(dtimr-dtim).mean(),numpy.abs(Iyr-Iy).mean(),numpy.abs(Ixr-Ix).mean()
 
 

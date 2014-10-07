@@ -145,7 +145,7 @@ def refinePos(el):
                     print "Pose",pp
                 selmodels=models[pp:pp+1]
             for mm in selmodels:
-                [f,pdet]=test3D2.rundet(img,mm,bbox=extnewbbox,angy=angy,angx=angx,angz=angz,selangy=selangy,selangx=selangx,selangz=selangz,sort=cfg.mysort,k=cfg.k,usebiases=cfg.usebiases,usedef=cfg.usedef,skip=cfg.skip)
+                [f,pdet]=test3D2.rundet(img,mm,bbox=extnewbbox,maxdet=10000,angy=angy,angx=angx,angz=angz,selangy=selangy,selangx=selangx,selangz=selangz,sort=cfg.mysort,k=cfg.k,usebiases=cfg.usebiases,usedef=cfg.usedef,skip=cfg.skip)
                 if cfg.flat:
                     for ee in pdet:
                         ee["id"]=pp
@@ -359,15 +359,15 @@ def test(el,docluster=True,show=False,inclusion=False,onlybest=False,ovr=0.5,sho
     #imageflip=el["flip"]
     det=[]
     if cfg.use3D:
-        angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
-        if cfg.__dict__.has_key("cangy"):
-            angy=cfg.cangy   
-        angx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
-        if cfg.__dict__.has_key("cangx"):
-            angx=cfg.cangx   
-        angz=[-20,-10,0,10,20]
-        if cfg.__dict__.has_key("cangz"):
-            angz=cfg.cangz   
+        #angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
+        #if cfg.__dict__.has_key("cangy"):
+        angy=cfg.cangy   
+        #angx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90]
+        #if cfg.__dict__.has_key("cangx"):
+        angx=cfg.cangx   
+        #angz=[-20,-10,0,10,20]
+        #if cfg.__dict__.has_key("cangz"):
+        angz=cfg.cangz   
         import test3D2
         for idmm,mm in enumerate(models):
             [f,pdet]=test3D2.rundet(img,mm,angy=angy,maxdet=5000,angx=angx,angz=angz,selangy=cfg.angy,selangx=cfg.angx,selangz=cfg.angz,k=cfg.k,usebiases=cfg.usebiases,usedef=cfg.usedef,skip=cfg.skip)
@@ -396,6 +396,7 @@ def test(el,docluster=True,show=False,inclusion=False,onlybest=False,ovr=0.5,sho
         clip(det,img.shape)
     if docluster:
         #det=cluster(det,maxcl=100,inclusion=False)
+        #det=cluster(det,maxcl=100,inclusion=inclusion,onlybest=onlybest,ovr=ovr)
         det=cluster(det,maxcl=100,inclusion=inclusion,onlybest=onlybest,ovr=ovr)
     for idl,l in enumerate(det):
         det[idl]["idim"]=el["file"].split("/")[-1]
@@ -500,17 +501,31 @@ def getfeature3D(det,f,model,angy,angx,angz,k,mlz,trunc=0,usebiases=False,usedef
             #print "Error",scr-ld["scr"]-m1["rho"],(scr-ld["scr"]-m1["rho"])/scr
             #raw_input()
         #print "Scr:",scr-m1["rho"],"PrevScr:",ld["scr"]
-        if abs((scr-ld["scr"]-m1["rho"])/scr)>0.0001:
-            print "Error",abs((scr-ld["scr"]-m1["rho"])/scr)                
-            #raw_input()
+        if abs((scr-m1["rho"]-ld["scr"])/scr)>0.0001:
+            print "Error",abs((scr-m1["rho"]-ld["scr"])/scr)                
+            print "Dense",ld["scr"],"Feat",scr-m1["rho"]
+            if usedef:
+                print uscr-m1["rho"],df2D,df3D
+            #print "Dense",ld["scrh"],ld["scr"],ld["scr"]-ld["scrh"],"Feat",scr-m1["rho"],uscr-m1["rho"],df2D
+            raw_input()
         if usedef: #compute 3D score
+            #print "Dense",ld["scr"],"Feat",scr-m1["rho"],uscr-m1["rho"],df2D,df3D
             det[idl]["scr2D"]=ld["scr"]
             det[idl]["scr"]=uscr-df3D-m1["rho"]
-            print "Score2D:",ld["scr2D"]," Score3D:",ld["scr"]
-            #raw_input()
+            #print "Score2D:",ld["scr2D"]," Score3D:",ld["scr"]
+            #if ld["scr"]>ld["scr2D"]:
+            #    print "Error, score 3D should be small than score3D"    
+            #    raw_input()
         lfeat.append(feat)
         lbiases.append(biases)
         ldef.append(df)
+        if 0:
+            pylab.figure(999)
+            test3D2.showHOG(models[0],efeat,ld['ang'][0],ld['ang'][1],ld['ang'][2])
+            pylab.draw()
+            pylab.show()
+            raw_input()
+    #print ldef
     return lfeat,lbiases,ldef
 
 
@@ -728,7 +743,7 @@ def cube(shape,center,rot,scl,def3D):
 
     
 
-def visualize3D(det,N,img,bb=[],text="",color=None,line=False,norec=True,nograph=False,lw=2,thr=-numpy.inf,alpha=0.5,npart=(5,5,5),cangy=[0],cangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],cangz=[0],vis3D=False):
+def visualize3D(model,det,N,img,bb=[],text="",color=None,line=False,norec=True,nograph=False,lw=2,thr=-numpy.inf,alpha=0.5,npart=(5,5,5),cangy=[0],cangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],cangz=[0],vis3D=False):
     """visualize a detection and the corresponding featues"""
     pl=pylab
     if color!=None:
@@ -769,6 +784,15 @@ def visualize3D(det,N,img,bb=[],text="",color=None,line=False,norec=True,nograph
         if det[l].has_key("bbox"):
             util.box(det[l]["bbox"][0],det[l]["bbox"][1],det[l]["bbox"][2],det[l]["bbox"][3],lw=lw,col=col[0])#col[cc%10])
         pylab.text(det[l]["bbox"][1],det[l]["bbox"][0],"%.2f %d %d %d %d"%(det[l]["scr"],det[l]["ang"][0],det[l]["ang"][1],det[l]["ang"][2],det[l]["id"]),backgroundcolor = 'w', color = 'k')
+        if 1:
+            import test3D2
+            #center=((det[l]["bbox"][0]+det[l]["bbox"][2])/2.0,(det[l]["bbox"][1]+det[l]["bbox"][3])/2.0)
+            center=(det[l]["bbox"][0],det[l]["bbox"][1])
+            scale=det[l]["scl"]
+            parts=det[l]["def3D"][0]
+            if parts==[]:
+                parts=numpy.zeros((len(model["ww"]),4))
+            test3D2.drawParts(model,center,scale,parts,cangy[det[l]["ang"][0]],cangx[det[l]["ang"][1]],cangz[det[l]["ang"][2]])
         if 0:#vis3D:#3d visualization
             #dsf
             pts,idx,parts=cube(npart,((det[l]["bbox"][0]+det[l]["bbox"][2])/2.0,(det[l]["bbox"][1]+det[l]["bbox"][3])/2.0),cangx[det[l]["ang"][1]],det[l]["scl"],det[l]["def3D"][0])

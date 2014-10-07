@@ -20,7 +20,7 @@ import crf3
 import logging as lg
 import os
 import pegasos2 as pegasos
-import denseCRFtest
+import denseCRFtestDef as denseCRFtest
 
 ########################## load configuration parametes
 
@@ -370,6 +370,7 @@ elif cfg.db=="epfl":
         trPosImages=numpy.concatenate((trPosImages,getRecord(epfl(select="pos",cl="%02d"%car,
                         basepath=cfg.dbpath,#"/home/databases/",
                         usetr=True,usedf=False,initimg=0,double=0),10000,pose=True)))#[:20]#[:cfg.posit]#88]#[22:]#[8:]
+    trPosImages=trPosImages[:cfg.maxpos]
     #trPosImagesFull=trPosImagesFull[sframe:eframe]
     trPosImagesFull=trPosImages
     #trPosImages=trPosImagesFull[0:1]#getRecord(track(select="pos",cl="%s"%cfg.cls,
@@ -390,7 +391,7 @@ elif cfg.db=="epfl":
         tsPosImages=numpy.concatenate((tsPosImages,getRecord(epfl(select="pos",cl="%02d"%car,
                         basepath=cfg.dbpath,#"/home/databases/",
                         usetr=True,usedf=False,initimg=0,double=0),10000,pose=True)))#[:20]
-    tsImages=tsPosImages
+    tsImages=tsPosImages[:cfg.maxtest]
     tsImagesFull=tsImages
     #trNegImages=getRecord(track(select="neg",cl="%s_frames.txt"%cfg.cls,
     #                    basepath=cfg.dbpath,#"/home/databases/",#"/share/ISE/marcopede/database/",
@@ -547,41 +548,42 @@ Number Negative SV:%d
 
 import pylab as pl
 
+if cfg.cls=="aeroplane":
+    cfg.model3D=5
+    cfg.npart=(4,8,8)#y,x,z # parts of the cuboid
+if cfg.cls=="bicycle":
+    cfg.model3D=6#9 is dense
+    cfg.npart=(4,2,6)#y,x,z # parts of the cuboid
+if cfg.cls=="bottle":
+    cfg.npart=(7,3,3)#y,x,z # parts of the cuboid
+if cfg.cls=="boat":
+    cfg.npart=(4,3,7)#y,x,z # parts of the cuboid
+if cfg.cls=="bus":
+    cfg.npart=(4,3,9)#y,x,z # parts of the cuboid
+if cfg.cls=="car":
+    if cfg.db=="epfl":
+        cfg.npart=(4,5,10)#y,x,z # parts of the cuboid
+    else:
+        cfg.npart=(2,3,6)#y,x,z # parts of the cuboid
+if cfg.cls=="chair":
+    cfg.npart=(5,3,3)#y,x,z # parts of the cuboid
+if cfg.cls=="diningtable":
+    cfg.npart=(3,3,6)#y,x,z # parts of the cuboid
+if cfg.cls=="motorbike":
+    cfg.model3D=6
+    cfg.npart=(4,3,7)#y,x,z # parts of the cuboid
+if cfg.cls=="sofa":
+    cfg.npart=(4,7,4)#y,x,z # parts of the cuboid
+if cfg.cls=="train":
+    cfg.npart=(3,3,8)#y,x,z # parts of the cuboid
+if cfg.cls=="tvmonitor":
+    cfg.npart=(3,4,3)#y,x,z # parts of the cuboid
+
+
 if initial:
     cpit=0
     cnit=0
     
-    if cfg.cls=="aeroplane":
-        cfg.model3D=5
-        cfg.npart=(4,8,8)#y,x,z # parts of the cuboid
-    if cfg.cls=="bicycle":
-        cfg.model3D=8
-        cfg.npart=(4,2,6)#y,x,z # parts of the cuboid
-    if cfg.cls=="bottle":
-        cfg.npart=(7,3,3)#y,x,z # parts of the cuboid
-    if cfg.cls=="boat":
-        cfg.npart=(4,3,7)#y,x,z # parts of the cuboid
-    if cfg.cls=="bus":
-        cfg.npart=(4,3,9)#y,x,z # parts of the cuboid
-    if cfg.cls=="car":
-        if cfg.db=="epfl":
-            cfg.npart=(4,6,11)#y,x,z # parts of the cuboid
-        else:
-            cfg.npart=(2,3,7)#y,x,z # parts of the cuboid
-    if cfg.cls=="chair":
-        cfg.npart=(5,3,3)#y,x,z # parts of the cuboid
-    if cfg.cls=="diningtable":
-        cfg.npart=(3,3,6)#y,x,z # parts of the cuboid
-    if cfg.cls=="motorbike":
-        cfg.model3D=6
-        cfg.npart=(4,3,7)#y,x,z # parts of the cuboid
-    if cfg.cls=="sofa":
-        cfg.npart=(4,7,4)#y,x,z # parts of the cuboid
-    if cfg.cls=="train":
-        cfg.npart=(3,3,8)#y,x,z # parts of the cuboid
-    if cfg.cls=="tvmonitor":
-        cfg.npart=(3,4,3)#y,x,z # parts of the cuboid
-
     if cfg.flat:
         models=model.initmodel2D(cfg.usebiases,cfg.cangy,cfg.cangx,cfg.cangz,lfy,lfx)
     else:
@@ -590,7 +592,10 @@ if initial:
     for m in models:
         for mm in m["ww"]:
             #mm.dfay=0.001;mm.dfax=0.001;mm.dfaz=0.001
-            mm.dfay=0.1;mm.dfax=0.1;mm.dfaz=0.1
+            if cfg.usedef:
+                mm.dfay=0.1;mm.dfax=0.1;mm.dfaz=0.1
+            else:
+                mm.dfay=0;mm.dfax=0;mm.dfaz=0
             m["thr"]=-2
     #########add thresholds
     #for m in models:
@@ -620,8 +625,8 @@ for idm,m in enumerate(models[:cfg.numcl]):
         waux.append(model.model2w(models[idm],False,False,False,useCRF=True,k=cfg.k))
     rr.append(models[idm]["rho"])
     w1=numpy.concatenate((w1,waux[-1],-numpy.array([models[idm]["rho"]])/bias))
-    if cfg.usedef:
-        sizereg[idm]=3*len(models[idm]["ww"])
+    #if cfg.usedef:
+    sizereg[idm]=3*len(models[idm]["ww"])
     #sizereg[idm]=13*13
 #w2=w #old w
 w=w1
@@ -664,6 +669,7 @@ cache_full=False
 import detectCRF
 from multiprocessing import Pool
 import itertools
+from database import invpose
 
 #just to compute totPosEx when using check points
 arg=[]
@@ -672,7 +678,7 @@ for idl,l in enumerate(trPosImages):
     for idb,b in enumerate(bb):
         if cfg.useRL:
             arg.append({"idim":idl,"file":l["name"],"idbb":idb,"bbox":b,"models":models,"facial":l["facial"],"pose":l["pose"],"cfg":cfg,"flip":False})    
-            arg.append({"idim":idl,"file":l["name"],"idbb":idb,"bbox":b,"models":models,"facial":l["facial"],"pose":l["pose"],"cfg":cfg,"flip":True})    
+            arg.append({"idim":idl,"file":l["name"],"idbb":idb,"bbox":b,"models":models,"facial":l["facial"],"pose":invpose(l["pose"]),"cfg":cfg,"flip":True})    
         else:
             arg.append({"idim":idl,"file":l["name"],"idbb":idb,"bbox":b,"models":models,"facial":l["facial"],"pose":l["pose"],"cfg":cfg,"flip":False})    
 totPosEx=len(arg)
@@ -721,7 +727,7 @@ for it in range(cpit,cfg.posit):
                 #if b[4]==1:#only for truncated
                 if cfg.useRL:
                     arg.append({"idim":idl,"file":l["name"],"idbb":idb,"bbox":b,"models":models,"facial":l["facial"],"pose":l["pose"],"cfg":cfg,"flip":False})    
-                    arg.append({"idim":idl,"file":l["name"],"idbb":idb,"bbox":b,"models":models,"facial":l["facial"],"pose":l["pose"],"cfg":cfg,"flip":True})    
+                    arg.append({"idim":idl,"file":l["name"],"idbb":idb,"bbox":b,"models":models,"facial":l["facial"],"pose":invpose(l["pose"]),"cfg":cfg,"flip":True})    
                 else:
                     arg.append({"idim":idl,"file":l["name"],"idbb":idb,"bbox":b,"models":models,"facial":l["facial"],"pose":l["pose"],"cfg":cfg,"flip":False})    
 
@@ -745,6 +751,7 @@ for it in range(cpit,cfg.posit):
                     #print "Newdet",newdet["idim"],"Olddet",l["idim"]
                     if (newdet["idim"]==l["idim"]): #same image
                         if (newdet["idbb"]==l["idbb"]): #same bbox
+                            print "OldSCR",l["scr"],"NewSCR",newdet["scr"]
                             if (newdet["scr"]>l["scr"]):#compare score
                                 print "New detection has better score"
                                 lpdet[idl]=newdet
@@ -802,9 +809,9 @@ for it in range(cpit,cfg.posit):
                 pylab.clf()
                 iname=arg[ii]["file"].split("/")[-1]
                 if res[0]!=[]:
-                    detectCRF.visualize3D([res[0]],cfg.N,im,cbb,iname+"\n"+text,line=True,nograph=True,npart=cfg.npart,vis3D=not(cfg.flat))
+                    detectCRF.visualize3D(models[0],[res[0]],cfg.N,im,cbb,iname+"\n"+text,line=True,nograph=True,npart=cfg.npart,cangy=cfg.cangy,cangx=cfg.cangx,cangz=cfg.cangz,vis3D=not(cfg.flat))
                 else:
-                    detectCRF.visualize3D([],cfg.N,im,cbb,iname+"\n"+text,npart=cfg.npart,nograph=True,vis3D=not(cfg.flat))
+                    detectCRF.visualize3D(models[0],[],cfg.N,im,cbb,iname+"\n"+text,npart=cfg.npart,nograph=True,cangy=cfg.cangy,cangx=cfg.cangx,cangz=cfg.cangz,vis3D=not(cfg.flat))
                 #raw_input()
                 if cfg.useFacial:
                     from extra import locatePoints,locatePointsInter
@@ -895,22 +902,28 @@ for it in range(cpit,cfg.posit):
     for idl,l in enumerate(lpdet):#enumerate(lndet):
         efeat=lpfeat[idl]#.flatten()
         eedge=lpedge[idl]#.flatten()
-        edef0=numpy.array(lpdef[idl])[:,-1]
-        edef1=-(numpy.array(lpdef[idl])[:,:-1]**2).astype(numpy.float32)
-        if lpdet[idl]["id"]>=cfg.numcl:#flipped version
-            efeat=pyrHOG2.hogflip(efeat)
-            #eedge=pyrHOG2.crfflip(eedge)
+        if cfg.usedef:
+            edef0=numpy.array(lpdef[idl])[:,-1].astype(numpy.float32)
+            edef1=-(numpy.array(lpdef[idl])[:,:-1]**2).astype(numpy.float32)
+        #if lpdet[idl]["id"]>=cfg.numcl:#flipped version
+        #    efeat=pyrHOG2.hogflip(efeat)
+        #    #eedge=pyrHOG2.crfflip(eedge)
+        else:
+            edef0=numpy.zeros((len(models[0]["ww"]),1),dtype=numpy.float32)
+            edef1=numpy.zeros((len(models[0]["ww"]),3),dtype=numpy.float32)
         trpos.append(numpy.concatenate((model.feat2flatten(efeat),eedge.flatten(),edef0.flatten(),edef1.flatten(),[bias])))
+#        else:
+#            trpos.append(numpy.concatenate((model.feat2flatten(efeat),eedge.flatten(),[bias])))
         trposcl.append(l["id"]%cfg.numcl)
         dscr=numpy.sum(trpos[-1]*w[cumsize[trposcl[-1]]:cumsize[trposcl[-1]+1]])#-models[0]["rho"]
         #print "Error:",abs(dscr-l["scr"])
         if (abs(dscr-l["scr"])>0.0005):
             print "Error in checking the score function"
             print "Feature score",dscr,"CRF score",l["scr"]
-            aa=numpy.array([(l.dfax,l.dfay,l.dfaz) for l in mm[0]["ww"]])
-            print "Deform",numpy.dot(aa,edef1.flatten())
+            aa=numpy.array([(p.dfax,p.dfay,p.dfaz) for p in models[0]["ww"]])
+            print "Deform",numpy.dot(aa.flatten(),edef1.flatten())
             lg.info("Error in checking the score function")
-            lg.info("Feature score %f CRF score %f"%(dscr,l["scr"]))
+            lg.info("Feature score %f DT score %f"%(dscr,l["scr"]))
             #raw_input()
 
     ########### check positive convergence    
@@ -972,14 +985,20 @@ for it in range(cpit,cfg.posit):
         for idl,l in enumerate(lndet):
             efeat=lnfeat[idl]#.flatten()
             eedge=lnedge[idl]#.flatten()
-            eedef0=numpy.array(lndef[idl])[:,-1]
-            eedef1=-(numpy.array(lndef[idl])[:,:-1]**2).astype(numpy.float32)
+            if cfg.usedef:
+                eedef0=numpy.array(lndef[idl])[:,-1].astype(numpy.float32)
+                eedef1=-(numpy.array(lndef[idl])[:,:-1]**2).astype(numpy.float32)
             #eedef=(numpy.array(lndef[idl])**2).astype(numpy.float32)
-            if lndet[idl]["id"]>=cfg.numcl:#flipped version
-                efeat=pyrHOG2.hogflip(efeat)
+            #if lndet[idl]["id"]>=cfg.numcl:#flipped version
+            #    efeat=pyrHOG2.hogflip(efeat)
             #    eedge=pyrHOG2.crfflip(eedge)
             #trneg.append(numpy.concatenate((efeat.flatten(),cfg.k*eedge.flatten(),[bias])))
+            else:
+                eedef0=numpy.zeros((len(models[0]["ww"]),1),dtype=numpy.float32)
+                eedef1=numpy.zeros((len(models[0]["ww"]),3),dtype=numpy.float32)
             trneg.append(numpy.concatenate((model.feat2flatten(efeat),eedge.flatten(),eedef0.flatten(),eedef1.flatten(),[bias])))
+            #else:
+            #    trneg.append(numpy.concatenate((model.feat2flatten(efeat),eedge.flatten(),[bias])))
             trnegcl.append(l["id"]%cfg.numcl)
             dscr=numpy.sum(trneg[-1]*w[cumsize[trnegcl[-1]]:cumsize[trnegcl[-1]+1]])
             #trnegcl.append(lndet[idl]["id"]%cfg.numcl)
@@ -1067,11 +1086,12 @@ for it in range(cpit,cfg.posit):
             #rr.append(models[idm]["rho"])
             w1=numpy.concatenate((w1,waux[-1],-numpy.array([models[idm]["rho"]])/bias))
         #skip the assert because for lz w1 is not anymore the same as w!
-        #assert(numpy.sum(numpy.abs(w1-w))<0.0002)
+        if cfg.mlz==0:
+            assert(numpy.sum(numpy.abs(w1-w))<0.0002)
         w2=w
         w=w1
 
-        if cfg.useRL:
+        if 0:#cfg.useRL:
             #add flipped models
             for idm in range(cfg.numcl):
                 models[cfg.numcl+idm]=(extra.flip(models[idm]))
@@ -1086,7 +1106,10 @@ for it in range(cpit,cfg.posit):
         import test3D2
         pylab.figure(400,figsize=(10,10))
         pylab.clf()
-        test3D2.showModel(models[0],0,0,0,nhog=50,bis=False)
+        if cfg.db=='3DVOC':
+            test3D2.showModel(models[0],0,90,0)    
+        else:
+            test3D2.showModel(models[0],0,0,0)
         pylab.draw()
         pylab.show()
         pylab.savefig("%s_3D%dq.png"%(testname,it))
@@ -1216,7 +1239,7 @@ Negative in cache vectors %d
             print "Total negatives:",len(lndetnew)
             if localshow and res[0]!=[]:
                 im=myimread(arg[ii]["file"])
-                detectCRF.visualize3D(res[0][:5],cfg.N,im,npart=cfg.npart,vis3D=not(cfg.flat))
+                detectCRF.visualize3D(models[0],res[0][:5],cfg.N,im,npart=cfg.npart,cangy=cfg.cangy,cangx=cfg.cangx,cangz=cfg.cangz,vis3D=not(cfg.flat))
             lndetnew+=res[0]
             lnfeatnew+=res[1]
             lnedgenew+=res[2]

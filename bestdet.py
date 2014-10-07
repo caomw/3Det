@@ -15,7 +15,7 @@ import sys
 
 if __name__ == '__main__':
 
-    if 0: #use the configuration file
+    if 1: #use the configuration file
         print "Loading defautl configuration config.py"
         from config import * #default configuration      
 
@@ -25,14 +25,14 @@ if __name__ == '__main__':
             exec "from config_%s import *"%import_name
             
         #cfg.cls=sys.argv[1]
-        cfg.useRL=False#for the moment
-        cfg.show=False
-        cfg.auxdir=""
-        cfg.numhyp=5
-        cfg.rescale=True
-        cfg.numneg= 10
-        bias=100
-        cfg.bias=bias
+        #cfg.useRL=False#for the moment
+        #cfg.show=False
+        #cfg.auxdir=""
+        #cfg.numhyp=5
+        #cfg.rescale=True
+        #cfg.numneg= 10
+        #bias=100
+        #cfg.bias=bias
         #just for a fast test
         #cfg.maxpos = 50
         #cfg.maxneg = 20
@@ -169,7 +169,9 @@ if __name__ == '__main__':
     #det=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/faces/car1_3Dafwright_final.det")["det"]
     #det=util.load("/users/visics/mpederso/code/git/3Def/3Det/faces_Def14.det")["det"]
     #det=util.load("/users/visics/mpederso/code/git/3Def/3Det/faces_DeepFace3.det")["det"]
-    det=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/VOC3Def/bicycle1_Deep25Fixed5.det")["det"]
+    #det=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/VOC3Def/bicycle1_Deep25Fixed5.det")["det"]
+    det=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/NEW/VOC3Def/bicycle1_Good3.det")["det"]
+    model=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/NEW/VOC3Def/bicycle1_Good3.model")[0]
     #imgpath=cfg.dbpath+"multiPIE//"
     imgpath=cfg.dbpath+"PASCAL3D+_release1.0/JPEGImages/"
     #imgpath=cfg.dbpath+"afw/testimages/"
@@ -214,9 +216,9 @@ if __name__ == '__main__':
             #print "Best ovr",max(ovr)
             if max(ovr)>=0.5:
                 #detectCRF.visualize2([l],cfg.N,img,text="rank:%d ovr:%.3f scl:%d"%(idl,max(ovr),l["hog"]),bb=gt[l["idim"]],color="w",line=line)
-                detectCRF.visualize3D([l],cfg.N,img,bb=gt[l["idim"]],color="w")
+                detectCRF.visualize3D(model,[l],cfg.N,img,bb=gt[l["idim"]],color="w",cangy=cfg.cangy,cangx=cfg.cangx,cangz=cfg.cangz)
             else:
-                detectCRF.visualize3D([l],cfg.N,img,bb=gt[l["idim"]],color="r")
+                detectCRF.visualize3D(model,[l],cfg.N,img,bb=gt[l["idim"]],color="r",cangy=cfg.cangy,cangx=cfg.cangx,cangz=cfg.cangz)
                 #detectCRF.visualize2([l],cfg.N,img,text="rank:%d ovr:%.3f scl:%d"%(idl,max(ovr),l["hog"]),bb=gt[l["idim"]],color="r",line=line)
         else:
             detectCRF.visualize2([l],cfg.N,img,text="rank:%d"%(idl),color="r",line=line)

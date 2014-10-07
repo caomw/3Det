@@ -417,11 +417,11 @@ def overlap_array(a,b):
     return abs(o)
 
 
-def box(p1y,p1x,p2y,p2x,col='b',lw=1):
+def box(p1y,p1x,p2y,p2x,col='b',lw=1,color=(0,0,1,1)):
     """
         plot a bbox with the given coordinates
     """
-    pylab.plot([p1x,p1x,p2x,p2x,p1x],[p1y,p2y,p2y,p1y,p1y],col,lw=lw)
+    pylab.plot([p1x,p1x,p2x,p2x,p1x],[p1y,p2y,p2y,p1y,p1y],col,lw=lw,color=color)
 
 def getfeat(a,y1,y2,x1,x2):
     """

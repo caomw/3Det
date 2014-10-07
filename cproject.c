@@ -121,6 +121,19 @@ def rotatez(v,a):
     return [res[0],res[1],v[2]]
 */
 
+void normal(int angy,int angx,int glangy,int glangx,float* px,float* py,float* pz)
+{
+    float res[2];//,tmpx,tmpy,tmpz;
+    rotate(*px,*pz,angx,res);//y
+    *px=res[0];*py=*py;*pz=res[1];
+    rotate(*py,*pz,angy,res);//x
+    *px=*px;*py=res[0],*pz=res[1];
+    rotate(*px,*pz,glangx,res);//rotate y
+    *px=res[0];*py=*py;*pz=res[1];
+    rotate(*py,*pz,glangy,res);//rotate x
+    *px=*px;*py=res[0];*pz=res[1];
+}
+
 void getproj(float minx,float miny,int glangx,int glangy,int glangz,int angx,int angy,float x,float y,float z,float lz,int hsize,float *projx, float *projy)
 {
     //printf("Hsize%d",hsize);
@@ -156,6 +169,30 @@ void getproj(float minx,float miny,int glangx,int glangy,int glangz,int angx,int
     //*projx=-minx+x*cos(glangx/180.0*M_PI)-hsize/2.0*(cos(angx/180.0*M_PI))-z*sin(angx/180.0*M_PI);
     //*projy=-miny+y*cos(glangy/180.0*M_PI)-hsize/2.0*(cos(angy/180.0*M_PI))-z*sin(angy/180.0*M_PI);
 }
+
+void getproj2(float dx,float dy,int glangx,int glangy,int glangz,int angx,int angy,float x,float y,float z,float lz,int hsize,float *projx, float *projy)
+{
+    float res[2],tmpx,tmpy,tmpz,yr,xr;
+    rotate(-dx,lz,angx,res);//rotatey
+    //rotate(0.0,lz,angx,res);//rotatey
+    tmpx=res[0];tmpy=-dy;tmpz=res[1];
+    //tmpx=res[0];tmpy=-hsize/2.0;tmpz=res[1];
+    rotate(tmpy,tmpz,angy,res);//rotatex
+    tmpx=tmpx;tmpy=res[0],tmpz=res[1];
+    //printf("middle x=%f,y+%f,z=%f    ",tmpx,tmpy,tmpz);
+    tmpx+=x;tmpy+=y;tmpz+=z;
+    rotate(tmpx,tmpz,glangx,res);//rotate y
+    tmpx=res[0];tmpy=tmpy;tmpz=res[1];
+    rotate(tmpy,tmpz,glangy,res);//rotate x
+    tmpx=tmpx;tmpy=res[0];tmpz=res[1];
+    xr=tmpx;yr=tmpy;
+    float co=cos(glangz/180.0*M_PI),si=sin(glangz/180.0*M_PI);
+    float xp=xr*co-yr*si;
+    float yp=xr*si+yr*co;
+    *projx=xp;
+    *projy=yp;
+}
+
 
 /*
 res[gly,glx][maxmy-posy:maxmy-posy+hsy+hsize,maxmx-posx:maxmx-posx+hsx+hsize]+=(1-disty)*(1-distx)*scr

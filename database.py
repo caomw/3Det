@@ -22,6 +22,11 @@ from util import myimread
 #        img=aux
 #    return img
 
+def invpose(pose):
+    ipose=[]
+    for l in pose:
+        ipose.append([[(-l[0][0])%360]])
+    return ipose
 
 def getbboxINRIA(filename):
     """
@@ -775,7 +780,7 @@ class VOC3D(VOC06Data):
                     if data["record"]["objects"][0][0]["difficult"][0][idl][0][0]:
                         continue
             if data["record"]["objects"][0][0]["class"][0][idl][0]==self.cl.split("_")[0]:
-                pose.append(l[0][0]["azimuth"])
+                pose.append(-l[0][0]["azimuth"])
         return pose
 
 class LFW(VOC06Data):

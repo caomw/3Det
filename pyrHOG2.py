@@ -333,6 +333,13 @@ def histflip(bin=6,siftsize=2):
                     #ftab[val]=flip[l3]*(bin**2)+flip[l2]*(bin**3)+flip[l1]+flip[l0]*(bin**1)      
     return ftab
 
+avrgHOG=numpy.array([ 0.12241797,  0.10359017,  0.11005541,  0.11226821,  0.16431062,
+        0.12279373,  0.11171412,  0.10874104,  0.10213629,  0.1220323 ,
+        0.10380248,  0.11032778,  0.11354706,  0.16490166,  0.12471075,
+        0.11370374,  0.10969901,  0.10290315,  0.21539788,  0.19500449,
+        0.20305865,  0.20972936,  0.27611336,  0.2211453 ,  0.20937632,
+        0.20142606,  0.19331241,  0.24948338,  0.25101063,  0.24964686,
+        0.25118914], dtype=numpy.float32)
 
 #def hog2bow2(feat,bin=5,siftsize=2):
 #    selbin=numpy.array([0,2,4,5,7])
@@ -366,6 +373,8 @@ def hog(img,sbin=8):
     mtype=c_float
     hog=numpy.zeros((hy,hx,31),dtype=mtype,order="f")
     lhog.process(numpy.asfortranarray(img,dtype=mtype),img.shape[0],img.shape[1],sbin,hog,hy,hx,31)
+    #just a test!
+    #hog=hog-avrgHOG
     return hog;#mfeatures.mfeatures(img , sbin);
 
 def hogd(img,sbin=8):
