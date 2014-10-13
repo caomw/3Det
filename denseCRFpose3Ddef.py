@@ -217,13 +217,13 @@ elif cfg.db=="LFW":
     tsImagesFull=tsImages
 elif cfg.db=="AFLW":
     trPosImages=getRecord(AFLW(basepath=cfg.dbpath,fold=0),cfg.maxpos,facial=True,pose=True)#cfg.useFacial)
-    trPosImagesNoTrunc=trPosImages[:900]
+    trPosImagesNoTrunc=trPosImages[:cfg.maxpos]
     #trNegImages=getRecord(InriaNegData(basepath=cfg.dbpath),cfg.maxneg)#check if it works better like this
-    trNegImages=getRecord(VOC07Data(select="neg",cl="person_trainval.txt"%cfg.cls,
+    trNegImages=getRecord(VOC07Data(select="neg",cl="person_trainval.txt",
                         basepath=cfg.dbpath,#"/home/databases/",#"/share/ISE/marcopede/database/",
                         usetr=True,usedf=False),cfg.maxneg)
     #trNegImagesFull=getRecord(InriaNegData(basepath=cfg.dbpath),cfg.maxnegfull)
-    trNegImages=getRecord(VOC07Data(select="neg",cl="person_trainval.txt"%cfg.cls,
+    trNegImagesFull=getRecord(VOC07Data(select="neg",cl="person_trainval.txt",
                         basepath=cfg.dbpath,#"/home/databases/",#"/share/ISE/marcopede/database/",
                         usetr=True,usedf=False),cfg.maxnegfull)
     #test
@@ -617,6 +617,7 @@ waux=[]
 rr=[]
 w1=numpy.array([])
 sizereg=numpy.zeros(cfg.numcl,dtype=numpy.int32)
+sizeslowlearn=numpy.zeros(cfg.numcl,dtype=numpy.int32)
 #from model m to w
 for idm,m in enumerate(models[:cfg.numcl]):
     if cfg.use3D:
@@ -626,7 +627,10 @@ for idm,m in enumerate(models[:cfg.numcl]):
     rr.append(models[idm]["rho"])
     w1=numpy.concatenate((w1,waux[-1],-numpy.array([models[idm]["rho"]])/bias))
     #if cfg.usedef:
-    sizereg[idm]=3*len(models[idm]["ww"])
+    sizereg[idm]=4*len(models[idm]["ww"])
+    sizeslowlearn[idm]=sizereg[idm]+numpy.array(m["biases"]).size
+    print "SIZE slow leanr",sizeslowlearn[idm]
+    raw_input()
     #sizereg[idm]=13*13
 #w2=w #old w
 w=w1
@@ -1086,8 +1090,8 @@ for it in range(cpit,cfg.posit):
             #rr.append(models[idm]["rho"])
             w1=numpy.concatenate((w1,waux[-1],-numpy.array([models[idm]["rho"]])/bias))
         #skip the assert because for lz w1 is not anymore the same as w!
-        if cfg.mlz==0:
-            assert(numpy.sum(numpy.abs(w1-w))<0.0002)
+        #if cfg.mlz==0:
+        #    assert(numpy.sum(numpy.abs(w1-w))<0.0002)
         w2=w
         w=w1
 

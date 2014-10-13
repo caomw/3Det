@@ -321,7 +321,7 @@ def model2w3D(model):
 #        for l in range(len(model["ww"])):# dfbz
 #            w=numpy.concatenate((w,(model["ww"][l].dfbz)))
 #    else:
-    w=numpy.concatenate((w,numpy.zeros(len(model["ww"]),dtype=numpy.float32)))
+    w=numpy.concatenate((w,numpy.zeros(len(model["ww"]),dtype=numpy.float32)))#fill with zeros
     for l in range(len(model["ww"])):#deformation x,y,z
         #print "here"#,item
         w=numpy.concatenate((w,(model["ww"][l].dfax,model["ww"][l].dfay,model["ww"][l].dfaz)))

@@ -1133,7 +1133,7 @@ def getfeatDef(model,hog,angy,angx,angz,ang,pos,parts,k,mlz,bis=BIS,usebiases=US
         #x3d[-1]=x3d[-2]*mlz
         df3D+=numpy.dot(x3d.T**2,[p.dfax,p.dfay,p.dfaz])[0]
         assert(df2D-df3D<0.00001)
-        df.append((x3d[0,0],x3d[1,0],x3d[2,0],0.0))    
+        df.append((x3d[0,0],x3d[1,0],x3d[2,0],x3d[2,0]))    
         #print "2D:",xx,"3D:",x3d
     if usebiases:
         biases=numpy.zeros((model["biases"].shape[0],model["biases"].shape[1],model["biases"].shape[2]),dtype=numpy.float32)

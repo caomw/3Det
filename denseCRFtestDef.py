@@ -160,7 +160,7 @@ if __name__ == '__main__':
     cfg.dbpath="/users/visics/mpederso/databases/"
     cfg.testpath="./data/test3/"#"./data/CRF/12_09_19/"
     cfg.testspec="3Dortogonal6"#"full2"
-    cfg.db="3DVOC"#"AFW"#"MultiPIE2"#"images"#"AFW"#"MultiPIE2"#"VOC"
+    cfg.db="AFW"#"3DVOC"#"AFW"#"MultiPIE2"#"images"#"AFW"#"MultiPIE2"#"VOC"
     cfg.maxtest=2000
     cfg.maxneg=200
     cfg.use3D=True
@@ -424,8 +424,9 @@ if __name__ == '__main__':
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/VOC3Def/bicycle1_New2Debug_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/VOC3Def/car1_Fixed0"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/VOC3Def/bicycle1_Good3"
-    testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/VOC3Def/bicycle1_test0"
+    #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/VOC3Def/bicycle1_DEFixed_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_AFLW2000Fixed_final"
+    testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_Right_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/VOC3Def/bicycle1_Flat_Full_Fixed_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/flat/face1_Full13view_2Def_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/3Deform/face1_HigherRes_final"
@@ -433,26 +434,26 @@ if __name__ == '__main__':
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/unsupervised/face1_3DMPfix2Initial4"
     #testname="data/faces/ReducedViews/face1_3DMPfix2RVfull_final"
     #testname="data/unsupervised/face1_3DMPfix2Unsupervised256"
-    cfg.usebiases=True
-    cfg.usedef=True
+    #cfg.usebiases=True
+    #cfg.usedef=True
     #testname="./data/unsupervised/face1_3Ddebug12_final"
     #testname="./data/VOC3D/bicycle1_fullVOC3D_final"
     #testname="./data/VOC3D/bicycle1_fullVOC3Dmoreneg2_final"
     #testname="data/faces/face1_3Dafwshort_final"
     #testname="data/test3/face1_3Dnewfull3"
     #cfg.trunc=1
-    cfg.flat=False
-    cfg.usebiases=True
-    cfg.k=20.0
+    #cfg.flat=False
+    #cfg.usebiases=True
+    #cfg.k=20.0
     models=util.load("%s.model"%(testname))
-    cfg.cangy=[0]
-    cfg.skip=20
-    cfg.angx=[17]
+    #cfg.cangy=[0]
+    #cfg.skip=20
+    #cfg.angx=[17]
     #cfg.usebiases=False
     #cfg.usedef=False
-    for mm in models[0]["ww"]:
-        mm.lz=0.0
-        mm.dfay=0.01;mm.dfax=0.0001;mm.dfaz=0.01#1
+    #for mm in models[0]["ww"]:
+    #    mm.lz=0.0
+    #    mm.dfay=0.01;mm.dfax=0.0001;mm.dfaz=0.01#1
         #mm.dfay=1;mm.dfax=1;mm.dfaz=1#1
         #mm.dfay=0.01;mm.dfax=0.01;mm.dfaz=0.0000000001#1
     #    #mm.lz=5 #does not work with different lz
@@ -473,5 +474,5 @@ if __name__ == '__main__':
     ##############test
     #import itertools
     #runtest(models,tsImages,cfg,parallel=False,numcore=4,detfun=lambda x :detectCRF.test(x,numhyp=1,show=False),show=True)#,save="%s%d"%(testname,it))[196] is the many faces
-    runtest(models,tsImages,cfg,parallel=False,numcore=24,show=True,detfun=testINC03)#,save="./face1_AFLW2000Fixed")
+    runtest(models,tsImagesFull,cfg,parallel=True,numcore=24,show=False,detfun=testINC03,save="./face_RightDef")
 

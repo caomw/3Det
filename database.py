@@ -1092,10 +1092,10 @@ class AFLW(VOC06Data):
         for idbb,b in enumerate(bb):
             a=abs(float(b[0])-float(b[2]))*abs(float(b[1])-float(b[3]))
             #print a
-            if a>self.mina:
-                #print "OK!"
-                auxb.append([b[1],b[0],b[1]+b[3],b[0]+b[2],0,0])
-                w=abs(float(auxb[-1][3])-float(auxb[-1][1]))
+            #if a>self.mina:
+            #    #print "OK!"
+            auxb.append([b[1],b[0],b[1]+b[3],b[0]+b[2],0,0])
+            w=abs(float(auxb[-1][3])-float(auxb[-1][1]))
             if correct:
                 #if abs(pose[idbb][0][0])>60:
                 auxb[-1]=numpy.array(auxb[-1])#+(pose[idbb][0][0]/90.0)*0.5*w
