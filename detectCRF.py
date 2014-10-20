@@ -501,7 +501,7 @@ def getfeature3D(det,f,model,angy,angx,angz,k,mlz,trunc=0,usebiases=False,usedef
             #print "Error",scr-ld["scr"]-m1["rho"],(scr-ld["scr"]-m1["rho"])/scr
             #raw_input()
         #print "Scr:",scr-m1["rho"],"PrevScr:",ld["scr"]
-        if abs((scr-m1["rho"]-ld["scr"])/scr)>0.0001:
+        if abs((scr-m1["rho"]-ld["scr"])/scr)>0.0002:
             print "Error",abs((scr-m1["rho"]-ld["scr"])/scr)                
             print "Dense",ld["scr"],"Feat",scr-m1["rho"]
             if usedef:
@@ -743,7 +743,7 @@ def cube(shape,center,rot,scl,def3D):
 
     
 
-def visualize3D(model,det,N,img,bb=[],text="",color=None,line=False,norec=True,nograph=False,lw=2,thr=-numpy.inf,alpha=0.5,npart=(5,5,5),cangy=[0],cangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],cangz=[0],vis3D=False):
+def visualize3D(model,det,N,img,bb=[],text="",color=None,line=False,norec=True,nograph=False,lw=2,thr=-numpy.inf,alpha=0.5,npart=(5,5,5),cangy=[0],cangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],cangz=[0],vis3D=False,onlyAng=False):
     """visualize a detection and the corresponding featues"""
     pl=pylab
     if color!=None:
@@ -783,7 +783,10 @@ def visualize3D(model,det,N,img,bb=[],text="",color=None,line=False,norec=True,n
         pl.subplot(1,subp,1)
         if det[l].has_key("bbox"):
             util.box(det[l]["bbox"][0],det[l]["bbox"][1],det[l]["bbox"][2],det[l]["bbox"][3],lw=lw,col=col[0])#col[cc%10])
-        pylab.text(det[l]["bbox"][1],det[l]["bbox"][0],"%.2f %d %d %d %d"%(det[l]["scr"],det[l]["ang"][0],det[l]["ang"][1],det[l]["ang"][2],det[l]["id"]),backgroundcolor = 'w', color = 'k')
+        if onlyAng:
+            pylab.text(det[l]["bbox"][1],det[l]["bbox"][0],"%d %d"%(cangy[det[l]["ang"][0]],cangx[det[l]["ang"][1]]),backgroundcolor = 'w', color = 'k')
+        else:
+            pylab.text(det[l]["bbox"][1],det[l]["bbox"][0],"%.2f %d %d %d %d"%(det[l]["scr"],det[l]["ang"][0],det[l]["ang"][1],det[l]["ang"][2],det[l]["id"]),backgroundcolor = 'w', color = 'k')
         if 1:
             import test3D2
             #center=((det[l]["bbox"][0]+det[l]["bbox"][2])/2.0,(det[l]["bbox"][1]+det[l]["bbox"][3])/2.0)
@@ -792,7 +795,7 @@ def visualize3D(model,det,N,img,bb=[],text="",color=None,line=False,norec=True,n
             parts=det[l]["def3D"][0]
             if parts==[]:
                 parts=numpy.zeros((len(model["ww"]),4))
-            test3D2.drawParts(model,center,scale,parts,cangy[det[l]["ang"][0]],cangx[det[l]["ang"][1]],cangz[det[l]["ang"][2]])
+            test3D2.drawParts(model[idm],center,scale,parts,cangy[det[l]["ang"][0]],cangx[det[l]["ang"][1]],cangz[det[l]["ang"][2]])
         if 0:#vis3D:#3d visualization
             #dsf
             pts,idx,parts=cube(npart,((det[l]["bbox"][0]+det[l]["bbox"][2])/2.0,(det[l]["bbox"][1]+det[l]["bbox"][3])/2.0),cangx[det[l]["ang"][1]],det[l]["scl"],det[l]["def3D"][0])

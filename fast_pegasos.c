@@ -113,6 +113,20 @@ static inline ftype addmul(ftype *a,ftype *b,ftype c,int len)
     }
 }
 
+static inline ftype addmulslow(ftype *a,ftype *b,ftype c,ftype smul,int len,int sizeslow)
+{
+    int cn;
+    for (cn=0;cn<len-sizeslow;cn++)
+    {
+        a[cn]=a[cn]+b[cn]*c;
+    }
+    for (cn=len-sizeslow;cn<len;cn++)//regularize at d instead of 0
+    {
+        a[cn]=a[cn]+b[cn]*c*smul;
+        //a[c]= (a[c]<0.1*d) ? 0.1*d : a[c];//limit the minimum pairwise cost
+    }
+}
+
 static inline ftype addmul_d(double *a,ftype *b,double c,int len)
 {
     int cn;
@@ -270,7 +284,7 @@ void fast_pegasos_comp(ftype *w,int numcomp,int *compx,int *compy,ftype **ptrsam
     printf("N:%g t:%d\n",n,t);
 }
 
-void fast_pegasos_comp_parall(ftype *w,int numcomp,int *compx,int *compy,ftype **ptrsamplescomp,int totsamples,int *label,int *comp,ftype C,int iter,int part,int k,int numthr,int *sizereg,ftype valreg,ftype lb)
+void fast_pegasos_comp_parall(ftype *w,int numcomp,int *compx,int *compy,ftype **ptrsamplescomp,int totsamples,int *label,int *comp,ftype C,int iter,int part,int k,int numthr,int *sizereg,ftype valreg,int *sizesmul,ftype valsmul,ftype lb)
 {
     int wx=0,wxtot=0,wcx;
     #ifdef _OPENMP
@@ -357,7 +371,10 @@ void fast_pegasos_comp_parall(ftype *w,int numcomp,int *compx,int *compy,ftype *
                 pex=pares[kk];
                 wx=compx[comp[pex]];
                 x=ptrsamplescomp[comp[pex]]+(pex-sumszy[comp[pex]])*wx;
-                addmul(w+sumszx[comp[pex]],x,(float)(label[pex])*n*C*totsamples/(float)k,wx);            
+                //addmulslow(ftype *a,ftype *b,ftype c,ftype smul,int len,int sizeslow)
+                //printf("Val:%f,Size:%d\n",valsmul,sizesmul[comp[pex]]);
+                addmulslow(w+sumszx[comp[pex]],x,(float)(label[pex])*n*C*totsamples/(float)k,valsmul,wx,sizesmul[comp[pex]]);   
+                //addmul(w+sumszx[comp[pex]],x,(float)(label[pex])*n*C*totsamples/(float)k,wx);            
             }
         }
         for (cp=0;cp<numcomp;cp++)

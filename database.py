@@ -996,13 +996,14 @@ class AFLW(VOC06Data):
                 imagepath="aflw/data/flickr/",
                 annpath="aflw/",
                 local="aflw/",
-                usetr=False,usedf=False,mina=0,fold=0):
+                usetr=False,usedf=False,mina=0,fold=0,compatible=True):
         self.usetr=usetr
         self.usedf=usedf
         self.local=basepath+local
         self.trainfile=basepath+trainfile
         self.imagepath=basepath+imagepath
         self.annpath=basepath+annpath
+        self.compatible=compatible
         import sqlite3 as lite
         #import util
         #self.ann=util.loadmat(self.trainfile)["anno"]
@@ -1094,7 +1095,14 @@ class AFLW(VOC06Data):
             #print a
             #if a>self.mina:
             #    #print "OK!"
-            auxb.append([b[1],b[0],b[1]+b[3],b[0]+b[2],0,0])
+            if self.compatible:
+                cy=(b[1]+b[1]+b[3])/2.0
+                cx=(b[0]+b[0]+b[2])/2.0
+                dy=b[3]/2.0
+                dx=b[2]/2.0
+                auxb.append([cy-dy*0.8,cx-dx,cy+dy,cx+dx,0,0])    
+            else:
+                auxb.append([b[1],b[0],b[1]+b[3],b[0]+b[2],0,0])
             w=abs(float(auxb[-1][3])-float(auxb[-1][1]))
             if correct:
                 #if abs(pose[idbb][0][0])>60:

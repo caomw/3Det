@@ -76,6 +76,8 @@ lpeg.fast_pegasos_comp_parall.argtypes=[
     ,c_int #numthr
     ,numpy.ctypeslib.ndpointer(dtype=c_int,ndim=1,flags="C_CONTIGUOUS")#sizereg
     ,c_float #valreg
+    ,numpy.ctypeslib.ndpointer(dtype=c_int,ndim=1,flags="C_CONTIGUOUS")#sizesmul
+    ,c_float #valsmul
     ,c_float #lb
     ]
 #fast_obj(ftype *w,int numcomp,int *compx,int *compy,ftype **ptrsamplescomp,int totsamples,int *label,int *comp,ftype C,int iter,int part,int k,int numthr,int *sizereg,ftype valreg,ftype lb)
@@ -807,7 +809,7 @@ def trainCompBFG_right(trpos,trneg,fname="",trposcl=None,trnegcl=None,oldw=None,
 
 
 
-def trainCompSGD(trpos,trneg,fname="",trposcl=None,trnegcl=None,oldw=None,dir="./save/",pc=0.017,path="/home/marcopede/code/c/liblinear-1.7",mintimes=30,maxtimes=200,eps=0.001,num_stop_count=5,numthr=1,k=1,sizereg=numpy.zeros(10,dtype=numpy.int32),valreg=0.01,lb=0):
+def trainCompSGD(trpos,trneg,fname="",trposcl=None,trnegcl=None,oldw=None,dir="./save/",pc=0.017,path="/home/marcopede/code/c/liblinear-1.7",mintimes=30,maxtimes=200,eps=0.001,num_stop_count=5,numthr=1,k=1,sizereg=numpy.zeros(10,dtype=numpy.int32),valreg=0.01,sizesmul=[],valsmul=0.1,lb=0):
     """
         The same as trainSVMRaw but it does use files instad of lists:
         it is slower but it needs less memory.
@@ -880,7 +882,7 @@ def trainCompSGD(trpos,trneg,fname="",trposcl=None,trnegcl=None,oldw=None,dir=".
     posl,negl,reg,nobj,hpos,hneg=objective(trpos,trneg,trposcl,trnegcl,compx,w,pc,sizereg,valreg)
     loss.append([posl,negl,reg,nobj,hpos,hneg])
     for tt in range(maxtimes):
-        lpeg.fast_pegasos_comp_parall(w,ncomp,arrint(*compx),arrint(*compy),arrfloat(*newtrcomp),ntimes,alabel,trcompcl,pc,int(ntimes*10.0/float(k)),tt+10,k,numthr,sizereg,valreg,lb)#added tt+10 to not restart form scratch
+        lpeg.fast_pegasos_comp_parall(w,ncomp,arrint(*compx),arrint(*compy),arrfloat(*newtrcomp),ntimes,alabel,trcompcl,pc,int(ntimes*10.0/float(k)),tt+10,k,numthr,sizereg,valreg,sizesmul,valsmul,lb)#added tt+10 to not restart form scratch
         posl,negl,reg,nobj,hpos,hneg=objective(trpos,trneg,trposcl,trnegcl,compx,w,pc,sizereg,valreg)
         loss.append([posl,negl,reg,nobj,hpos,hneg])
         print "Objective Function:",nobj

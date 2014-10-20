@@ -170,8 +170,8 @@ if __name__ == '__main__':
     #det=util.load("/users/visics/mpederso/code/git/3Def/3Det/faces_Def14.det")["det"]
     #det=util.load("/users/visics/mpederso/code/git/3Def/3Det/faces_DeepFace3.det")["det"]
     #det=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/VOC3Def/bicycle1_Deep25Fixed5.det")["det"]
-    det=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/NEW/VOC3Def/bicycle1_Good3.det")["det"]
-    model=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/NEW/VOC3Def/bicycle1_Good3.model")[0]
+    det=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/NEW/VOC3Def/bicycle1_NewSGD2.det")["det"]
+    model=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/NEW/VOC3Def/bicycle1_NewSGD2.model")[0]
     #imgpath=cfg.dbpath+"multiPIE//"
     imgpath=cfg.dbpath+"PASCAL3D+_release1.0/JPEGImages/"
     #imgpath=cfg.dbpath+"afw/testimages/"

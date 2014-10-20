@@ -94,6 +94,20 @@ lib.rotatec_bi.argtypes=[
     c_int, #ndimy
     ]
 
+#void refine(ftype *img,int sy,int sx,int* defy, int defx,ftype ay,ftype ax,ftype axy,ftype *dst)
+lib.refine.argtypes=[
+    numpy.ctypeslib.ndpointer(dtype=c_float,flags="C_CONTIGUOUS"),#image source
+    c_int, #dimy
+    c_int, #dimx
+    numpy.ctypeslib.ndpointer(dtype=c_int,flags="C_CONTIGUOUS"),#defy
+    numpy.ctypeslib.ndpointer(dtype=c_int,flags="C_CONTIGUOUS"),#defx
+    c_float, #ay
+    c_float, #ax
+    c_float, #axy
+    numpy.ctypeslib.ndpointer(dtype=c_float,flags="C_CONTIGUOUS"),#image DT
+    ]
+
+
 def test1d():
     import pylab
     sz=10
@@ -192,7 +206,7 @@ def dt2rot(img,ay,ax,axy,by,bx,fast=False):
     if abs(axy)<min(ax,ay)*0.01:
         #print "Fast DT",ax,ay,axy
         return mydt(img,ay,ax,0,0,fast)    
-    intrp=1
+    intrp=0
     szy=img.shape[0]
     szx=img.shape[1]
     axy=-axy
@@ -234,9 +248,15 @@ def dt2rot(img,ay,ax,axy,by,bx,fast=False):
         dx=rotate(Ix,-ang,mode='nearest',order=intrp)
     #print sin(-rad)*cos(-rad)*szy,sin(-rad)*sin(-rad)*szx
     #adx=numpy.round(dx*cos(-rad)+dy*sin(-rad)-szx*cos(-rad)*sin(-rad))
-    adx=(dx*cos(-rad)+dy*sin(-rad)-szx*cos(-rad)*sin(-rad))
+    if rad>0:
+        dtx=img2.shape[0]*sin(rad)
+        dty=0
+    else:
+        dtx=0
+        dty=-img2.shape[1]*sin(rad)
+    adx=(dx*cos(-rad)+dy*sin(-rad))+dtx#-szx*cos(-rad)*sin(-rad))
     #ady=numpy.round(-dx*sin(-rad)+dy*cos(-rad)+szy*sin(-rad)*sin(-rad))
-    ady=(-dx*sin(-rad)+dy*cos(-rad)+szy*sin(-rad)*sin(-rad))
+    ady=(-dx*sin(-rad)+dy*cos(-rad))+dty#+szy*sin(-rad)*sin(-rad))
     cty=(res.shape[0]-szy)/2
     ctx=(res.shape[1]-szx)/2
     if abs(bx)>ctx or abs(by)>cty:
@@ -254,18 +274,45 @@ def dt2rot(img,ay,ax,axy,by,bx,fast=False):
         adx=dx2
         cty=cty+aby
         ctx=ctx+abx
-    fdy=(ady[cty-by:cty+szy-by,ctx-bx:ctx+szx-bx])
-    fdx=(adx[cty-by:cty+szy-by,ctx-bx:ctx+szx-bx])#.astype(numpy.int)
-    #there should be a simpler and faster solution to align down
-    mesh=numpy.mgrid[:szy,:szx]
-    fdy=(fdy-(fdy-mesh[0]).mean()).round().astype(numpy.int)
-    fdx=(fdx-(fdx-mesh[1]).mean()).round().astype(numpy.int)
+    #fdy=ady-cty
+    #fdx=adx-ctx#.astype(numpy.int)
+    fdy=((ady[cty-by:cty+szy-by,ctx-bx:ctx+szx-bx]).round()-cty).astype(numpy.int32)
+    fdx=((adx[cty-by:cty+szy-by,ctx-bx:ctx+szx-bx]).round()-ctx).astype(numpy.int32)
+    #round refinement
+    dst=-1000*numpy.ones(img.shape,dtype=numpy.float32)
+    lib.refine(img,img.shape[0],img.shape[1],fdy,fdx,ay,ax,axy,dst)
+    return dst,fdy,fdx
+    if 0:#refinement
+        dispy=[0,0,0,1,1,1,2,2,2]
+        dispx=[0,1,2,0,1,2,0,1,2]
+        mesh=numpy.mgrid[:fdy.shape[0],:fdy.shape[1]]
+        defy=fdy.round()-mesh[0]
+        defx=fdx.round()-mesh[1]
+        ydf=numpy.array((defy[0:-2,0:-2],defy[0:-2,1:-1],defy[0:-2,2:],defy[1:-1,0:-2],defy[1:-1,1:-1],defy[1:-1,2:],defy[2:,0:-2],defy[2:,1:-1],defy[2:,2:]))
+        xdf=numpy.array((defx[0:-2,0:-2],defx[0:-2,1:-1],defx[0:-2,2:],defx[1:-1,0:-2],defx[1:-1,1:-1],defx[1:-1,2:],defx[2:,0:-2],defx[2:,1:-1],defx[2:,2:]))
+        scr=numpy.array((img[0:-2,0:-2],img[0:-2,1:-1],img[0:-2,2:],img[1:-1,0:-2],img[1:-1,1:-1],img[1:-1,2:],img[2:,0:-2],img[2:,1:-1],img[2:,2:]))
+        #mesh1=numpy.mgrid[:9,:defy.shape[0]-2,:defy.shape[1]-2]
+        mesh1=numpy.mgrid[:defy.shape[0]-2,:defy.shape[1]-2]
+        #fscr=scr[mesh1[0],mesh1[1]+ydf.astype(numpy.int),mesh1[2]+xdf.astype(numpy.int)]-ydf**2*ay-xdf**2*ax+2*axy*ydf*xdf
+        fscr=img[mesh1[0]+ydf.astype(numpy.int),mesh1[1]+xdf.astype(numpy.int)]-ydf**2*ay-xdf**2*ax+2*axy*ydf*xdf
+        res2=fscr.max(0)
+        sel=fscr.argmax(0)
+        mesh2=numpy.mgrid[:defy.shape[0]-2,:defy.shape[1]-2]
+        defy=ydf[sel,mesh2[0],mesh2[1]].round()+sel/3-1
+        defx=xdf[sel,mesh2[0],mesh2[1]].round()+sel%3-1
+        if 0:
+            import pylab
+            pylab.figure();pylab.imshow(res2);pylab.show()
+            fsdf
+        return res[cty-1:cty+szy+1,ctx-1:ctx+szx+1],fdy[cty-1:cty+szy+1,ctx-1:ctx+szx+1],fdx[cty-1:cty+szy+1,ctx-1:ctx+szx+1]
+    #fdy=(fdy-(fdy-mesh[0]).mean()).round().astype(numpy.int)
+    #fdx=(fdx-(fdx-mesh[1]).mean()).round().astype(numpy.int)
     return res[cty-by:cty+szy-by,ctx-bx:ctx+szx-bx],fdy,fdx
 
 
 if __name__ == "__main__":
     dimy=100
-    dimx=100
+    dimx=150
     #a=numpy.random.random((dimy,dimx)).astype(numpy.float32)
     im=numpy.zeros((dimy,dimx),numpy.float32)
     #im=-numpy.ones((dimy,dimx),numpy.float32)
@@ -279,14 +326,15 @@ if __name__ == "__main__":
     #lib.dtpy(a,dta,dy,dx,dimy,dimy,1,1,0,0)
     ax=0.5;ay=0.1
     by=0;bx=0
+    axy=-0.1
     #dtim,Iy,Ix=mydt(im,a,a,b,b)
     #dtim,Iy,Ix=dt2(im,a,2*a,-0.00,by,bx)
     #dtim,Iy,Ix=dt(im,ay,ax,by,bx)
     #dtimr,Iyr,Ixr=ffdt(im,ay,ax,bx,by)
-    dtim,Iy,Ix=dt2rot(im,ay,ax,0.1,by,bx)
+    dtim,Iy,Ix=dt2rot(im,ay,ax,axy,by,bx)
     px=10;py=10
     dy=py-Iy[py,px];dx=px-Ix[py,px]
-    df=-(dy**2+dx**2)
+    df=-(dy**2+dx**2-2*dx*dy*axy)
     app=im[Iy[py,px],Ix[py,px]]
     assert(abs(dtim[py,px]-(app-df))<0.00001)
     #dtimr,Iyr,Ixr=dt2rot(im,a,2*a,-0.005,by,bx,fast=True)

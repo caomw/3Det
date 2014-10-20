@@ -51,9 +51,9 @@ def runtest(models,tsImages,cfg,parallel=True,numcore=4,detfun=detectCRF.test,sa
             im=myimread(arg[ii]["file"],resize=cfg.resize)
             if tsImages[ii]["bbox"]!=[]:
                 #detectCRF.visualize2(res[:3],cfg.N,im,bb=tsImages[ii]["bbox"][0])
-                detectCRF.visualize3D(models[0],res[:5],cfg.N,im,bb=tsImages[ii]["bbox"][0],npart=cfg.npart,cangy=cfg.cangy,cangx=cfg.cangx,cangz=cfg.cangz)
+                detectCRF.visualize3D(models,res[:5],cfg.N,im,bb=tsImages[ii]["bbox"][0],npart=cfg.npart,cangy=cfg.cangy,cangx=cfg.cangx,cangz=cfg.cangz)
             else:
-                detectCRF.visualize3D(models[0],res[:1],cfg.N,im,cangy=cfg.cangy,cangx=cfg.cangx,cangz=cfg.cangz)
+                detectCRF.visualize3D(models,res[:1],cfg.N,im,cangy=cfg.cangy,cangx=cfg.cangx,cangz=cfg.cangz)
             print [x["scr"] for x in res[:5]]
             #lfeat,biases=getfeature3D(det,f,model,angy,angx,angz,k,trunc=0,usebiases=False,usedef=False):
             #raw_input()
@@ -161,7 +161,7 @@ if __name__ == '__main__':
     cfg.testpath="./data/test3/"#"./data/CRF/12_09_19/"
     cfg.testspec="3Dortogonal6"#"full2"
     cfg.db="AFW"#"3DVOC"#"AFW"#"MultiPIE2"#"images"#"AFW"#"MultiPIE2"#"VOC"
-    cfg.maxtest=2000
+    cfg.maxtest=10000#before it was a 2000...
     cfg.maxneg=200
     cfg.use3D=True
     cfg.nobbox=False
@@ -426,7 +426,11 @@ if __name__ == '__main__':
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/VOC3Def/bicycle1_Good3"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/VOC3Def/bicycle1_DEFixed_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_AFLW2000Fixed_final"
-    testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_Right_final"
+    #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_Right_final"
+    #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_MultiPIEstim20Z_final"
+    testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_Double26"
+    #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/VOC3Def/bicycle1_Estim20_final"
+    #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_AFLWEstim20Z_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/VOC3Def/bicycle1_Flat_Full_Fixed_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/flat/face1_Full13view_2Def_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/3Deform/face1_HigherRes_final"
@@ -445,6 +449,7 @@ if __name__ == '__main__':
     #cfg.flat=False
     #cfg.usebiases=True
     #cfg.k=20.0
+    #cfg.resize=0.5
     models=util.load("%s.model"%(testname))
     #cfg.cangy=[0]
     #cfg.skip=20
@@ -474,5 +479,5 @@ if __name__ == '__main__':
     ##############test
     #import itertools
     #runtest(models,tsImages,cfg,parallel=False,numcore=4,detfun=lambda x :detectCRF.test(x,numhyp=1,show=False),show=True)#,save="%s%d"%(testname,it))[196] is the many faces
-    runtest(models,tsImagesFull,cfg,parallel=True,numcore=24,show=False,detfun=testINC03,save="./face_RightDef")
+    runtest(models,tsImagesFull,cfg,parallel=True,numcore=12,show=False,detfun=testINC03,save="./results/face_DoubleDensity")
 

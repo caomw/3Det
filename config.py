@@ -84,7 +84,9 @@ cfg.trunc=0
 cfg.lb=0.001
 cfg.useSGD=True
 cfg.skip=10
-cfg.lmz=10
+cfg.usedef=False
+cfg.mlz=0
+cfg.mul=0.1
 
 #trade-off speed accuracy
 #now in training when not using bb it is using force parts

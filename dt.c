@@ -95,6 +95,42 @@ void rotatec_bi(ftype *imgin,int x,int y,int nch,ftype rads,ftype *imgout,int nx
 	}   
 }
 
+//refine DT in a 3x3 window to make deformations and scr be coherent 
+void refine(ftype *img,int sy,int sx,int* defy, int* defx,ftype ay,ftype ax,ftype axy,ftype *dst)
+{
+    //found small problem at borders: defy points one maxima defx another one...
+    int dd=1;
+    ftype scr;
+    int dy,dx,bny,bnx,py,px,ny,nx;
+    for (py=0;py<sy;py++)
+        for (px=0;px<sx;px++)
+        {
+            for (ny=-dd;ny<=dd;ny++)
+                for (nx=-dd;nx<=dd;nx++)
+                {
+                    dy=defy[py*sx+px]+ny;dx=defx[py*sx+px]+nx;
+                    dy= dy < 0 ? 0 : dy;dx= dx < 0 ? 0 : dx;
+                    dy= dy >= sy ? sy-1 : dy; dx = dx>=sx ? sx-1 : dx;
+                    scr=img[dy*sx+dx]-(dy-py)*(dy-py)*ay-(dx-px)*(dx-px)*ax+2*(dy-py)*(dx-px)*axy;
+                    //printf("SCR %f DY%d DX%d \n",scr,dy-py,dx-px);
+                    if (scr>dst[py*sx+px])
+                    {
+                        dst[py*sx+px]=scr;
+                        bny=ny;bnx=nx;    
+                    }
+                }
+            defy[py*sx+px]+=bny;
+            defx[py*sx+px]+=bnx;
+            if (dst[py*sx+px]<img[py*sx+px])//round problem --> do not deform
+            {
+                dst[py*sx+px]=img[py*sx+px];
+                defy[py*sx+px]=py;
+                defx[py*sx+px]=px;
+            }
+        }
+                
+}
+
 
 //2D distnace transform
 void dt2D_helper(ftype *src, ftype *dst, int *ptrx,int *ptry,int dimx, int dimy,int sx1,int sy1,int sx2,int sy2,int dx1,int dy1,int dx2,int dy2, ftype axx, ftype axy, ftype ayy, ftype bx,ftype by) 

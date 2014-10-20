@@ -548,8 +548,10 @@ Number Negative SV:%d
 
 import pylab as pl
 
+if cfg.cls=="face":
+    cfg.npart=(5,5,4)#y,x,z # parts of the cuboid
 if cfg.cls=="aeroplane":
-    cfg.model3D=5
+#    cfg.model3D=5
     cfg.npart=(4,8,8)#y,x,z # parts of the cuboid
 if cfg.cls=="bicycle":
     cfg.model3D=6#9 is dense
@@ -593,7 +595,7 @@ if initial:
         for mm in m["ww"]:
             #mm.dfay=0.001;mm.dfax=0.001;mm.dfaz=0.001
             if cfg.usedef:
-                mm.dfay=0.1;mm.dfax=0.1;mm.dfaz=0.1
+                mm.dfay=0.1;mm.dfax=0.1;mm.dfaz=0.01
             else:
                 mm.dfay=0;mm.dfax=0;mm.dfaz=0
             m["thr"]=-2
@@ -617,7 +619,7 @@ waux=[]
 rr=[]
 w1=numpy.array([])
 sizereg=numpy.zeros(cfg.numcl,dtype=numpy.int32)
-sizeslowlearn=numpy.zeros(cfg.numcl,dtype=numpy.int32)
+sizesmul=numpy.zeros(cfg.numcl,dtype=numpy.int32)
 #from model m to w
 for idm,m in enumerate(models[:cfg.numcl]):
     if cfg.use3D:
@@ -628,9 +630,9 @@ for idm,m in enumerate(models[:cfg.numcl]):
     w1=numpy.concatenate((w1,waux[-1],-numpy.array([models[idm]["rho"]])/bias))
     #if cfg.usedef:
     sizereg[idm]=4*len(models[idm]["ww"])
-    sizeslowlearn[idm]=sizereg[idm]+numpy.array(m["biases"]).size
-    print "SIZE slow leanr",sizeslowlearn[idm]
-    raw_input()
+    sizesmul[idm]=sizereg[idm]+numpy.array(m["biases"]).size
+    print "SIZE slow leanr",sizesmul[idm]
+    #raw_input()
     #sizereg[idm]=13*13
 #w2=w #old w
 w=w1
@@ -664,6 +666,8 @@ if 0:
     #pylab.figure();test3D2.showModel(models[0],-15,0,0)
     #pylab.figure();test3D2.showModel(models[0],15,0,0)
     #sdfs
+
+#models=util.load("/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_AFLWFull0.model")
 
 total=[]
 posratio=[]
@@ -813,9 +817,9 @@ for it in range(cpit,cfg.posit):
                 pylab.clf()
                 iname=arg[ii]["file"].split("/")[-1]
                 if res[0]!=[]:
-                    detectCRF.visualize3D(models[0],[res[0]],cfg.N,im,cbb,iname+"\n"+text,line=True,nograph=True,npart=cfg.npart,cangy=cfg.cangy,cangx=cfg.cangx,cangz=cfg.cangz,vis3D=not(cfg.flat))
+                    detectCRF.visualize3D(models,[res[0]],cfg.N,im,cbb,iname+"\n"+text,line=True,nograph=True,npart=cfg.npart,cangy=cfg.cangy,cangx=cfg.cangx,cangz=cfg.cangz,vis3D=not(cfg.flat))
                 else:
-                    detectCRF.visualize3D(models[0],[],cfg.N,im,cbb,iname+"\n"+text,npart=cfg.npart,nograph=True,cangy=cfg.cangy,cangx=cfg.cangx,cangz=cfg.cangz,vis3D=not(cfg.flat))
+                    detectCRF.visualize3D(models,[],cfg.N,im,cbb,iname+"\n"+text,npart=cfg.npart,nograph=True,cangy=cfg.cangy,cangx=cfg.cangx,cangz=cfg.cangz,vis3D=not(cfg.flat))
                 #raw_input()
                 if cfg.useFacial:
                     from extra import locatePoints,locatePointsInter
@@ -1059,7 +1063,7 @@ for it in range(cpit,cfg.posit):
 
         #import pegasos   
         if cfg.useSGD:
-            w,r,prloss=pegasos.trainCompSGD(trpos,trneg,"",trposcl,trnegcl,oldw=w,pc=cfg.svmc,k=numcore*2,numthr=numcore,eps=0.01,sizereg=sizereg,valreg=cfg.valreg,lb=cfg.lb)#,notreg=notreg)
+            w,r,prloss=pegasos.trainCompSGD(trpos,trneg,"",trposcl,trnegcl,oldw=w,pc=cfg.svmc,k=numcore*2,numthr=numcore,eps=0.01,sizereg=sizereg,valreg=cfg.valreg,sizesmul=sizesmul,valsmul=cfg.mul,lb=cfg.lb)#,notreg=notreg)
         else:
             w,r,prloss=pegasos.trainCompBFG(trpos,trneg,"",trposcl,trnegcl,oldw=w,pc=cfg.svmc,k=numcore*2,numthr=numcore,eps=0.001,sizereg=sizereg,valreg=cfg.valreg,lb=cfg.lb)#,notreg=notreg)
 
@@ -1243,7 +1247,8 @@ Negative in cache vectors %d
             print "Total negatives:",len(lndetnew)
             if localshow and res[0]!=[]:
                 im=myimread(arg[ii]["file"])
-                detectCRF.visualize3D(models[0],res[0][:5],cfg.N,im,npart=cfg.npart,cangy=cfg.cangy,cangx=cfg.cangx,cangz=cfg.cangz,vis3D=not(cfg.flat))
+                #if not(cfg.flat):
+                detectCRF.visualize3D(models,res[0][:5],cfg.N,im,npart=cfg.npart,cangy=cfg.cangy,cangx=cfg.cangx,cangz=cfg.cangz,vis3D=not(cfg.flat))
             lndetnew+=res[0]
             lnfeatnew+=res[1]
             lnedgenew+=res[2]
@@ -1378,13 +1383,18 @@ Negative in cache vectors %d
         lg.info("Model %d:%f"%(idm,m["thr"]))
 
     lg.info("############# Run test on %d positive examples #################"%len(tsImages))
+    if cfg.db=="AFLW":
+        cfg.resize=0.5
     ap=denseCRFtest.runtest(models,tsImages,cfg,parallel=parallel,numcore=numcore,save="%s%d"%(testname,it),show=localshow,pool=mypool,detfun=denseCRFtest.testINC03)
     lg.info("Ap is:%f"%ap)
+    cfg.resize=1.0
     if last_round:
         break
 
 lg.info("############# Run test on all (%d) examples #################"%len(tsImagesFull))
 util.save("%s_final.model"%(testname),models)
+if cfg.db=="AFLW":
+    cfg.resize=0.5
 ap=denseCRFtest.runtest(models,tsImagesFull,cfg,parallel=parallel,numcore=numcore,save="%s_final"%(testname),show=localshow,pool=mypool,detfun=denseCRFtest.testINC03)
 lg.info("Ap is:%f"%ap)
 print "Training Finished!!!"
