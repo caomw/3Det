@@ -374,7 +374,7 @@ def hog(img,sbin=8):
     hog=numpy.zeros((hy,hx,31),dtype=mtype,order="f")
     lhog.process(numpy.asfortranarray(img,dtype=mtype),img.shape[0],img.shape[1],sbin,hog,hy,hx,31)
     #just a test!
-    #hog=hog-avrgHOG
+    hog=hog-0.5*avrgHOG
     return hog;#mfeatures.mfeatures(img , sbin);
 
 def hogd(img,sbin=8):

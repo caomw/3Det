@@ -200,6 +200,13 @@ from numpy.linalg import eig
 #from scipy.linalg import eig
 from math import atan2,atan,cos,sin
 
+def eig22(A):
+    A=numpy.array(A)
+    trA=numpy.trace(A)
+    val1=trA+numpy.sqrt(trA**2-4*(A[0,0]*A[1,1]-A[1,0]*A[0,1]))
+    val2=trA-numpy.sqrt(trA**2-4*(A[0,0]*A[1,1]-A[1,0]*A[0,1]))
+    return (0.5*val1,.5*val2)
+
 #from prof import do_profile
 #@do_profile()
 def dt2rot(img,ay,ax,axy,by,bx,fast=False):
@@ -211,6 +218,9 @@ def dt2rot(img,ay,ax,axy,by,bx,fast=False):
     szx=img.shape[1]
     axy=-axy
     val,vec=eig([[ax,axy],[axy,ay]])
+    if numpy.any(val)<0:
+        print "Error, negative eigenvalues!"
+        raw_input()
     rad=atan(vec[0,1]/vec[0,0])
     #rad=atan2(vec[0,1],vec[0,0])
     ang=rad/numpy.pi*180
@@ -316,7 +326,7 @@ if __name__ == "__main__":
     #a=numpy.random.random((dimy,dimx)).astype(numpy.float32)
     im=numpy.zeros((dimy,dimx),numpy.float32)
     #im=-numpy.ones((dimy,dimx),numpy.float32)
-    #im=numpy.random.random((dimy,dimx)).astype(numpy.float32)
+    #im=100*numpy.random.random((dimy,dimx)).astype(numpy.float32)
     im[40,50]=150
     im[25,65]=150
     #im[40,50]=1
@@ -324,34 +334,35 @@ if __name__ == "__main__":
     #dy=numpy.zeros((dimy,dimx),dtype=numpy.float32)
     #dx=numpy.zeros((dimy,dimx),dtype=numpy.float32)
     #lib.dtpy(a,dta,dy,dx,dimy,dimy,1,1,0,0)
-    ax=0.5;ay=0.1
-    by=0;bx=0
-    axy=-0.1
+    ax=0.5;ay=0.01#0.01
+    axy=0.1#0.1
     #dtim,Iy,Ix=mydt(im,a,a,b,b)
     #dtim,Iy,Ix=dt2(im,a,2*a,-0.00,by,bx)
     #dtim,Iy,Ix=dt(im,ay,ax,by,bx)
     #dtimr,Iyr,Ixr=ffdt(im,ay,ax,bx,by)
-    dtim,Iy,Ix=dt2rot(im,ay,ax,axy,by,bx)
-    px=10;py=10
-    dy=py-Iy[py,px];dx=px-Ix[py,px]
-    df=-(dy**2+dx**2-2*dx*dy*axy)
-    app=im[Iy[py,px],Ix[py,px]]
-    assert(abs(dtim[py,px]-(app-df))<0.00001)
-    #dtimr,Iyr,Ixr=dt2rot(im,a,2*a,-0.005,by,bx,fast=True)
+    dtim,Iy,Ix=dt2rot(im,ay,ax,axy,0,0,fast=True)
+    for px in range(im.shape[1]):
+        for py in range(im.shape[0]):
+    #px=10;py=10
+            dy=py-Iy[py,px];dx=px-Ix[py,px]
+            df=(ay*dy**2+ax*dx**2+2*dx*dy*axy)
+            app=im[Iy[py,px],Ix[py,px]]
+            assert(abs(dtim[py,px]-(app-df))<0.0001)
+    dtimf,Iyf,Ixf=dt2rot(im,ay,ax,axy,0,0,fast=False)
     if 0:
         import pylab
         pylab.figure(1)
         pylab.clf()
-        pylab.imshow(dtim)#(numpy.concatenate((im,im,im,im,im,im,im,im,im),0))
+        pylab.imshow(dtim-dtimf)#(numpy.concatenate((im,im,im,im,im,im,im,im,im),0))
         pylab.figure(2)
         pylab.clf()
-        pylab.imshow(dtimr)#(numpy.concatenate((dtim,dtim,dtim,dtim,dtim,dtim,dtim,dtim,dtim),0))
+        pylab.imshow(dtimf)#(numpy.concatenate((dtim,dtim,dtim,dtim,dtim,dtim,dtim,dtim,dtim),0))
         pylab.figure(3)
         pylab.clf()
-        pylab.imshow(Iy-Iyr)#(numpy.concatenate((Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy),0))
+        pylab.imshow(Iy-Iyf)#(numpy.concatenate((Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy,Iy),0))
         pylab.figure(4)
         pylab.clf()
-        pylab.imshow(Ix-Ixr)#(numpy.concatenate((Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix),0))
+        pylab.imshow(Ix-Ixf)#(numpy.concatenate((Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix,Ix),0))
         pylab.draw()
         pylab.show()
     #print "Max Error",numpy.abs(dtimr-dtim).max(),numpy.abs(Iyr-Iy).max(),numpy.abs(Ixr-Ix).max()

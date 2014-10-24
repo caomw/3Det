@@ -227,7 +227,7 @@ elif cfg.db=="AFLW":
                         basepath=cfg.dbpath,#"/home/databases/",#"/share/ISE/marcopede/database/",
                         usetr=True,usedf=False),cfg.maxnegfull)
     #test
-    tsImages=getRecord(AFLW(basepath=cfg.dbpath,fold=0),cfg.maxtest,facial=True,pose=True)#cfg.useFacial)
+    tsImages=getRecord(AFLW(basepath=cfg.dbpath,fold=0),2*cfg.maxtest,facial=True,pose=True)[cfg.maxpos:]#cfg.useFacial)
     tsImagesFull=tsImages
 elif cfg.db=="MultiPIEunif":
     cameras=["11_0","12_0","09_0","06_0","13_0","14_0","05_1","05_0","04_1","19_0","20_0","01_0","24_0"]
@@ -244,9 +244,11 @@ elif cfg.db=="MultiPIEunif":
     trNegImages=getRecord(InriaNegData(basepath=cfg.dbpath),cfg.maxneg)#check if it works better like this
     trNegImagesFull=getRecord(InriaNegData(basepath=cfg.dbpath),cfg.maxnegfull)
     #test
-    tsImages=getRecord(MultiPIE(basepath=cfg.dbpath,session="session02"),cfg.maxtest,facial=True,pose=True)#cfg.useFacial)
+    if 0:
+        tsImages=getRecord(MultiPIE(basepath=cfg.dbpath,session="session02"),cfg.maxtest,facial=True,pose=True)#cfg.useFacial)
+        tsImagesFull=tsImages
+    tsImages=getRecord(AFW(basepath=cfg.dbpath),cfg.maxpos,facial=True,pose=True)
     tsImagesFull=tsImages
-
 elif cfg.db=="MultiPIE2":
     #cameras=["11_0","12_0","09_0","08_0","13_0","14_0","05_1","05_0","04_1","19_0","20_0","01_0","24_0"]
     cameras=["110","120","090","080","130","140","051","050","041","190","200","010","240"]
@@ -277,12 +279,14 @@ elif cfg.db=="MultiPIE2":
     #test
     #subjects=10
     conditions=cfg.maxtest/13
-    tsImages=numpy.array([],dtype=aux.dtype)
-    for cc in cameras:#range(subjects):
-        tsImages=numpy.concatenate((tsImages,getRecord(MultiPIE2(basepath=cfg.dbpath,camera=cc),conditions,facial=True,pose=True)))
-    #tsImages=getRecord(MultiPIE(basepath=cfg.dbpath,session="session02"),cfg.maxtest,facial=True,pose=True)#cfg.useFacial)
+    if 0:
+        tsImages=numpy.array([],dtype=aux.dtype)
+        for cc in cameras:#range(subjects):
+            tsImages=numpy.concatenate((tsImages,getRecord(MultiPIE2(basepath=cfg.dbpath,camera=cc),conditions,facial=True,pose=True)))
+        #tsImages=getRecord(MultiPIE(basepath=cfg.dbpath,session="session02"),cfg.maxtest,facial=True,pose=True)#cfg.useFacial)
+        tsImagesFull=tsImages
+    tsImages=getRecord(AFW(basepath=cfg.dbpath),cfg.maxpos,facial=True,pose=True)
     tsImagesFull=tsImages
-
 elif cfg.db=="MultiPIE2half":
     #cameras=["11_0","12_0","09_0","08_0","13_0","14_0","05_1","05_0","04_1","19_0","20_0","01_0","24_0"]
     cameras=["110","120","090","080","130","140","051","050","041","190","200","010","240"]
@@ -595,7 +599,7 @@ if initial:
         for mm in m["ww"]:
             #mm.dfay=0.001;mm.dfax=0.001;mm.dfaz=0.001
             if cfg.usedef:
-                mm.dfay=0.1;mm.dfax=0.1;mm.dfaz=0.01
+                mm.dfay=0.1;mm.dfax=0.1;mm.dfaz=0.1
             else:
                 mm.dfay=0;mm.dfax=0;mm.dfaz=0
             m["thr"]=-2
@@ -620,8 +624,15 @@ rr=[]
 w1=numpy.array([])
 sizereg=numpy.zeros(cfg.numcl,dtype=numpy.int32)
 sizesmul=numpy.zeros(cfg.numcl,dtype=numpy.int32)
+regvec=[]#numpy.zeros(cfg.numcl,dtype=numpy.int32)
+zerovec=[]#numpy.zeros(cfg.numcl,dtype=numpy.int32)
+mulvec=[]#numpy.zeros(cfg.numcl,dtype=numpy.int32)
+limitvec=[]#numpy.zeros(cfg.numcl,dtype=numpy.int32)
 #from model m to w
+sizepart=models[0]["ww"][0].mask.size
 for idm,m in enumerate(models[:cfg.numcl]):
+    numparts=len(models[idm]["ww"])
+    numbias=numpy.array(m["biases"]).size
     if cfg.use3D:
         waux.append(model.model2w3D(models[idm]))        
     else:    
@@ -631,8 +642,17 @@ for idm,m in enumerate(models[:cfg.numcl]):
     #if cfg.usedef:
     sizereg[idm]=4*len(models[idm]["ww"])
     sizesmul[idm]=sizereg[idm]+numpy.array(m["biases"]).size
-    print "SIZE slow leanr",sizesmul[idm]
-    #raw_input()
+    #print "SIZE slow leanr",sizesmul[idm]
+    if 1:
+        regvec.append(numpy.concatenate((numpy.ones(numparts*sizepart),numpy.ones(numbias),numpy.ones(numparts),numpy.array([cfg.regdef[0],cfg.regdef[1],cfg.regdef[2]]*numparts),[0]),0).astype(numpy.float32))
+        zerovec.append(numpy.concatenate((numpy.zeros(numparts*sizepart),numpy.zeros(numbias),numpy.zeros(numparts),cfg.valreg*numpy.ones(numparts*3),[0]),0).astype(numpy.float32))
+        mulvec.append(numpy.concatenate((numpy.ones(numparts*sizepart),cfg.mul*numpy.ones(numbias),cfg.mul*numpy.ones(numparts),cfg.mul*numpy.ones(3*numparts),[cfg.mul]),0).astype(numpy.float32))
+        limitvec.append(numpy.concatenate((-1000*numpy.ones(numparts*sizepart),-1000*numpy.ones(numbias),-1000*numpy.ones(numparts),cfg.lb*numpy.ones(3*numparts),[-1000]),0).astype(numpy.float32))
+    if 0:#no strange things
+        regvec.append(numpy.concatenate((numpy.ones(numparts*sizepart),numpy.ones(numbias),numpy.ones(numparts),numpy.array([1.0,1.0,1.0]*numparts)),0).astype(numpy.float32))
+        zerovec.append(numpy.concatenate((numpy.zeros(numparts*sizepart),numpy.zeros(numbias),numpy.zeros(numparts),0*numpy.ones(numparts*3)),0).astype(numpy.float32))
+        mulvec.append(numpy.concatenate((numpy.ones(numparts*sizepart),1.0*numpy.ones(numbias),1.0*numpy.ones(numparts),1.0*numpy.ones(3*numparts)),0).astype(numpy.float32))
+        limitvec.append(numpy.concatenate((-1000*numpy.ones(numparts*sizepart),-1000*numpy.ones(numbias),-1000*numpy.ones(numparts),cfg.lb*numpy.ones(3*numparts)),0).astype(numpy.float32))
     #sizereg[idm]=13*13
 #w2=w #old w
 w=w1
@@ -1063,7 +1083,7 @@ for it in range(cpit,cfg.posit):
 
         #import pegasos   
         if cfg.useSGD:
-            w,r,prloss=pegasos.trainCompSGD(trpos,trneg,"",trposcl,trnegcl,oldw=w,pc=cfg.svmc,k=numcore*2,numthr=numcore,eps=0.01,sizereg=sizereg,valreg=cfg.valreg,sizesmul=sizesmul,valsmul=cfg.mul,lb=cfg.lb)#,notreg=notreg)
+            w,r,prloss=pegasos.trainCompSGD_new(trpos,trneg,"",trposcl,trnegcl,oldw=w,pc=cfg.svmc,k=numcore*2,numthr=numcore,eps=0.01,regvec=regvec,zerovec=zerovec,mulvec=mulvec,limitvec=limitvec)
         else:
             w,r,prloss=pegasos.trainCompBFG(trpos,trneg,"",trposcl,trnegcl,oldw=w,pc=cfg.svmc,k=numcore*2,numthr=numcore,eps=0.001,sizereg=sizereg,valreg=cfg.valreg,lb=cfg.lb)#,notreg=notreg)
 
@@ -1118,6 +1138,9 @@ for it in range(cpit,cfg.posit):
             test3D2.showModel(models[0],0,90,0)    
         else:
             test3D2.showModel(models[0],0,0,0)
+        if 0:
+            import showmodel3D;showmodel3D.showmodel3D(models[0])
+            import showdef3D;showdef3D.showdef3D(models[0])
         pylab.draw()
         pylab.show()
         pylab.savefig("%s_3D%dq.png"%(testname,it))
@@ -1383,7 +1406,7 @@ Negative in cache vectors %d
         lg.info("Model %d:%f"%(idm,m["thr"]))
 
     lg.info("############# Run test on %d positive examples #################"%len(tsImages))
-    if cfg.db=="AFLW":
+    if cfg.db=="AFLW" or cfg.db=="MultiPIE2":
         cfg.resize=0.5
     ap=denseCRFtest.runtest(models,tsImages,cfg,parallel=parallel,numcore=numcore,save="%s%d"%(testname,it),show=localshow,pool=mypool,detfun=denseCRFtest.testINC03)
     lg.info("Ap is:%f"%ap)
@@ -1393,8 +1416,8 @@ Negative in cache vectors %d
 
 lg.info("############# Run test on all (%d) examples #################"%len(tsImagesFull))
 util.save("%s_final.model"%(testname),models)
-if cfg.db=="AFLW":
-    cfg.resize=0.5
+#if cfg.db=="AFLW":# or cfg.db=="MultiPIE2":
+#    cfg.resize=0.5
 ap=denseCRFtest.runtest(models,tsImagesFull,cfg,parallel=parallel,numcore=numcore,save="%s_final"%(testname),show=localshow,pool=mypool,detfun=denseCRFtest.testINC03)
 lg.info("Ap is:%f"%ap)
 print "Training Finished!!!"

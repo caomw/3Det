@@ -396,11 +396,9 @@ def w2model3D(oldmodel,descr,rho,usebiases,usedef,mlz):
     if usedef:
         for idl,l in enumerate(oldmodel["ww"]):
             #adjustment position
-            usez=True
-            if usez:
-                #oldmodel["ww"][idl].dfbz=0
-                oldmodel["ww"][idl].lz+=descr[cnt]*mlz #there are two places with this coeff
-                # the other is in test3D2
+            #oldmodel["ww"][idl].dfbz=0
+            oldmodel["ww"][idl].lz+=descr[cnt]*mlz #there are two places with this coeff
+            # the other is in test3D2
             cnt+=1
         for idl,l in enumerate(oldmodel["ww"]):
             oldmodel["ww"][idl].dfax=descr[cnt]

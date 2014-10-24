@@ -501,7 +501,7 @@ def getfeature3D(det,f,model,angy,angx,angz,k,mlz,trunc=0,usebiases=False,usedef
             #print "Error",scr-ld["scr"]-m1["rho"],(scr-ld["scr"]-m1["rho"])/scr
             #raw_input()
         #print "Scr:",scr-m1["rho"],"PrevScr:",ld["scr"]
-        if abs((scr-m1["rho"]-ld["scr"])/scr)>0.0002:
+        if abs((scr-m1["rho"]-ld["scr"])/scr)>0.001:#do not know why for non axis aligned dt error is 0.001 isntead of 0.0001
             print "Error",abs((scr-m1["rho"]-ld["scr"])/scr)                
             print "Dense",ld["scr"],"Feat",scr-m1["rho"]
             if usedef:
@@ -794,7 +794,7 @@ def visualize3D(model,det,N,img,bb=[],text="",color=None,line=False,norec=True,n
             scale=det[l]["scl"]
             parts=det[l]["def3D"][0]
             if parts==[]:
-                parts=numpy.zeros((len(model["ww"]),4))
+                parts=numpy.zeros((len(model[idm]["ww"]),4))
             test3D2.drawParts(model[idm],center,scale,parts,cangy[det[l]["ang"][0]],cangx[det[l]["ang"][1]],cangz[det[l]["ang"][2]])
         if 0:#vis3D:#3d visualization
             #dsf

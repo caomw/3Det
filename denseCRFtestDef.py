@@ -427,8 +427,10 @@ if __name__ == '__main__':
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/VOC3Def/bicycle1_DEFixed_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_AFLW2000Fixed_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_Right_final"
+    testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_Test3HOG_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_MultiPIEstim20Z_final"
-    testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_Double26"
+    #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_Double26"
+    #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_Test2HOG_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/VOC3Def/bicycle1_Estim20_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_AFLWEstim20Z_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/VOC3Def/bicycle1_Flat_Full_Fixed_final"
@@ -451,6 +453,10 @@ if __name__ == '__main__':
     #cfg.k=20.0
     #cfg.resize=0.5
     models=util.load("%s.model"%(testname))
+    #cfg.usedef=False
+    #cfg.cangy=[-30,-15,0,15,30]#[-30,0,+30]
+    #cfg.cangz=[-20,-10,0,10,20]#[-10,0,10]
+    #cfg.resize=0.5
     #cfg.cangy=[0]
     #cfg.skip=20
     #cfg.angx=[17]
@@ -479,5 +485,5 @@ if __name__ == '__main__':
     ##############test
     #import itertools
     #runtest(models,tsImages,cfg,parallel=False,numcore=4,detfun=lambda x :detectCRF.test(x,numhyp=1,show=False),show=True)#,save="%s%d"%(testname,it))[196] is the many faces
-    runtest(models,tsImagesFull,cfg,parallel=True,numcore=12,show=False,detfun=testINC03,save="./results/face_DoubleDensity")
+    runtest(models,tsImagesFull,cfg,parallel=True,numcore=12,show=False,detfun=testINC03,save="./results/face_Test3HOG")
 

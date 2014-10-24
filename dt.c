@@ -103,6 +103,7 @@ void refine(ftype *img,int sy,int sx,int* defy, int* defx,ftype ay,ftype ax,ftyp
     ftype scr;
     int dy,dx,bny,bnx,py,px,ny,nx;
     for (py=0;py<sy;py++)
+    {
         for (px=0;px<sx;px++)
         {
             for (ny=-dd;ny<=dd;ny++)
@@ -116,11 +117,13 @@ void refine(ftype *img,int sy,int sx,int* defy, int* defx,ftype ay,ftype ax,ftyp
                     if (scr>dst[py*sx+px])
                     {
                         dst[py*sx+px]=scr;
-                        bny=ny;bnx=nx;    
+                        bny=dy;bnx=dx;    
                     }
                 }
-            defy[py*sx+px]+=bny;
-            defx[py*sx+px]+=bnx;
+            //if (py==17 && px==31)
+                //printf("%d def:%f dy%d dx%d",px,-(bny-py)*(bny-py)*ay-(bnx-px)*(bnx-px)*ax+2*(bny-py)*(bnx-px)*axy,bny-py,bnx-px);
+            defy[py*sx+px]=bny;
+            defx[py*sx+px]=bnx;
             if (dst[py*sx+px]<img[py*sx+px])//round problem --> do not deform
             {
                 dst[py*sx+px]=img[py*sx+px];
@@ -128,7 +131,8 @@ void refine(ftype *img,int sy,int sx,int* defy, int* defx,ftype ay,ftype ax,ftyp
                 defx[py*sx+px]=px;
             }
         }
-                
+        //printf("dy%d \n",py);
+    }           
 }
 
 
