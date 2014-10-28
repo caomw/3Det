@@ -319,6 +319,13 @@ def dt2rot(img,ay,ax,axy,by,bx,fast=False):
     #fdx=(fdx-(fdx-mesh[1]).mean()).round().astype(numpy.int)
     return res[cty-by:cty+szy-by,ctx-bx:ctx+szx-bx],fdy,fdx
 
+def checkdt(im,dtim,Iy,Ix,ay,ax,axy):
+    for px in range(im.shape[1]):
+        for py in range(im.shape[0]):
+            dy=py-Iy[py,px];dx=px-Ix[py,px]
+            df=(ay*dy**2+ax*dx**2+2*dx*dy*axy)
+            app=im[Iy[py,px],Ix[py,px]]
+            assert(abs(dtim[py,px]-(app-df))<0.0001)
 
 if __name__ == "__main__":
     dimy=100

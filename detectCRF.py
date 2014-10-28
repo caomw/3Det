@@ -501,9 +501,16 @@ def getfeature3D(det,f,model,angy,angx,angz,k,mlz,trunc=0,usebiases=False,usedef
             #print "Error",scr-ld["scr"]-m1["rho"],(scr-ld["scr"]-m1["rho"])/scr
             #raw_input()
         #print "Scr:",scr-m1["rho"],"PrevScr:",ld["scr"]
-        if abs((scr-m1["rho"]-ld["scr"])/scr)>0.001:#do not know why for non axis aligned dt error is 0.001 isntead of 0.0001
+        if abs((scr-m1["rho"]-ld["scr"])/scr)>0.0005:#do not know why for non axis aligned dt error is 0.001 isntead of 0.0001
             print "Error",abs((scr-m1["rho"]-ld["scr"])/scr)                
             print "Dense",ld["scr"],"Feat",scr-m1["rho"]
+            print "Parts",ld["scrp"]
+            scrp=[];scrd=[]
+            for idlp,lp in enumerate(model[0]["ww"]):
+                scrp.append(numpy.sum(feat[idlp]*lp.mask))
+                scrd.append(numpy.sum(numpy.array(df[idlp])**2*numpy.array([lp.dfax,lp.dfay,lp.dfaz,0])))
+            scrf=numpy.array(scrp)-numpy.array(scrd)
+            print "Parts Feat",scrf
             if usedef:
                 print uscr-m1["rho"],df2D,df3D
             #print "Dense",ld["scrh"],ld["scr"],ld["scr"]-ld["scrh"],"Feat",scr-m1["rho"],uscr-m1["rho"],df2D

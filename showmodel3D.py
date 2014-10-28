@@ -50,7 +50,7 @@ import util
 #model=util.load("./data/VOC3D/bicycle1_VOC3Ddebug1.model")[0]
 #model=util.load("./data/VOC3D/bus1_fullVOC3Dmoreneg20.model")[0]
 
-def showmodel3D(model):
+def showmodel3D(model,skip=False):
 
     window = pyglet.window.Window()
     glEnable(GL_DEPTH_TEST)
@@ -59,6 +59,7 @@ def showmodel3D(model):
     #                          x=window.width//2, y=window.height//2,
     #                         anchor_x='center', anchor_y='center')
 
+    skipset=[0,9,18,27,36]
     #render HOGS
     import test3D2
     import drawHOG
@@ -66,7 +67,9 @@ def showmodel3D(model):
     txt=[]
     glClearColor(1, 1, 1, 1)
     glColor4f(0.8, 0.8, 0.8, 1.0 )
-    for w in model["ww"]:
+    for idw,w in enumerate(model["ww"]):
+        if (idw in skipset) and skip:
+            continue
         aux=drawHOG.drawHOG(w.mask,border=2,val=1)[::-1,:]
         #aux=numpy.random.random(aux.shape)#numpy.ones(aux.shape)
         w.im=(aux/aux.max()*255).astype('uint8')

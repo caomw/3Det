@@ -227,7 +227,9 @@ elif cfg.db=="AFLW":
                         basepath=cfg.dbpath,#"/home/databases/",#"/share/ISE/marcopede/database/",
                         usetr=True,usedf=False),cfg.maxnegfull)
     #test
-    tsImages=getRecord(AFLW(basepath=cfg.dbpath,fold=0),2*cfg.maxtest,facial=True,pose=True)[cfg.maxpos:]#cfg.useFacial)
+    #tsImages=getRecord(AFLW(basepath=cfg.dbpath,fold=0),2*cfg.maxtest,facial=True,pose=True)[cfg.maxpos:]#cfg.useFacial)
+    #tsImagesFull=tsImages
+    tsImages=getRecord(AFW(basepath=cfg.dbpath),cfg.maxpos,facial=True,pose=True)
     tsImagesFull=tsImages
 elif cfg.db=="MultiPIEunif":
     cameras=["11_0","12_0","09_0","06_0","13_0","14_0","05_1","05_0","04_1","19_0","20_0","01_0","24_0"]
@@ -558,7 +560,7 @@ if cfg.cls=="aeroplane":
 #    cfg.model3D=5
     cfg.npart=(4,8,8)#y,x,z # parts of the cuboid
 if cfg.cls=="bicycle":
-    cfg.model3D=6#9 is dense
+    #cfg.model3D=6#9 is dense
     cfg.npart=(4,2,6)#y,x,z # parts of the cuboid
 if cfg.cls=="bottle":
     cfg.npart=(7,3,3)#y,x,z # parts of the cuboid

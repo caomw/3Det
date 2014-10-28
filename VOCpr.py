@@ -441,11 +441,12 @@ def VOCprRecord(gtImages,detlist,show=False,ovr=0.5,pixels=None):
 
     return tp,fp,thr,tot
 
-def VOCprPose(gtImages,detlist,show=False,ovr=0.5,pixels=None,posethr=15):
+def VOCprPose(gtImages,detlist,show=False,ovr=0.5,pixels=None,posethr=15,maest=False):
     """
         calculate the precision recall curve
     """
     dimg={}
+    mae=[]
     tot=0
     for idx in range(len(gtImages)):
         rect=gtImages[idx]["bbox"][:]
@@ -493,6 +494,8 @@ def VOCprPose(gtImages,detlist,show=False,ovr=0.5,pixels=None,posethr=15):
             if dimg[detbb[0]]["bbox"][gt][5] == 0:
                 print "GT",(dimg[detbb[0]]["pose"][gt][0][0]+180)%360-180,"pose",detbb[6]
                 #if not(dimg[detbb[0]]["det"][gt]) and abs((dimg[detbb[0]]["pose"][gt]+180)%360-180-detbb[6])<posethr:                    #check also pose
+                #if not(dimg[detbb[0]]["det"][gt]):
+                mae.append(abs((dimg[detbb[0]]["pose"][gt][0][0]+180)%360-180-detbb[6]))
                 if not(dimg[detbb[0]]["det"][gt]) and abs((dimg[detbb[0]]["pose"][gt][0][0]+180)%360-180-detbb[6])<posethr:                    #check also pose
                     tp[idx]=1
                     dimg[detbb[0]]["det"][gt]=True
@@ -542,8 +545,10 @@ def VOCprPose(gtImages,detlist,show=False,ovr=0.5,pixels=None,posethr=15):
                 pylab.draw()
                 pylab.show()
                 rect=[]
-
-    return tp,fp,thr,tot
+    if maest:
+        return tp,fp,thr,tot,mae
+    else:
+        return tp,fp,thr,tot
 
 
 #det should have imid and facial

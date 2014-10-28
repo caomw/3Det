@@ -393,7 +393,7 @@ if __name__ == '__main__':
     cfg.angy=range(len(cfg.cangy))#[4,6,8]
     cfg.angz=range(len(cfg.cangz))#[1,2,3]
 
-    cfg.resize=1.0#2.0
+    cfg.resize=0.5#2.0
     #testname="./data/CRF/12_10_02_parts_full/bicycle2_testN2_final"
     #testname="./data/person1_testN2best0"#inria1_inria3"bicycle2_testN4aiter3_final
     #testname="./data/bicycle2_testN4aiter3_final"
@@ -427,8 +427,8 @@ if __name__ == '__main__':
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/VOC3Def/bicycle1_DEFixed_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_AFLW2000Fixed_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_Right_final"
-    testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_Test3HOG_final"
-    #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_MultiPIEstim20Z_final"
+    #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_Test3HOG_final"
+    testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_MultiPIEstim20Z_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_Double26"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_Test2HOG_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/VOC3Def/bicycle1_Estim20_final"
@@ -454,17 +454,19 @@ if __name__ == '__main__':
     #cfg.resize=0.5
     models=util.load("%s.model"%(testname))
     #cfg.usedef=False
+    #cfg.angx=[8]
     #cfg.cangy=[-30,-15,0,15,30]#[-30,0,+30]
     #cfg.cangz=[-20,-10,0,10,20]#[-10,0,10]
     #cfg.resize=0.5
-    #cfg.cangy=[0]
+    cfg.cangy=[5]
     #cfg.skip=20
     #cfg.angx=[17]
     #cfg.usebiases=False
     #cfg.usedef=False
     #for mm in models[0]["ww"]:
     #    mm.lz=0.0
-    #    mm.dfay=0.01;mm.dfax=0.0001;mm.dfaz=0.01#1
+        #mm.dfay=1.0;mm.dfax=1.0;mm.dfaz=1.0#1
+        #mm.dfay=.001;mm.dfax=0.001;mm.dfaz=.0001#1
         #mm.dfay=1;mm.dfax=1;mm.dfaz=1#1
         #mm.dfay=0.01;mm.dfax=0.01;mm.dfaz=0.0000000001#1
     #    #mm.lz=5 #does not work with different lz
@@ -485,5 +487,5 @@ if __name__ == '__main__':
     ##############test
     #import itertools
     #runtest(models,tsImages,cfg,parallel=False,numcore=4,detfun=lambda x :detectCRF.test(x,numhyp=1,show=False),show=True)#,save="%s%d"%(testname,it))[196] is the many faces
-    runtest(models,tsImagesFull,cfg,parallel=True,numcore=12,show=False,detfun=testINC03,save="./results/face_Test3HOG")
+    runtest(models,tsImagesFull,cfg,parallel=False,numcore=12,show=True,detfun=testINC03)#,save="./results/face_Test3HOG")
 

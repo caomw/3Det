@@ -130,6 +130,17 @@ def initmodel3D(mtype,usebiases,angy,angx,angz,nparty=4,npartx=5,npartz=9):
                     lmask.append(test3D2.part3D(initval*numpy.ones((4,4,31),dtype=numpy.float32),(py-hsize[0]/2.0)*4,(hsize[1]/2.0)*4,(pz-hsize[2]/2.0)*4+2,lz,0,90))
                     lmask.append(test3D2.part3D(initval*numpy.ones((4,4,31),dtype=numpy.float32),(py-hsize[0]/2.0)*4,-(hsize[1]/2.0)*4,(pz-hsize[2]/2.0)*4+2,lz,0,-90))#frontal #(hsize[1]/2.0)*4,0(pz-
 
+    elif mtype==11:#cube double density without back
+        hsize=[nparty,npartx,npartz]#y,x,z
+        lz=0
+        for py in range(hsize[0]*2-1):
+            for px in range(hsize[1]*2-1):
+                #lmask.append(test3D2.part3D(0.001*numpy.ones((4,4,31),dtype=numpy.float32),(py-hsize[0]/2.0)*4+2,(px-hsize[1]/2.0)*4+2,(hsize[2]/2.0)*4,lz,0,180))#frontal 
+                lmask.append(test3D2.part3D(initval*numpy.ones((4,4,31),dtype=numpy.float32),(py*2-hsize[0]/2.0*4)+2,(px*2-hsize[1]/2.0*4)+2,-(hsize[2]/2.0)*4,lz,0,0))#backward
+        for py in range(hsize[0]*2-1):
+            for pz in range(hsize[2]*2-1):
+                lmask.append(test3D2.part3D(initval*numpy.ones((4,4,31),dtype=numpy.float32),(py*2-hsize[0]/2.0*4)+2,(hsize[1]/2.0)*4,(pz*2-hsize[2]/2.0*4)+2,lz,0,90))
+                lmask.append(test3D2.part3D(initval*numpy.ones((4,4,31),dtype=numpy.float32),(py*2-hsize[0]/2.0*4)+2,-(hsize[1]/2.0)*4,(pz*2-hsize[2]/2.0*4)+2,lz,0,-90))#frontal #(hsize[1]/2.0)*4,0(pz-hsiz
 
     if usebiases:
         biases=numpy.zeros((len(angy),len(angx),len(angz)),dtype=numpy.float32)

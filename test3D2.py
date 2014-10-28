@@ -597,12 +597,7 @@ import dt#,time
 #from scipy.ndimage.interpolation import map_coordinates
 #from prof import *
 #@do_profile()
-def det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,k,usebiases):
-#def det2_(model,hog,ppglangy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],ppglangx=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],selangy=None,selangx=None,bis=BIS,k=1):
-    #if selangy==None:
-    #    selangy=range(len(ppglangy))
-    #if selangx==None:
-    #    selangx=range(len(ppglangx))
+def det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,k,usebiases,debug=True):
     hsy=hog.shape[0]
     hsx=hog.shape[1]
     prec=[]
@@ -623,10 +618,8 @@ def det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,
     hsize=model["ww"][0].mask.shape[0]
     #res=-1000*numpy.ones((len(ppglangy),len(ppglangx),hsy-minym+maxym+hsize+2,hsx-minxm+maxxm+hsize+2),dtype=numpy.float32)      
     res=numpy.ones((len(ppglangy),len(ppglangx),len(ppglangz),hsy-minym+maxym+hsize+2,hsx-minxm+maxxm+hsize+2),dtype=numpy.float32)*numpy.float32(-1000.0)
-    #res2=numpy.ones((len(ppglangy),len(ppglangx),len(ppglangz),hsy-minym+maxym+hsize+2,hsx-minxm+maxxm+hsize+2),dtype=numpy.float32)*numpy.float32(-1000.0)
-    #resp=numpy.zeros((len(model["ww"]),len(ppglangy),len(ppglangx),len(ppglangz),hsy-minym+maxym+hsize+2,hsx-minxm+maxxm+hsize+2),dtype=numpy.float32)*numpy.float32(-1000.0)
-    #ldy=numpy.zeros((len(model["ww"]),len(ppglangy),len(ppglangx),len(ppglangz),hsy-minym+maxym+hsize+2,hsx-minxm+maxxm+hsize+2),dtype=numpy.float32)*numpy.int32(-1)
-    #ldx=numpy.zeros((len(model["ww"]),len(ppglangy),len(ppglangx),len(ppglangz),hsy-minym+maxym+hsize+2,hsx-minxm+maxxm+hsize+2),dtype=numpy.float32)*numpy.int32(-1)
+    if debug:
+        res2=numpy.ones((len(model["ww"]),len(ppglangy),len(ppglangx),len(ppglangz),hsy-minym+maxym+hsize+2,hsx-minxm+maxxm+hsize+2),dtype=numpy.float32)*numpy.float32(-1000.0)
     ldy=numpy.ones((len(model["ww"]),len(ppglangy),len(ppglangx),len(ppglangz),hsy-minym+maxym+hsize+2,hsx-minxm+maxxm+hsize+2),dtype=numpy.float32)#*numpy.int32(-1)
     ldy=ldy[:,:,:,:].cumsum(4)-1
     ldx=numpy.ones((len(model["ww"]),len(ppglangy),len(ppglangx),len(ppglangz),hsy-minym+maxym+hsize+2,hsx-minxm+maxxm+hsize+2),dtype=numpy.float32)#*numpy.int32(-1)
@@ -684,18 +677,8 @@ def det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,
                                         cache[l,lly,llx]=auxscr
                     else:
                         scr=cache[l,gly,glx]
-                    #if type(scr)!=numpy.ndarray:
-                    #    print type(scr)
-                    #    dsfsd
-                    #print scr.shape
-                    #nposy=-minym+mm.y*cos(ppglangy[gly]/180.0*numpy.pi)-hsize/2.0*(cos(angy/180.0*numpy.pi))-mm.z*sin(angy/180.0*numpy.pi)
-                    #nposx=-minxm+mm.x*cos(ppglangx[glx]/180.0*numpy.pi)-hsize/2.0*(cos(angx/180.0*numpy.pi))-mm.z*sin(angx/180.0*numpy.pi)
+                   
                     pr.getproj(minxm,minym,ppglangx[glx],ppglangy[gly],ppglangz[glz],mm.ax,mm.ay,mm.x,mm.y,mm.z,mm.lz,hsize,byref(nposx),byref(nposy))
-                    # set lz=0 because it is used in the dt
-                    #pr.getproj(minxm,minym,ppglangx[glx],ppglangy[gly],ppglangz[glz],mm.ax,mm.ay,mm.x,mm.y,mm.z,0,hsize,byref(nposx),byref(nposy))
-                    #print nposy,nposx
-                    #nposy=-miny+project.getproj(mm.y,mm.z,glangy,angy)
-                    #nposx=-minx+project.getproj(mm.x,mm.z,glangx,angx)
                     pposy=nposy.value
                     pposx=nposx.value
                     #print "Dense input",minxm,minym,ppglangx[glx],ppglangy[gly],ppglangz[glz],mm.ax,mm.ay,mm.x,mm.y,mm.z,mm.lz,hsize
@@ -704,18 +687,6 @@ def det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,
                     posx=int(floor(pposx))
                     disty=pposy-posy
                     distx=pposx-posx
-                    #print maxmy-posy,maxmx-posx,nposy,nposx,glangx,angx
-                    #auxscr=numpy.zeros((scr.shape[0]+1,scr.shape[1]+1,4),dtype=scr.dtype)
-                    #auxloc=numpy.zeros(numpy.array(scr.shape)+1,dtype=numpy.int32)
-                    #auxscr[:-1,:-1,0]=scr
-                    #auxscr[1:,:-1,1]= (disty)*(1-distx)*scr
-                    #auxscr[:-1,1:,2]= (1-disty)*(distx)*scr
-                    #auxscr[1:,1:,3]= (disty)*(distx)*scr 
-                    #transform parameters
-                    #for the moment is wrong because it should generate an elipsis with any possible rotation and not only aligned to the axis
-                    #ay=mm.dfay;ax=mm.dfax,by=mm.dfby,bx=mm.dfbx
-                    #pr.getproj(minxm,minym,ppglangx[glx],ppglangy[gly],ppglangz[glz],mm.ax,mm.ay,mm.dfax,mm.dfay,mm.dfaz,mm.lz,hsize,byref(defx),byref(defy))
-                    #build Q
                     Q=numpy.array([[mm.dfax,0,0,0],
                                    [0,mm.dfay,0,0],
                                    [0,0,mm.dfaz,0],#[0,0,mm.dfaz,mm.lz/2],
@@ -734,47 +705,15 @@ def det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,
                     #modified dt
                     #auxscr,ddy,ddx=dt.mydt(auxscr,ay,ax,by,bx)
                     ay=Qr[1,1];ax=Qr[0,0];axy=Qr[1,0];by=0;bx=0
-                    #by=2*Qr[2,1];bx=2*Qr[2,0]
-                    #auxscr,ddy,ddx=dt.mydt(auxscr,ay,ax,by,bx)
-                    #dfds
-                    #auxscr,ddy,ddx=dt.dt2(auxscr,ay,ax,axy,by,bx)
-                    #ay=0.001;ax=0.001;axy=0.0;by=0;bx=0#by=2*Qr[2,1];bx=2*Qr[2,0]
-                    #mt=time.time()
+                    #print ax,ay,axy
                     auxscr,ddy,ddx=dt.dt2rot(scr,ay,ax,axy,by,bx)
-                    #for t in range(1):
-                        #smp=numpy.random.random(2)
-                        #pt=(smp*(numpy.array(auxscr.shape)-5).round()).astype(numpy.int)
-                        ##pt=[0,0]
-                        #parts=[ddy[pt[0],pt[1]],ddx[pt[0],pt[1]]]
-                        #auxhog=project.invprjhog(hog[floor(pt[0]-round(parts[0])+1):,floor(pt[1]-round(parts[1])+1):],project.pattern4_cos(n[0]),project.pattern4_cos(n[1]))
-                        #myscr=numpy.sum(auxhog*mm.mask)
-                        ##print myscr
-                        ##for mdy in range(-5,6):
-                        ##    for mdx in range(-5,6):
-                        ##        #print (scr[pt[0]+mdy,pt[1]+mdx]-myscr),mdy,mdx
-                        ##        if abs(scr[pt[0]+mdy+5,pt[1]+mdx+5]-myscr)<0.00000001:
-                        ##            print (scr[pt[0]+mdy+5,pt[1]+mdx+5]-myscr),mdy,mdx,posy,posx
-                        ##            print "Found right..."
-                        ##            raw_input()
-                        #assert(abs(scr[pt[0]+5,pt[1]+5]-myscr)<0.00001)
-                    #print
-                    #auxscr=scr
-                    #auxscr,ddy,ddx=dt.dt2rot(scr[::2,::2],ay,ax,axy,by,bx)
-                    #idx=numpy.mgrid[:scr.shape[0],:scr.shape[1]]/2.0
-                    #auxscr=map_coordinates(auxscr,idx,order=1)
-                    #ddy=map_coordinates(ddy,idx,order=1)
-                    #ddx=map_coordinates(ddx,idx,order=1)
-                    #tt+= time.time()-mt
-                    #mt=time.time()    
+                    if 0:
+                        dt.checkdt(scr,auxscr,ddy,ddx,ay,ax,axy)
                     ldy[l,gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=ddy+maxmy-posy
                     ldx[l,gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=ddx+maxmx-posx
                     #resp[l,gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=auxscr
                     res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]+auxscr
-                    #res2[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=res2[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]+scr
-                    #ta+= time.time()-mt
-                    #print tt,ta," ",
-                    #asddsf
-                    #print "Part in:",l,Qr
+                    res2[l,gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=auxscr
                     if 0: #l==0: #plot gaussian for each part
                         p=numpy.array((10,5)).reshape(2,1)
                         print "PART:",l
@@ -808,16 +747,6 @@ def det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,
                         pylab.show()
                         raw_input()
 
-                    #res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+=(1-disty)*(distx)*scr
-                    #res[gly,glx,glz,maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]+=(disty)*(1-distx)*scr
-                    #res[gly,glx,glz,maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+=(disty)*(distx)*scr
-                    #res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-posx:maxmx-posx+hsx+hsize]+=(1-disty)*(1-distx)*scr
-                    #res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+=(1-disty)*(distx)*scr
-                    #res[gly,glx,glz,maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]+=(disty)*(1-distx)*scr
-                    #res[gly,glx,glz,maxmy-(posy+1):maxmy-(posy+1)+hsy+hsize,maxmx-(posx+1):maxmx-(posx+1)+hsx+hsize]+=(disty)*(distx)*scr
-                    #pr.interpolate(res.shape[0],res.shape[1],res.shape[2],res.shape[3],res.shape[4],res,glx,gly,glz,maxmx,maxmy,posx,posy,hsx,hsy,hsize,distx,disty,scr)
-    #if numpy.sum(numpy.abs(res-resc))>0.0001:
-    #    gsdgdf
     if 0:
         pylab.figure(100)
         pylab.clf()
@@ -825,7 +754,9 @@ def det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,
         pylab.show()
         pylab.draw()
         raw_input()
-    return res,ldy,ldx            
+    if debug:
+        return res,ldy,ldx,res2            
+    return res,ldy,ldx
 
 #@autojit
 def drawdet(ldet):
@@ -862,7 +793,7 @@ def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-9
         import time
         t=time.time()
         if usedef:
-            res,ldy,ldx=det2_def(model,hog.hog[idr],ppglangy=angy,ppglangx=angx,ppglangz=angz,selangy=selangy,selangx=selangx,selangz=selangz,k=k,bis=bis,usebiases=usebiases)
+            res,ldy,ldx,resp=det2_def(model,hog.hog[idr],ppglangy=angy,ppglangx=angx,ppglangz=angz,selangy=selangy,selangx=selangx,selangz=selangz,k=k,bis=bis,usebiases=usebiases)
             #res=det2(model,hog.hog[idr],ppglangy=angy,ppglangx=angx,ppglangz=angz,selangy=selangy,selangx=selangx,selangz=selangz,k=k,bis=bis,usebiases=usebiases)
         else:
             #res,ldy,ldx=det2_def(model,hog.hog[idr],ppglangy=angy,ppglangx=angx,ppglangz=angz,selangy=selangy,selangx=selangx,selangz=selangz,k=k,bis=bis,usebiases=usebiases)
@@ -922,7 +853,7 @@ def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-9
                     #    ppy=min(max(0,dd[3]+posy-deltay),y.shape[0]-1)
                     #    ppx=min(max(0,dd[4]+posx-deltax),x.shape[1]-1)
                     #    pdfx.append(x[ppy,ppx]);pddx.append(pdfx[-1]-ppx)
-                    #scrp.append(resp[idp,dd[0],dd[1],dd[2],dd[3],dd[4]])
+                    scrp.append(resp[idp,dd[0],dd[1],dd[2],dd[3],dd[4]])
                     #assert(scrp[-1]-resp[idp,dd[0],dd[1],dd[2],pdfy[-1],pdfx[-1]]<0.0001)
                     if 0:
                         print deltay,deltax
