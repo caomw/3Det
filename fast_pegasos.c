@@ -523,6 +523,156 @@ void fast_pegasos_comp_parall_new(ftype *w,int numcomp,int *compx,int *compy,fty
     free(pexarray);
 }
 
+void fast_lbgs_comp_parall_new(ftype *w,int numcomp,int *compx,int *compy,ftype **ptrsamplescomp,int totsamples,int *label,int *comp,ftype C,int iter,int part,int k,int numthr,ftype *reg,ftype *zero,ftype *mul,ftype *lim)
+{
+    int wx=0,wxtot=0,wcx;
+    #ifdef _OPENMP
+    omp_set_num_threads(numthr);
+    #endif
+    printf("k=%d\n",k);
+    srand48(3+part);
+    int c,cp,bcp,d,y,t,pex,pexcomp,totsz,sumszx[maxcomp],sumszy[maxcomp];//max 100 components
+    ftype *x,n,scr,norm,val,ptrc,wscr,bwscr=-1.0;
+    totsz=0;
+    sumszx[0]=0;
+    sumszy[0]=0;
+    int *pares,*pexarray,kk;
+    pares   =malloc(sizeof(int)*k);
+    pexarray=malloc(sizeof(int)*k);
+    for (c=0;c<numcomp;c++)
+    {
+        wxtot+=compx[c];
+        totsz+=compy[c];
+        sumszx[c+1]=wxtot;
+        sumszy[c+1]=totsz;
+    }
+    //printf("sumz %d compx %d\n",sumszx[0],compx[0]);
+    //for (c=0;c<compx[0];c++)
+    //c=0;printf("r:%f z:%f m:%f l:%f ",reg[c],zero[c],mul[c],lim[c]); 
+    //c=compx[0]-1;printf("r:%f z:%f m:%f l:%f ",reg[c],zero[c],mul[c],lim[c]); 
+    for (c=0;c<iter;c++)
+    {
+        t=c+part*iter+1;
+        n=1.0/(t);
+        //only the component l2_max*/
+        bwscr=-1.0;
+        for (cp=0;cp<numcomp;cp++)
+        {   
+            wscr=score3(w+sumszx[cp],w+sumszx[cp],reg+sumszx[cp],zero+sumszx[cp],compx[cp]);
+            if (wscr>bwscr)
+            {
+                bwscr=wscr;
+                bcp=cp;
+            }
+        }
+        //reg(w+sumszx[bcp],n,valreg,compx[bcp]-1,sizereg[bcp]);//0.01    
+        reg3(w+sumszx[bcp],n,reg+sumszx[bcp],zero+sumszx[bcp],mul+sumszx[bcp],compx[bcp]-1);//0.01    
+        for (kk=0;kk<k;kk++)
+        {
+            pexarray[kk]=(int)(drand48()*(totsamples-0.5));
+        }
+        //printf("here2!!!\n");
+        #pragma omp parallel for private(scr,pex,x,y,wx)
+        for (kk=0;kk<k;kk++)
+        {          
+            pex=pexarray[kk];
+            wx=compx[comp[pex]];
+            x=ptrsamplescomp[comp[pex]]+(pex-sumszy[comp[pex]])*wx;
+            //printf("here2.3!!!\n");
+            y=label[pex];
+            //printf("Y %d ",y);
+            //printf("C %d ",comp[pex]);
+            scr=score(x,w+sumszx[comp[pex]],wx);
+            //printf("here2.5!!!\n");
+            if (scr*y<1.0)
+            {
+                pares[kk]=pex;
+            }
+            else
+            {
+                pares[kk]=-1;
+            }
+        }
+        //printf("here3!!!\n");
+        for (kk=0;kk<k;kk++)
+        {
+            if (pares[kk]!=-1)
+            {
+                //addmul(w,ex+pares[kk]*wx,(float)(label[pares[kk]])*n/(float)k,wx);            
+                pex=pares[kk];
+                wx=compx[comp[pex]];
+                x=ptrsamplescomp[comp[pex]]+(pex-sumszy[comp[pex]])*wx;
+                //addmulslow(ftype *a,ftype *b,ftype c,ftype smul,int len,int sizeslow)
+                //printf("Val:%f,Size:%d\n",valsmul,sizesmul[comp[pex]]);
+                //addmulslow(w+sumszx[comp[pex]],x,(float)(label[pex])*n*C*totsamples/(float)k,valsmul,wx,sizesmul[comp[pex]]);   
+                //addmul(w+sumszx[comp[pex]],x,(float)(label[pex])*n*C*totsamples/(float)k,wx);            
+                addmul3(w+sumszx[comp[pex]],x,(float)(label[pex])*n*C*totsamples/(float)k,mul+sumszx[comp[pex]],wx);   
+            }
+        }
+        for (cp=0;cp<numcomp;cp++)
+            //limit(w+sumszx[cp],lb,compx[cp]-1,sizereg[cp]);//0.01    
+            limit3(w+sumszx[cp],lim+sumszx[cp],compx[cp]);//0.01    
+    }
+    printf("N:%g t:%d\n",n,t);
+    free(pares);
+    free(pexarray);
+}
+
+void fast_grad_new(ftype *w,int numcomp,int *compx,int *compy,ftype **ptrsamplescomp,int totsamples,int *label,int *comp,ftype C,int k,int numthr,ftype *reg,ftype *zero,ftype *grad)
+{
+    // grad has the same dimensionality as w
+    int wx=0,wxtot=0,wcx;
+    #ifdef _OPENMP
+    omp_set_num_threads(numthr);
+    #endif
+    int wc,c,cp,bcp,d,y,t,pex,pexcomp,totsz,sumszx[maxcomp],sumszy[maxcomp];//max 100 components
+    ftype *x,n,scr,norm,val,ptrc,wscr,bwscr=-1.0;
+    totsz=0;
+    sumszx[0]=0;
+    sumszy[0]=0;
+    for (c=0;c<numcomp;c++)
+    {
+        wxtot+=compx[c];
+        totsz+=compy[c];
+        sumszx[c+1]=wxtot;
+        sumszy[c+1]=totsz;
+    }
+    bwscr=-1.0;
+    //printf("So far:0\n");
+    for (cp=0;cp<numcomp;cp++)
+    {   
+        wscr=score3(w+sumszx[cp],w+sumszx[cp],reg+sumszx[cp],zero+sumszx[cp],compx[cp]);
+        if (wscr>bwscr)
+        {
+            bwscr=wscr;
+            bcp=cp;
+        }
+    }
+    for (wc=sumszx[bcp];wc<sumszx[bcp]+compx[bcp];wc++)
+        grad[wc]=(w[wc]-zero[wc])*reg[wc];
+    //printf("So far:1\n");
+    for (c=0;c<totsz;c++)
+    {
+        pex=c;
+        wx=compx[comp[pex]];
+        x=ptrsamplescomp[comp[pex]]+(pex-sumszy[comp[pex]])*wx;
+        y=label[pex];
+        scr=score(x,w+sumszx[comp[pex]],wx);
+        if (scr*y<1.0)
+        {
+            wx=compx[comp[pex]];
+            x=ptrsamplescomp[comp[pex]]+(pex-sumszy[comp[pex]])*wx;
+            if (y>0)
+                for (wc=sumszx[cp];wc<sumszx[cp]+compx[cp];wc++)
+                    grad[wc]=grad[wc]-C*x[wc];
+            else
+                for (wc=sumszx[cp];wc<sumszx[cp]+compx[cp];wc++)
+                    grad[wc]=grad[wc]+C*x[wc];
+        }
+    }
+    //printf("So far:2\n");
+}
+
 void fast_objective_new(ftype *w,int numcomp,int *compx,int *compy,ftype **ptrsamplescomp,int totsamples,int *label,int *comp,ftype C,int k,int numthr,ftype *reg,ftype *zero,ftype *ret)
 {
     ftype *rreg=ret, *rposl=ret+1, *rnegl=ret+2;
@@ -573,6 +723,7 @@ void fast_objective_new(ftype *w,int numcomp,int *compx,int *compy,ftype **ptrsa
     }
     *rposl=*rposl*C;
     *rnegl=*rnegl*C;
+    printf("Reg:%f Posl:%f Negl:%f Tot:%f \n",*rreg,*rposl,*rnegl,*rreg+*rposl+*rnegl);
 }
 
 

@@ -20,6 +20,7 @@ import crf3
 import logging as lg
 import os
 import pegasos2 as pegasos
+import pegasos3
 import denseCRFtestDef as denseCRFtest
 
 ########################## load configuration parametes
@@ -596,7 +597,6 @@ if initial:
         models=model.initmodel2D(cfg.usebiases,cfg.cangy,cfg.cangx,cfg.cangz,lfy,lfx)
     else:
         models=model.initmodel3D(cfg.model3D,cfg.usebiases,cfg.cangy,cfg.cangx,cfg.cangz,cfg.npart[0],cfg.npart[1],cfg.npart[2])
-    
     for m in models:
         for mm in m["ww"]:
             #mm.dfay=0.001;mm.dfax=0.001;mm.dfaz=0.001
@@ -644,11 +644,16 @@ for idm,m in enumerate(models[:cfg.numcl]):
     #if cfg.usedef:
     sizereg[idm]=4*len(models[idm]["ww"])
     sizesmul[idm]=sizereg[idm]+numpy.array(m["biases"]).size
-    #print "SIZE slow leanr",sizesmul[idm]
-    if 1:
+    if cfg.useold: #old setting working well
         regvec.append(numpy.concatenate((numpy.ones(numparts*sizepart),numpy.ones(numbias),numpy.ones(numparts),numpy.array([cfg.regdef[0],cfg.regdef[1],cfg.regdef[2]]*numparts),[0]),0).astype(numpy.float32))
         zerovec.append(numpy.concatenate((numpy.zeros(numparts*sizepart),numpy.zeros(numbias),numpy.zeros(numparts),cfg.valreg*numpy.ones(numparts*3),[0]),0).astype(numpy.float32))
-        mulvec.append(numpy.concatenate((numpy.ones(numparts*sizepart),cfg.mul*numpy.ones(numbias),cfg.mul*numpy.ones(numparts),cfg.mul*numpy.ones(3*numparts),[cfg.mul]),0).astype(numpy.float32))
+        mulvec.append(numpy.concatenate((numpy.ones(numparts*sizepart),cfg.mul*numpy.ones(numbias),cfg.mul*numpy.ones(numparts),numpy.array([cfg.mul,cfg.mul,cfg.mul]*numparts),[cfg.mul]),0).astype(numpy.float32))
+        limitvec.append(numpy.concatenate((-1000*numpy.ones(numparts*sizepart),-1000*numpy.ones(numbias),-1000*numpy.ones(numparts),cfg.lb*numpy.ones(3*numparts),[-1000]),0).astype(numpy.float32))
+    else: #new setting trying with VOC3D_Def_new
+        regvec.append(numpy.concatenate((numpy.ones(numparts*sizepart),numpy.zeros(numbias),numpy.ones(numparts),numpy.array([cfg.regdef[0],cfg.regdef[1],cfg.regdef[2]]*numparts),[0]),0).astype(numpy.float32))
+        zerovec.append(numpy.concatenate((numpy.zeros(numparts*sizepart),numpy.zeros(numbias),numpy.zeros(numparts),cfg.valreg*numpy.ones(numparts*3),[0]),0).astype(numpy.float32))
+        mulvec.append(numpy.concatenate((numpy.ones(numparts*sizepart),1.0/float(cfg.k)*numpy.ones(numbias),1.0/float(cfg.mlz)*numpy.ones(numparts),numpy.array([cfg.mul,cfg.mul,cfg.mul]*numparts),[1.0/float(cfg.bias)]),0).astype(numpy.float32))
+        #mulvec.append(numpy.concatenate((numpy.ones(numparts*sizepart),1.0/float(cfg.k)*numpy.ones(numbias),1.0/float(cfg.mlz)*numpy.ones(numparts),numpy.array([cfg.mul,cfg.mul,cfg.mul])*numparts,[1.0/float(cfg.bias)]),0).astype(numpy.float32))
         limitvec.append(numpy.concatenate((-1000*numpy.ones(numparts*sizepart),-1000*numpy.ones(numbias),-1000*numpy.ones(numparts),cfg.lb*numpy.ones(3*numparts),[-1000]),0).astype(numpy.float32))
     if 0:#no strange things
         regvec.append(numpy.concatenate((numpy.ones(numparts*sizepart),numpy.ones(numbias),numpy.ones(numparts),numpy.array([1.0,1.0,1.0]*numparts)),0).astype(numpy.float32))
@@ -712,7 +717,6 @@ for idl,l in enumerate(trPosImages):
         else:
             arg.append({"idim":idl,"file":l["name"],"idbb":idb,"bbox":b,"models":models,"facial":l["facial"],"pose":l["pose"],"cfg":cfg,"flip":False})    
 totPosEx=len(arg)
-
 
 lg.info("Starting Main loop!")
 ####################### repeat scan positives
@@ -923,7 +927,8 @@ for it in range(cpit,cfg.posit):
 
     
     if it>cpit:
-        oldposl,negl,reg,nobj,hpos,hneg=pegasos.objective(trpos,trneg,trposcl,trnegcl,clsize,w,cfg.svmc,sizereg=sizereg,valreg=cfg.valreg)              
+        oldposl,negl,reg,nobj,hpos,hneg=pegasos3.objective_new(trpos,trneg,trposcl,trnegcl,w,cfg.svmc,numthr=numcore,regvec=regvec,zerovec=zerovec)
+        #oldposl,negl,reg,nobj,hpos,hneg=pegasos.objective(trpos,trneg,trposcl,trnegcl,clsize,w,cfg.svmc,sizereg=sizereg,valreg=cfg.valreg)#this should be changed to objective new which should call the objective in fast_pegasos 
 
     #build training data for positives
     trpos=[]
@@ -959,7 +964,8 @@ for it in range(cpit,cfg.posit):
     ########### check positive convergence    
     if it>cpit:
         lg.info("################# Checking Positive Convergence ##############")
-        newposl,negl,reg,nobj,hpos,hneg=pegasos.objective(trpos,trneg,trposcl,trnegcl,clsize,w,cfg.svmc,sizereg=sizereg,valreg=cfg.valreg)
+        newposl,negl,reg,nobj,hpos,hneg=pegasos3.objective_new(trpos,trneg,trposcl,trnegcl,w,cfg.svmc,numthr=numcore,regvec=regvec,zerovec=zerovec)
+        #newposl,negl,reg,nobj,hpos,hneg=pegasos.objective(trpos,trneg,trposcl,trnegcl,clsize,w,cfg.svmc,sizereg=sizereg,valreg=cfg.valreg)#this should be changed to objective new which should call the objective in fast_pegasos 
         #lposl.append(newposl)
         #add a bound on not found examples
         boldposl=oldposl/float(totPosEx)+(totPosEx-total[-2])*(1-cfg.posthr)
@@ -1058,7 +1064,8 @@ for it in range(cpit,cfg.posit):
         ############ check negative convergency
         if nit>0: # and not(limit):
             lg.info("################ Checking Negative Convergence ##############")
-            posl,negl,reg,nobj,hpos,hneg=pegasos.objective(trpos,trneg,trposcl,trnegcl,clsize,w,cfg.svmc,sizereg=sizereg,valreg=cfg.valreg)#,notreg)
+            posl,negl,reg,nobj,hpos,hneg=pegasos3.objective_new(trpos,trneg,trposcl,trnegcl,w,cfg.svmc,numthr=numcore,regvec=regvec,zerovec=zerovec)
+            #posl,negl,reg,nobj,hpos,hneg=pegasos.objective(trpos,trneg,trposcl,trnegcl,clsize,w,cfg.svmc,sizereg=sizereg,valreg=cfg.valreg)#this should be changed to objective new which should call the objective in fast_pegasos 
             print "NIT:",nit,"OLDLOSS",old_nobj,"NEWLOSS:",nobj
             negratio.append(nobj/(old_nobj+0.000001))
             negratio2.append((posl+negl)/(old_posl+old_negl+0.000001))
@@ -1084,10 +1091,13 @@ for it in range(cpit,cfg.posit):
             lg.info("Negative Examples:%d"%(numpy.sum(numpy.array(trnegcl)==l)))    
 
         #import pegasos   
+        
         if cfg.useSGD:
-            w,r,prloss=pegasos.trainCompSGD_new(trpos,trneg,"",trposcl,trnegcl,oldw=w,pc=cfg.svmc,k=numcore*2,numthr=numcore,eps=0.01,regvec=regvec,zerovec=zerovec,mulvec=mulvec,limitvec=limitvec)
+            w,r,prloss=pegasos.trainCompSGD_new(trpos,trneg,"",trposcl,trnegcl,oldw=w,pc=cfg.svmc,k=numcore*2,numthr=numcore,eps=cfg.eps,regvec=regvec,zerovec=zerovec,mulvec=mulvec,limitvec=limitvec)
         else:
-            w,r,prloss=pegasos.trainCompBFG(trpos,trneg,"",trposcl,trnegcl,oldw=w,pc=cfg.svmc,k=numcore*2,numthr=numcore,eps=0.001,sizereg=sizereg,valreg=cfg.valreg,lb=cfg.lb)#,notreg=notreg)
+            import pegasos3
+            w,r,prloss=pegasos3.trainCompLBGS_new(trpos,trneg,"",trposcl,trnegcl,oldw=w,pc=cfg.svmc,k=numcore*2,numthr=numcore,eps=cfg.eps,regvec=regvec,zerovec=zerovec,mulvec=mulvec,limitvec=limitvec)
+            #w,r,prloss=pegasos.trainCompBFG(trpos,trneg,"",trposcl,trnegcl,oldw=w,pc=cfg.svmc,k=numcore*2,numthr=numcore,eps=0.001,sizereg=sizereg,valreg=cfg.valreg,lb=cfg.lb)#,notreg=notreg)
 
         pylab.figure(300,figsize=(4,4))
         pylab.clf()
@@ -1097,7 +1107,11 @@ for it in range(cpit,cfg.posit):
         pylab.show()
         #raw_input()
 
-        old_posl,old_negl,old_reg,old_nobj,old_hpos,old_hneg=pegasos.objective(trpos,trneg,trposcl,trnegcl,clsize,w,cfg.svmc,sizereg=sizereg,valreg=cfg.valreg)#,notreg) 
+        old_posl,old_negl,old_reg,old_nobj,old_hpos,old_hneg=pegasos3.objective_new(trpos,trneg,trposcl,trnegcl,w,cfg.svmc,numthr=numcore,regvec=regvec,zerovec=zerovec)
+        print "Objective After learning:",old_nobj
+        lg.info("Objective After learning %f"%old_nobj)
+        #raw_input()
+        #old_posl,old_negl,old_reg,old_nobj,old_hpos,old_hneg=pegasos.objective(trpos,trneg,trposcl,trnegcl,clsize,w,cfg.svmc,sizereg=sizereg,valreg=cfg.valreg)#this should be changed to objective new which should call the objective in fast_pegasos 
         waux=[]
         rr=[]
         w1=numpy.array([])

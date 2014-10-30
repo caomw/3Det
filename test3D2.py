@@ -597,7 +597,7 @@ import dt#,time
 #from scipy.ndimage.interpolation import map_coordinates
 #from prof import *
 #@do_profile()
-def det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,k,usebiases,debug=True):
+def det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,bis,k,usebiases,debug=False):
     hsy=hog.shape[0]
     hsx=hog.shape[1]
     prec=[]
@@ -713,7 +713,8 @@ def det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,
                     ldx[l,gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=ddx+maxmx-posx
                     #resp[l,gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=auxscr
                     res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=res[gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]+auxscr
-                    res2[l,gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=auxscr
+                    if debug:
+                        res2[l,gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=auxscr
                     if 0: #l==0: #plot gaussian for each part
                         p=numpy.array((10,5)).reshape(2,1)
                         print "PART:",l
@@ -793,7 +794,7 @@ def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-9
         import time
         t=time.time()
         if usedef:
-            res,ldy,ldx,resp=det2_def(model,hog.hog[idr],ppglangy=angy,ppglangx=angx,ppglangz=angz,selangy=selangy,selangx=selangx,selangz=selangz,k=k,bis=bis,usebiases=usebiases)
+            res,ldy,ldx=det2_def(model,hog.hog[idr],ppglangy=angy,ppglangx=angx,ppglangz=angz,selangy=selangy,selangx=selangx,selangz=selangz,k=k,bis=bis,usebiases=usebiases)
             #res=det2(model,hog.hog[idr],ppglangy=angy,ppglangx=angx,ppglangz=angz,selangy=selangy,selangx=selangx,selangz=selangz,k=k,bis=bis,usebiases=usebiases)
         else:
             #res,ldy,ldx=det2_def(model,hog.hog[idr],ppglangy=angy,ppglangx=angx,ppglangz=angz,selangy=selangy,selangx=selangx,selangz=selangz,k=k,bis=bis,usebiases=usebiases)
@@ -853,7 +854,7 @@ def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-9
                     #    ppy=min(max(0,dd[3]+posy-deltay),y.shape[0]-1)
                     #    ppx=min(max(0,dd[4]+posx-deltax),x.shape[1]-1)
                     #    pdfx.append(x[ppy,ppx]);pddx.append(pdfx[-1]-ppx)
-                    scrp.append(resp[idp,dd[0],dd[1],dd[2],dd[3],dd[4]])
+                    #scrp.append(resp[idp,dd[0],dd[1],dd[2],dd[3],dd[4]])
                     #assert(scrp[-1]-resp[idp,dd[0],dd[1],dd[2],pdfy[-1],pdfx[-1]]<0.0001)
                     if 0:
                         print deltay,deltax

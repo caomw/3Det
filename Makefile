@@ -12,7 +12,7 @@ CFLAGS = -O3 -g -march=nocona -fomit-frame-pointer -fopenmp -mfpmath=sse -msse -
 #CFLAGS = -xP -fast
 #OMPFLAGS = -openmp
 
-LIB_TARGETS = libresize.so libexcorr.so libhog.so libfastpegasos.so libcrf2.so libfastDP.so cproject.so libdt.so
+LIB_TARGETS = libresize.so libexcorr.so libhog.so libfastpegasos.so libfastpegasos2.so libcrf2.so libfastDP.so cproject.so libdt.so
 all:	$(LIB_TARGETS)
 
 libcrf2.so: ./MRF2.1/myexample2.cpp Makefile
@@ -35,6 +35,9 @@ cproject.so: cproject.c Makefile
 
 libfastpegasos.so: fast_pegasos.c Makefile
 	$(CC) $(CFLAGS) -shared -Wl,-soname=libfastpegasos.so -fPIC -lc fast_pegasos.c -o libfastpegasos.so
+
+libfastpegasos2.so: fast_pegasos2.c Makefile
+	$(CC) $(CFLAGS) -shared -Wl,-soname=libfastpegasos2.so -fPIC -lc fast_pegasos2.c -o libfastpegasos2.so
 
 libresize.so:	resize.c Makefile
 	$(CC) $(CFLAGS) -shared -Wl,-soname=libresize.so -fPIC resize.c -o libresize.so

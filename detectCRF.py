@@ -770,7 +770,7 @@ def visualize3D(model,det,N,img,bb=[],text="",color=None,line=False,norec=True,n
     pad=0
     cc=0
     if bb!=[]:
-        if type(bb[0])!=list:
+        if type(bb[0])!=list and type(bb[0])!=numpy.ndarray:
             util.box(bb[0],bb[1],bb[2],bb[3], col="b--", lw=2)  
         else:
             for b in bb:

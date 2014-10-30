@@ -50,8 +50,17 @@ def runtest(models,tsImages,cfg,parallel=True,numcore=4,detfun=detectCRF.test,sa
         if show:
             im=myimread(arg[ii]["file"],resize=cfg.resize)
             if tsImages[ii]["bbox"]!=[]:
+                if 0:#cfg.db=="AFLW":#reduce bounding box for training with AFLW
+                    for l in res:
+                        dd=(l["ang"][1]-6)/6.0
+                        w=l["bbox"][3]-l["bbox"][1]
+                        #print l["bbox"]
+                        newb=(l["bbox"][0],l["bbox"][1]+0.5*w*max(dd,0),l["bbox"][2],l["bbox"][3]-0.5*w*max(-dd,0))
+                        l["bbox"]=newb
+                        #print l["bbox"]
+                        #raw_input()
                 #detectCRF.visualize2(res[:3],cfg.N,im,bb=tsImages[ii]["bbox"][0])
-                detectCRF.visualize3D(models,res[:5],cfg.N,im,bb=tsImages[ii]["bbox"][0],npart=cfg.npart,cangy=cfg.cangy,cangx=cfg.cangx,cangz=cfg.cangz)
+                detectCRF.visualize3D(models,res[:1],cfg.N,im,bb=tsImages[ii]["bbox"][0],npart=cfg.npart,cangy=cfg.cangy,cangx=cfg.cangx,cangz=cfg.cangz)
             else:
                 detectCRF.visualize3D(models,res[:1],cfg.N,im,cangy=cfg.cangy,cangx=cfg.cangx,cangz=cfg.cangz)
             print [x["scr"] for x in res[:5]]
@@ -393,7 +402,7 @@ if __name__ == '__main__':
     cfg.angy=range(len(cfg.cangy))#[4,6,8]
     cfg.angz=range(len(cfg.cangz))#[1,2,3]
 
-    cfg.resize=0.5#2.0
+    cfg.resize=1.0#2.0
     #testname="./data/CRF/12_10_02_parts_full/bicycle2_testN2_final"
     #testname="./data/person1_testN2best0"#inria1_inria3"bicycle2_testN4aiter3_final
     #testname="./data/bicycle2_testN4aiter3_final"
@@ -428,7 +437,8 @@ if __name__ == '__main__':
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_AFLW2000Fixed_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_Right_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_Test3HOG_final"
-    testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_MultiPIEstim20Z_final"
+    #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_MultiPIEstim20Z_final"
+    testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_MorePos5"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_Double26"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/AFLW/face1_Test2HOG_final"
     #testname="/users/visics/mpederso/code/git/3Def/3Det/data/NEW/VOC3Def/bicycle1_Estim20_final"
@@ -458,7 +468,7 @@ if __name__ == '__main__':
     #cfg.cangy=[-30,-15,0,15,30]#[-30,0,+30]
     #cfg.cangz=[-20,-10,0,10,20]#[-10,0,10]
     #cfg.resize=0.5
-    cfg.cangy=[5]
+    #cfg.cangy=[5]
     #cfg.skip=20
     #cfg.angx=[17]
     #cfg.usebiases=False
@@ -487,5 +497,5 @@ if __name__ == '__main__':
     ##############test
     #import itertools
     #runtest(models,tsImages,cfg,parallel=False,numcore=4,detfun=lambda x :detectCRF.test(x,numhyp=1,show=False),show=True)#,save="%s%d"%(testname,it))[196] is the many faces
-    runtest(models,tsImagesFull,cfg,parallel=False,numcore=12,show=True,detfun=testINC03)#,save="./results/face_Test3HOG")
+    runtest(models,tsImagesFull,cfg,parallel=True,numcore=24,show=True,detfun=testINC03,save="./results/face_MorePos5")
 
