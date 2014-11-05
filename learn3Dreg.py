@@ -652,7 +652,8 @@ for idm,m in enumerate(models[:cfg.numcl]):
     else: #new setting trying with VOC3D_Def_new
         regvec.append(numpy.concatenate((numpy.ones(numparts*sizepart),numpy.zeros(numbias),numpy.ones(numparts),numpy.array([cfg.regdef[0],cfg.regdef[1],cfg.regdef[2]]*numparts),[0]),0).astype(numpy.float32))
         zerovec.append(numpy.concatenate((numpy.zeros(numparts*sizepart),numpy.zeros(numbias),numpy.zeros(numparts),cfg.valreg*numpy.ones(numparts*3),[0]),0).astype(numpy.float32))
-        mulvec.append(numpy.concatenate((numpy.ones(numparts*sizepart),1.0/float(cfg.k)*numpy.ones(numbias),1.0/float(cfg.mlz)*numpy.ones(numparts),numpy.array([cfg.mul,cfg.mul,cfg.mul]*numparts),[1.0/float(cfg.bias)]),0).astype(numpy.float32))
+        mulvec.append(numpy.concatenate((numpy.ones(numparts*sizepart),1.0/float(cfg.k)*numpy.ones(numbias),cfg.mul*numpy.ones(numparts),numpy.array([cfg.mul,cfg.mul,cfg.mul]*numparts),[1.0/float(cfg.bias)]),0).astype(numpy.float32))
+        #mulvec.append(numpy.concatenate((numpy.ones(numparts*sizepart),1.0/float(cfg.k)*numpy.ones(numbias),1.0/float(cfg.mlz)*numpy.ones(numparts),numpy.array([cfg.mul,cfg.mul,cfg.mul]*numparts),[1.0/float(cfg.bias)]),0).astype(numpy.float32))
         #mulvec.append(numpy.concatenate((numpy.ones(numparts*sizepart),1.0/float(cfg.k)*numpy.ones(numbias),1.0/float(cfg.mlz)*numpy.ones(numparts),numpy.array([cfg.mul,cfg.mul,cfg.mul])*numparts,[1.0/float(cfg.bias)]),0).astype(numpy.float32))
         limitvec.append(numpy.concatenate((-1000*numpy.ones(numparts*sizepart),-1000*numpy.ones(numbias),-1000*numpy.ones(numparts),cfg.lb*numpy.ones(3*numparts),[-1000]),0).astype(numpy.float32))
     if 0:#no strange things
@@ -927,7 +928,7 @@ for it in range(cpit,cfg.posit):
 
     
     if it>cpit:
-        oldposl,negl,reg,nobj,hpos,hneg=pegasos3.objective_new(trpos,trneg,trposcl,trnegcl,w,cfg.svmc,numthr=numcore,regvec=regvec,zerovec=zerovec)
+        oldposl,negl,reg,nobj,hpos,hneg=pegasos3.objective_float(trpos,trneg,trposcl,trnegcl,w,cfg.svmc,numthr=numcore,regvec=regvec,zerovec=zerovec)
         #oldposl,negl,reg,nobj,hpos,hneg=pegasos.objective(trpos,trneg,trposcl,trnegcl,clsize,w,cfg.svmc,sizereg=sizereg,valreg=cfg.valreg)#this should be changed to objective new which should call the objective in fast_pegasos 
 
     #build training data for positives
@@ -964,7 +965,7 @@ for it in range(cpit,cfg.posit):
     ########### check positive convergence    
     if it>cpit:
         lg.info("################# Checking Positive Convergence ##############")
-        newposl,negl,reg,nobj,hpos,hneg=pegasos3.objective_new(trpos,trneg,trposcl,trnegcl,w,cfg.svmc,numthr=numcore,regvec=regvec,zerovec=zerovec)
+        newposl,negl,reg,nobj,hpos,hneg=pegasos3.objective_float(trpos,trneg,trposcl,trnegcl,w,cfg.svmc,numthr=numcore,regvec=regvec,zerovec=zerovec)
         #newposl,negl,reg,nobj,hpos,hneg=pegasos.objective(trpos,trneg,trposcl,trnegcl,clsize,w,cfg.svmc,sizereg=sizereg,valreg=cfg.valreg)#this should be changed to objective new which should call the objective in fast_pegasos 
         #lposl.append(newposl)
         #add a bound on not found examples
@@ -1064,7 +1065,7 @@ for it in range(cpit,cfg.posit):
         ############ check negative convergency
         if nit>0: # and not(limit):
             lg.info("################ Checking Negative Convergence ##############")
-            posl,negl,reg,nobj,hpos,hneg=pegasos3.objective_new(trpos,trneg,trposcl,trnegcl,w,cfg.svmc,numthr=numcore,regvec=regvec,zerovec=zerovec)
+            posl,negl,reg,nobj,hpos,hneg=pegasos3.objective_float(trpos,trneg,trposcl,trnegcl,w,cfg.svmc,numthr=numcore,regvec=regvec,zerovec=zerovec)
             #posl,negl,reg,nobj,hpos,hneg=pegasos.objective(trpos,trneg,trposcl,trnegcl,clsize,w,cfg.svmc,sizereg=sizereg,valreg=cfg.valreg)#this should be changed to objective new which should call the objective in fast_pegasos 
             print "NIT:",nit,"OLDLOSS",old_nobj,"NEWLOSS:",nobj
             negratio.append(nobj/(old_nobj+0.000001))
@@ -1096,7 +1097,7 @@ for it in range(cpit,cfg.posit):
             w,r,prloss=pegasos.trainCompSGD_new(trpos,trneg,"",trposcl,trnegcl,oldw=w,pc=cfg.svmc,k=numcore*2,numthr=numcore,eps=cfg.eps,regvec=regvec,zerovec=zerovec,mulvec=mulvec,limitvec=limitvec)
         else:
             import pegasos3
-            w,r,prloss=pegasos3.trainCompLBGS_new(trpos,trneg,"",trposcl,trnegcl,oldw=w,pc=cfg.svmc,k=numcore*2,numthr=numcore,eps=cfg.eps,regvec=regvec,zerovec=zerovec,mulvec=mulvec,limitvec=limitvec)
+            w,r,prloss=pegasos3.trainCompLBGS_float(trpos,trneg,"",trposcl,trnegcl,oldw=w,pc=cfg.svmc,k=numcore*2,numthr=numcore,eps=cfg.eps,regvec=regvec,zerovec=zerovec,mulvec=mulvec,limitvec=limitvec)
             #w,r,prloss=pegasos.trainCompBFG(trpos,trneg,"",trposcl,trnegcl,oldw=w,pc=cfg.svmc,k=numcore*2,numthr=numcore,eps=0.001,sizereg=sizereg,valreg=cfg.valreg,lb=cfg.lb)#,notreg=notreg)
 
         pylab.figure(300,figsize=(4,4))
@@ -1107,7 +1108,7 @@ for it in range(cpit,cfg.posit):
         pylab.show()
         #raw_input()
 
-        old_posl,old_negl,old_reg,old_nobj,old_hpos,old_hneg=pegasos3.objective_new(trpos,trneg,trposcl,trnegcl,w,cfg.svmc,numthr=numcore,regvec=regvec,zerovec=zerovec)
+        old_posl,old_negl,old_reg,old_nobj,old_hpos,old_hneg=pegasos3.objective_float(trpos,trneg,trposcl,trnegcl,w,cfg.svmc,numthr=numcore,regvec=regvec,zerovec=zerovec)
         print "Objective After learning:",old_nobj
         lg.info("Objective After learning %f"%old_nobj)
         #raw_input()
@@ -1272,10 +1273,14 @@ Negative in cache vectors %d
         totn=len(trNegImages)
         for idl1 in range(totn):
             idl=(idl1+lastcount)%totn
-            l=trNegImages[idl]
+            l=trNegImages[idl]            
             #bb=l["bbox"]
             #for idb,b in enumerate(bb):
-            arg.append({"idim":idl,"file":l["name"],"idbb":0,"bbox":[],"models":models,"cfg":cfg,"flip":False,"control":d}) 
+            if cfg.useRL:
+                arg.append({"idim":idl,"file":l["name"],"idbb":0,"bbox":[],"models":models,"cfg":cfg,"flip":False,"control":d})    
+                arg.append({"idim":idl,"file":l["name"],"idbb":0,"bbox":[],"models":models,"cfg":cfg,"flip":True,"control":d})    
+            else:
+                arg.append({"idim":idl,"file":l["name"],"idbb":0,"bbox":[],"models":models,"cfg":cfg,"flip":False,"control":d}) 
         lg.info("############### Starting Scan of %d negative images #############"%len(arg))
         if not(parallel):
             itr=itertools.imap(hardNegCache,arg)        

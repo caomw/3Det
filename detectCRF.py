@@ -501,7 +501,7 @@ def getfeature3D(det,f,model,angy,angx,angz,k,mlz,trunc=0,usebiases=False,usedef
             #print "Error",scr-ld["scr"]-m1["rho"],(scr-ld["scr"]-m1["rho"])/scr
             #raw_input()
         #print "Scr:",scr-m1["rho"],"PrevScr:",ld["scr"]
-        if abs((scr-m1["rho"]-ld["scr"])/scr)>0.0005:#do not know why for non axis aligned dt error is 0.001 isntead of 0.0001
+        if abs((scr-m1["rho"]-ld["scr"])/scr)>0.001:#do not know why for non axis aligned dt error is 0.001 isntead of 0.0001
             print "Error",abs((scr-m1["rho"]-ld["scr"])/scr)                
             print "Dense",ld["scr"],"Feat",scr-m1["rho"]
             print "Parts",ld["scrp"]

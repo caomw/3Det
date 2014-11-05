@@ -708,7 +708,9 @@ def det2_cache_def(model,hog,ppglangy,ppglangx,ppglangz,selangy,selangx,selangz,
                     #print ax,ay,axy
                     auxscr,ddy,ddx=dt.dt2rot(scr,ay,ax,axy,by,bx)
                     if 0:
-                        dt.checkdt(scr,auxscr,ddy,ddx,ay,ax,axy)
+                        print auxscr.min(),
+                        #raw_input()
+                        #dt.checkdt(scr,auxscr,ddy,ddx,ay,ax,axy)
                     ldy[l,gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=ddy+maxmy-posy
                     ldx[l,gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=ddx+maxmx-posx
                     #resp[l,gly,glx,glz,maxmy-posy:maxmy-posy+hsy+hsize,maxmx-(posx):maxmx-(posx)+hsx+hsize]=auxscr
@@ -779,6 +781,8 @@ def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-9
     minxm=numpy.min(model["size"][:,:,:,1])#numpy.max([el.x for el in model["ww"]])+1
     deltay=maxym-minym+hsize+1
     deltax=maxxm-minxm+hsize+1
+#    deltay=maxym-minym#+1hsize+1
+#    deltax=maxxm-minxm#+1hsize+1
     #maxmy=#numpy.max(model["size"][:,:,2])+hsize+1#numpy.max([el.y for el in model["ww"]])+hsize+1
     #maxmx=#numpy.max(model["size"][:,:,3])+hsize+1#numpy.max([el.x for el in model["ww"]])+hsize+1
     show=False
@@ -805,10 +809,14 @@ def rundet(img,model,angy=[-90,-75,-60,-45,-30,-15,0,15,30,45,60,75,90],angx=[-9
         for l in range(min(numhyp,len(order))):
             dd=numpy.unravel_index(order[l],res.shape)
             (minym,minxm,maxym,maxxm)=model["size"][dd[0],dd[1],dd[2]]
-            pcy1=(dd[3]-deltay+hsize/2)*sbin/hog.scale[idr]
-            pcx1=(dd[4]-deltax+hsize/2)*sbin/hog.scale[idr]
-            pcy2=(dd[3]-deltay+(maxym-minym)+hsize/2)*sbin/hog.scale[idr]
-            pcx2=(dd[4]-deltax+(maxxm-minxm)+hsize/2)*sbin/hog.scale[idr]
+            pcy1=(dd[3]-deltay+1)*sbin/hog.scale[idr]
+            pcx1=(dd[4]-deltax+1)*sbin/hog.scale[idr]
+            pcy2=(dd[3]-deltay+(maxym-minym)+1)*sbin/hog.scale[idr]
+            pcx2=(dd[4]-deltax+(maxxm-minxm)+1)*sbin/hog.scale[idr]
+#            pcy1=(dd[3]-deltay+hsize/2)*sbin/hog.scale[idr]
+#            pcx1=(dd[4]-deltax+hsize/2)*sbin/hog.scale[idr]
+#            pcy2=(dd[3]-deltay+(maxym-minym)+hsize/2)*sbin/hog.scale[idr]
+#            pcx2=(dd[4]-deltax+(maxxm-minxm)+hsize/2)*sbin/hog.scale[idr]
             pdfy=[];pdfx=[];pddy=[];pddx=[];scrp=[]
             if usedef:
                 glangy=angy[dd[0]]

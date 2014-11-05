@@ -331,9 +331,9 @@ if __name__ == "__main__":
     dimy=100
     dimx=150
     #a=numpy.random.random((dimy,dimx)).astype(numpy.float32)
-    im=numpy.zeros((dimy,dimx),numpy.float32)
+    #im=numpy.zeros((dimy,dimx),numpy.float32)
     #im=-numpy.ones((dimy,dimx),numpy.float32)
-    #im=100*numpy.random.random((dimy,dimx)).astype(numpy.float32)
+    im=100*numpy.random.random((dimy,dimx)).astype(numpy.float32)
     im[40,50]=150
     im[25,65]=150
     #im[40,50]=1
@@ -341,7 +341,7 @@ if __name__ == "__main__":
     #dy=numpy.zeros((dimy,dimx),dtype=numpy.float32)
     #dx=numpy.zeros((dimy,dimx),dtype=numpy.float32)
     #lib.dtpy(a,dta,dy,dx,dimy,dimy,1,1,0,0)
-    ax=0.5;ay=0.01#0.01
+    ax=0.01;ay=0.5#0.01
     axy=0.1#0.1
     #dtim,Iy,Ix=mydt(im,a,a,b,b)
     #dtim,Iy,Ix=dt2(im,a,2*a,-0.00,by,bx)
